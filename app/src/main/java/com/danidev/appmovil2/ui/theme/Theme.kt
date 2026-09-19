@@ -12,32 +12,37 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 
 private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80
+    primary = DiceTopFace,
+    secondary = DiceSideFace,
+    tertiary = DiceShadow,
+    background = DiceBlack,
+    surface = DiceBlack,
+    onPrimary = DiceBlack,
+    onSecondary = DiceBlack,
+    onTertiary = DiceBlack,
+    onBackground = DiceWhite,
+    onSurface = DiceWhite
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
-    secondary = PurpleGrey40,
-    tertiary = Pink40
-
-    /* Other default colors to override
-    background = Color(0xFFFFFBFE),
-    surface = Color(0xFFFFFBFE),
-    onPrimary = Color.White,
-    onSecondary = Color.White,
-    onTertiary = Color.White,
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F),
-    */
+    primary = DiceTopFace,
+    secondary = DiceSideFace,
+    tertiary = DiceBackground,
+    background = DiceWhite,
+    surface = DiceWhite,
+    onPrimary = DiceTextPink,
+    onSecondary = DiceTextPink,
+    onTertiary = DiceTextPink,
+    onBackground = DiceTextPink,
+    onSurface = DiceTextPink,
+    onSurfaceVariant = DiceTextPink.copy(alpha = 0.8f)
 )
 
 @Composable
 fun Appmovil2Theme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    dynamicColor: Boolean = false, // Desactivado para forzar los colores del dado
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {

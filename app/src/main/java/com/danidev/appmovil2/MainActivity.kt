@@ -4,69 +4,52 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.material3.Button
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.danidev.appmovil2.ui.dice.DiceViewModel
+import androidx.compose.ui.unit.sp
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.navigation.compose.rememberNavController
+import com.danidev.appmovil2.ui.navigation.AppNavGraph
 import com.danidev.appmovil2.ui.theme.Appmovil2Theme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
+        installSplashScreen()
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             Appmovil2Theme {
-                MoverDados()
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    val navController = rememberNavController()
+                    AppNavGraph(navController = navController)
+                }
             }
         }
     }
 }
 
 @Composable
-fun MoverDados(diceViewModel: DiceViewModel = viewModel()){
-    val uiState by diceViewModel.uiState.collectAsState()
-    DadoConBotonImagen(
-        diceValue = uiState.currentDiceValue,
-        onRollClick = { diceViewModel.rollDice() }
-    )
-}
+fun MoverDados() {
+    var result by remember { mutableIntStateOf(1) }
 
-@Composable
-fun DadoConBotonImagen(
-    diceValue: Int,
-    onRollClick: () -> Unit,
-    modifier: Modifier = Modifier.fillMaxSize().wrapContentSize(Alignment.Center)
-){
-    var rotation by remember { mutableFloatStateOf(0f) }
-    val animatedRotation by animateFloatAsState(
-        targetValue = rotation,
-        animationSpec = tween(durationMillis = 500, easing = LinearEasing),
-        label = "DiceRotation"
-    )
-
-    val imageResource = when (diceValue) {
+    val imageResource = when (result) {
         1 -> R.drawable.dice_1
         2 -> R.drawable.dice_2
         3 -> R.drawable.dice_3
@@ -74,25 +57,61 @@ fun DadoConBotonImagen(
         5 -> R.drawable.dice_5
         else -> R.drawable.dice_6
     }
-    Column(
-        modifier = modifier,
-        horizontalAlignment = Alignment.CenterHorizontally
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(
+                brush = Brush.verticalGradient(
+                    colors = listOf(
+                        MaterialTheme.colorScheme.primary,
+                        MaterialTheme.colorScheme.background
+                    )
+                )
+            ),
+        contentAlignment = Alignment.Center
     ) {
-        Image(
-            painter = painterResource(imageResource),
-            contentDescription = diceValue.toString(),
-            modifier = Modifier.graphicsLayer(
-                rotationZ = animatedRotation,
-                scaleX = if ((animatedRotation % 360f) == 0f) 1f else 1.1f,
-                scaleY = if ((animatedRotation % 360f) == 0f) 1f else 1.1f
-            )
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        Button(onClick = {
-            rotation += 360f
-            onRollClick()
-        }){
-            Text(stringResource(R.string.roll))
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Card(
+                modifier = Modifier
+                    .padding(16.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 12.dp),
+                shape = MaterialTheme.shapes.extraLarge,
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+            ) {
+                Image(
+                    painter = painterResource(imageResource),
+                    contentDescription = result.toString(),
+                    modifier = Modifier
+                        .size(200.dp)
+                        .padding(32.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(48.dp))
+
+            Button(
+                onClick = { },
+                enabled = false,
+                modifier = Modifier
+                    .fillMaxWidth(0.6f)
+                    .height(56.dp),
+                shape = MaterialTheme.shapes.large,
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 6.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onBackground
+                )
+            ) {
+                Text(
+                    text = stringResource(R.string.roll),
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
         }
     }
 }

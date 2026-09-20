@@ -8,11 +8,13 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.danidev.appmovil2.MoverDados
+import com.danidev.appmovil2.ui.screens.AboutScreen
 import com.danidev.appmovil2.ui.screens.WelcomeScreen
 
 sealed class Screen(val route: String) {
     object Welcome : Screen("welcome")
     object Main : Screen("main")
+    object About : Screen("about")        // HU-17
 }
 
 @Composable
@@ -24,14 +26,24 @@ fun AppNavGraph(navController: NavHostController) {
         exitTransition = { fadeOut(animationSpec = tween(500)) }
     ) {
         composable(Screen.Welcome.route) {
-            WelcomeScreen(onStartClicked = {
-                navController.navigate(Screen.Main.route) {
-                    popUpTo(Screen.Welcome.route) { inclusive = true }
+            WelcomeScreen(
+                onStartClicked = {
+                    navController.navigate(Screen.Main.route) {
+                        popUpTo(Screen.Welcome.route) { inclusive = true }
+                    }
+                },
+                onNavigateToAbout = {
+                    navController.navigate(Screen.About.route)
                 }
-            })
+            )
         }
         composable(Screen.Main.route) {
             MoverDados()
+        }
+        composable(Screen.About.route) {   // HU-17: Navegación a "Acerca de"
+            AboutScreen(onNavigateBack = {
+                navController.popBackStack()
+            })
         }
     }
 }

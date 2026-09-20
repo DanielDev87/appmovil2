@@ -14,7 +14,7 @@ import com.danidev.appmovil2.ui.screens.WelcomeScreen
 sealed class Screen(val route: String) {
     object Welcome : Screen("welcome")
     object Main : Screen("main")
-    object About : Screen("about")        // HU-17
+    object About : Screen("about")
 }
 
 @Composable
@@ -40,7 +40,7 @@ fun AppNavGraph(navController: NavHostController) {
         composable(Screen.Main.route) {
             MoverDados()
         }
-        composable(Screen.About.route) {   // HU-17: Navegación a "Acerca de"
+        composable(Screen.About.route) {
             AboutScreen(onNavigateBack = {
                 navController.popBackStack()
             })

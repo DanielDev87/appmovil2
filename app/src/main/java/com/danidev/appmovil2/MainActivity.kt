@@ -120,9 +120,6 @@ fun MoverDados() {
 @Composable
 fun MoverDadosPreview() {
     Appmovil2Theme {
-        DadoConBotonImagen(
-            diceValue = 1,
-            onRollClick = {}
-        )
+        MoverDados()
     }
 }

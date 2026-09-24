@@ -6,6 +6,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -14,6 +15,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -22,6 +24,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import androidx.navigation.compose.rememberNavController
 import com.danidev.appmovil2.ui.navigation.AppNavGraph
 import com.danidev.appmovil2.ui.theme.Appmovil2Theme
@@ -48,6 +52,20 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun MoverDados() {
     var result by remember { mutableIntStateOf(1) }
+    var isRolling by remember { mutableStateOf(false) }
+    var rollAnimationKey by remember { mutableIntStateOf(0) }
+    val coroutineScope = rememberCoroutineScope()
+
+    val rotation by animateFloatAsState(
+        targetValue = rollAnimationKey * 720f,
+        animationSpec = tween(durationMillis = 900, easing = FastOutSlowInEasing),
+        label = "diceRotation"
+    )
+    val scale by animateFloatAsState(
+        targetValue = if (isRolling) 0.8f else 1f,
+        animationSpec = tween(durationMillis = 180),
+        label = "diceScale"
+    )
 
     val imageResource = when (result) {
         1 -> R.drawable.dice_1
@@ -88,14 +106,31 @@ fun MoverDados() {
                     modifier = Modifier
                         .size(200.dp)
                         .padding(32.dp)
+                        .scale(scale)
+                        .rotate(rotation)
                 )
             }
 
             Spacer(modifier = Modifier.height(48.dp))
 
             Button(
-                onClick = { },
-                enabled = false,
+                onClick = {
+                    if (!isRolling) {
+                        coroutineScope.launch {
+                            isRolling = true
+                            rollAnimationKey++
+
+                            repeat(9) {
+                                result = (1..6).random()
+                                delay(100)
+                            }
+
+                            result = (1..6).random()
+                            isRolling = false
+                        }
+                    }
+                },
+                enabled = !isRolling,
                 modifier = Modifier
                     .fillMaxWidth(0.6f)
                     .height(56.dp),

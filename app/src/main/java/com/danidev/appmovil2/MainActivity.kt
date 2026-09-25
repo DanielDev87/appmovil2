@@ -23,10 +23,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import androidx.navigation.compose.rememberNavController
+import com.danidev.appmovil2.ui.dice.DiceViewModel
+import com.danidev.appmovil2.ui.dice.RollHistory
+import com.danidev.appmovil2.ui.dice.diceImageRes
 import com.danidev.appmovil2.ui.navigation.AppNavGraph
 import com.danidev.appmovil2.ui.theme.Appmovil2Theme
 
@@ -49,9 +53,23 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+/**
+ * Pantalla principal: muestra el dado, el botón para lanzarlo y el historial
+ * de los últimos lanzamientos (HU-011).
+ *
+ * La animación del lanzamiento usa estado local (`result`, `isRolling`) porque
+ * es puramente visual. El resultado final se registra en [DiceViewModel], que
+ * es quien conserva el historial.
+ *
+ * @param diceViewModel ViewModel con el historial de lanzamientos.
+ */
 @Composable
-fun MoverDados() {
-    var result by remember { mutableIntStateOf(1) }
+fun MoverDados(diceViewModel: DiceViewModel = viewModel()) {
+    // Historial de lanzamientos (HU-011); se recompone con cada nuevo registro.
+    val uiState by diceViewModel.uiState.collectAsState()
+
+    // Parte del último valor registrado para que el dado no vuelva a 1 al rotar.
+    var result by remember { mutableIntStateOf(uiState.currentDiceValue) }
     var isRolling by remember { mutableStateOf(false) }
     var rollAnimationKey by remember { mutableIntStateOf(0) }
     val coroutineScope = rememberCoroutineScope()
@@ -67,14 +85,7 @@ fun MoverDados() {
         label = "diceScale"
     )
 
-    val imageResource = when (result) {
-        1 -> R.drawable.dice_1
-        2 -> R.drawable.dice_2
-        3 -> R.drawable.dice_3
-        4 -> R.drawable.dice_4
-        5 -> R.drawable.dice_5
-        else -> R.drawable.dice_6
-    }
+    val imageResource = diceImageRes(result)
 
     Box(
         modifier = Modifier
@@ -126,6 +137,8 @@ fun MoverDados() {
                             }
 
                             result = (1..6).random()
+                            // Solo el valor final se guarda en el historial (HU-011).
+                            diceViewModel.registerResult(result)
                             isRolling = false
                         }
                     }
@@ -147,6 +160,11 @@ fun MoverDados() {
                     fontWeight = FontWeight.Bold
                 )
             }
+
+            Spacer(modifier = Modifier.height(32.dp))
+
+            // HU-011: lista desplazable con los últimos 10 lanzamientos.
+            RollHistory(history = uiState.history)
         }
     }
 }

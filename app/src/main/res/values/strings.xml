@@ -1,4 +1,8 @@
 <resources>
     <string name="app_name">Up Dice </string>
     <string name="roll">Tirar</string>
+
+    <!-- HU-011: Historial de lanzamientos -->
+    <string name="roll_history_title">Últimos lanzamientos</string>
+    <string name="roll_history_empty">Aún no hay lanzamientos</string>
 </resources>

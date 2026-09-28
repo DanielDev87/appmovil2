@@ -54,6 +54,7 @@ fun MoverDados() {
     var result by remember { mutableIntStateOf(1) }
     var isRolling by remember { mutableStateOf(false) }
     var rollAnimationKey by remember { mutableIntStateOf(0) }
+    var resultMessage by remember { mutableStateOf("") }
     val coroutineScope = rememberCoroutineScope()
 
     val rotation by animateFloatAsState(
@@ -113,7 +114,16 @@ fun MoverDados() {
 
             Spacer(modifier = Modifier.height(48.dp))
 
+            Text(
+                text = resultMessage,
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
             Button(
+
                 onClick = {
                     if (!isRolling) {
                         coroutineScope.launch {
@@ -126,6 +136,13 @@ fun MoverDados() {
                             }
 
                             result = (1..6).random()
+
+                            resultMessage = when (result) {
+                                1 -> "💥 ¡PIFIA!"
+                                6 -> "🎯 ¡CRÍTICO!"
+                                else -> ""
+                            }
+
                             isRolling = false
                         }
                     }

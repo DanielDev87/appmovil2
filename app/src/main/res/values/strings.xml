@@ -1,4 +1,7 @@
 <resources>
     <string name="app_name">Up Dice </string>
     <string name="roll">Tirar</string>
+    <string name="player_name">Nombre del jugador</string>
+    <string name="save_player_name">Guardar jugador</string>
+    <string name="player_name_saved">Jugador guardado</string>
 </resources>

@@ -70,6 +70,9 @@ fun MoverDados(diceViewModel: DiceViewModel = viewModel()) {
 
     // Parte del último valor registrado para que el dado no vuelva a 1 al rotar.
     var result by remember { mutableIntStateOf(uiState.currentDiceValue) }
+    var score by remember { mutableIntStateOf(0) }
+    var launches by remember { mutableIntStateOf(0) }
+    val outcome = determineGameOutcome(score, launches)
     var isRolling by remember { mutableStateOf(false) }
     var rollAnimationKey by remember { mutableIntStateOf(0) }
     val coroutineScope = rememberCoroutineScope()
@@ -84,7 +87,6 @@ fun MoverDados(diceViewModel: DiceViewModel = viewModel()) {
         animationSpec = tween(durationMillis = 180),
         label = "diceScale"
     )
-
     val imageResource = diceImageRes(result)
 
     Box(
@@ -124,9 +126,17 @@ fun MoverDados(diceViewModel: DiceViewModel = viewModel()) {
 
             Spacer(modifier = Modifier.height(48.dp))
 
+            Text(stringResource(R.string.score, score, TARGET_SCORE))
+            Text(stringResource(R.string.launches, launches, MAX_LAUNCHES))
+            when (outcome) {
+                GameOutcome.WON -> Text(stringResource(R.string.game_won))
+                GameOutcome.LAUNCH_LIMIT_REACHED -> Text(stringResource(R.string.launch_limit_reached))
+                GameOutcome.IN_PROGRESS -> Unit
+            }
+
             Button(
                 onClick = {
-                    if (!isRolling) {
+                    if (!isRolling && outcome == GameOutcome.IN_PROGRESS) {
                         coroutineScope.launch {
                             isRolling = true
                             rollAnimationKey++
@@ -137,13 +147,14 @@ fun MoverDados(diceViewModel: DiceViewModel = viewModel()) {
                             }
 
                             result = (1..6).random()
-                            // Solo el valor final se guarda en el historial (HU-011).
                             diceViewModel.registerResult(result)
+                            score += result
+                            launches++
                             isRolling = false
                         }
                     }
                 },
-                enabled = !isRolling,
+                enabled = !isRolling && outcome == GameOutcome.IN_PROGRESS,
                 modifier = Modifier
                     .fillMaxWidth(0.6f)
                     .height(56.dp),
@@ -159,6 +170,15 @@ fun MoverDados(diceViewModel: DiceViewModel = viewModel()) {
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold
                 )
+            }
+            if (outcome != GameOutcome.IN_PROGRESS) {
+                OutlinedButton(onClick = {
+                    result = 1
+                    score = 0
+                    launches = 0
+                }) {
+                    Text(stringResource(R.string.play_again))
+                }
             }
 
             Spacer(modifier = Modifier.height(32.dp))

@@ -9,4 +9,8 @@
     <string name="game_won">¡Victoria! Alcanzaste la meta de puntos.</string>
     <string name="launch_limit_reached">Fin de la partida: se agotaron los lanzamientos.</string>
     <string name="play_again">Jugar de nuevo</string>
+    <!-- HU-04: Selección de color de dados -->
+    <string name="dice_palette_lila">Lila</string>
+    <string name="dice_palette_rosa">Rosa</string>
+    <string name="dice_palette_menta">Menta</string>
 </resources>

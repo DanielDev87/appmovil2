@@ -139,6 +139,8 @@ private fun RollHistoryItem(
         Image(
             painter = painterResource(diceImageRes(record.value)),
             contentDescription = record.value.toString(),
+            // HU-04: el historial usa la misma paleta que el dado principal.
+            colorFilter = LocalDicePalette.current.colorFilter,
             modifier = Modifier
                 .size(RollHistoryItemSize)
                 .padding(8.dp)

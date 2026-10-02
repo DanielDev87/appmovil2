@@ -1,4 +1,12 @@
 <resources>
-    <string name="app_name">appmovil2</string>
+    <string name="app_name">Up Dice </string>
     <string name="roll">Tirar</string>
+    <!-- HU-011: Historial de lanzamientos -->
+    <string name="roll_history_title">Últimos lanzamientos</string>
+    <string name="roll_history_empty">Aún no hay lanzamientos</string>
+    <string name="score">Puntos: %1$d / %2$d</string>
+    <string name="launches">Lanzamientos: %1$d / %2$d</string>
+    <string name="game_won">¡Victoria! Alcanzaste la meta de puntos.</string>
+    <string name="launch_limit_reached">Fin de la partida: se agotaron los lanzamientos.</string>
+    <string name="play_again">Jugar de nuevo</string>
 </resources>

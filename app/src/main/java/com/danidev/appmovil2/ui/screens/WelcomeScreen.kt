@@ -23,6 +23,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.danidev.appmovil2.R
+import com.danidev.appmovil2.ui.theme.ThemeSwitch
 
 @Composable
 fun WelcomeScreen(onStartClicked: () -> Unit, onNavigateToAbout: () -> Unit = {}) {
@@ -55,6 +56,12 @@ fun WelcomeScreen(onStartClicked: () -> Unit, onNavigateToAbout: () -> Unit = {}
                 )
             )
     ) {
+        // HU-03: selector de tema claro / oscuro.
+        ThemeSwitch(
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .padding(top = 48.dp, start = 16.dp)
+        )
         IconButton(
             onClick = onNavigateToAbout,
             modifier = Modifier

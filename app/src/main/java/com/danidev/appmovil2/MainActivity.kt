@@ -48,6 +48,7 @@ import com.danidev.appmovil2.ui.theme.ThemeController
 import com.danidev.appmovil2.ui.theme.ThemeMode
 import com.danidev.appmovil2.ui.theme.ThemeSwitch
 import com.danidev.appmovil2.ui.theme.ThemeViewModel
+import androidx.compose.runtime.saveable.rememberSaveable
 
 class MainActivity : ComponentActivity() {
 
@@ -133,6 +134,7 @@ fun MoverDados(diceViewModel: DiceViewModel = viewModel()) {
     val outcome = determineGameOutcome(score, launches)
     var isRolling by remember { mutableStateOf(false) }
     var rollAnimationKey by remember { mutableIntStateOf(0) }
+    var rollCount by remember { mutableIntStateOf(0) }
     val coroutineScope = rememberCoroutineScope()
 
     val rotation by animateFloatAsState(
@@ -198,8 +200,10 @@ fun MoverDados(diceViewModel: DiceViewModel = viewModel()) {
 
             Spacer(modifier = Modifier.height(32.dp))
 
+
             Text(stringResource(R.string.score, score, TARGET_SCORE))
             Text(stringResource(R.string.launches, launches, MAX_LAUNCHES))
+            Text(stringResource(R.string.roll_count,rollCount ))
             when (outcome) {
                 GameOutcome.WON -> Text(stringResource(R.string.game_won))
                 GameOutcome.LAUNCH_LIMIT_REACHED -> Text(stringResource(R.string.launch_limit_reached))
@@ -210,6 +214,7 @@ fun MoverDados(diceViewModel: DiceViewModel = viewModel()) {
                 onClick = {
                     if (!isRolling && outcome == GameOutcome.IN_PROGRESS) {
                         coroutineScope.launch {
+                            rollCount++
                             isRolling = true
                             rollAnimationKey++
 
@@ -251,6 +256,20 @@ fun MoverDados(diceViewModel: DiceViewModel = viewModel()) {
                 }) {
                     Text(stringResource(R.string.play_again))
                 }
+            }
+
+            Spacer(modifier = Modifier.height(32.dp))
+
+            IconButton (
+                onClick = {
+                    rollCount = 0
+                }
+            ) {
+                Image(
+                    painter = painterResource(R.drawable.reiniciar),
+                    contentDescription = "Reiniciar contador",
+                    modifier = Modifier.size(40.dp)
+                )
             }
 
             Spacer(modifier = Modifier.height(32.dp))

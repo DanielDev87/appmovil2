@@ -15,4 +15,7 @@
     <string name="dice_palette_lila">Lila</string>
     <string name="dice_palette_rosa">Rosa</string>
     <string name="dice_palette_menta">Menta</string>
+    <!-- HU-08: Contador de tiradas consecutivas -->
+    <string name="roll_count">Tiros consecutivos: %1$d</string>
+    <string name="reset_counter">Reiniciar</string>
 </resources>

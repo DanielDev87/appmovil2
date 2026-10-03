@@ -1,9 +1,13 @@
 package com.danidev.appmovil2
 
+import android.graphics.Color
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -24,6 +28,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -36,20 +42,65 @@ import com.danidev.appmovil2.ui.dice.diceImageRes
 import com.danidev.appmovil2.ui.dice.rememberDicePaletteViewModel
 import com.danidev.appmovil2.ui.navigation.AppNavGraph
 import com.danidev.appmovil2.ui.theme.Appmovil2Theme
+import com.danidev.appmovil2.ui.theme.LocalThemeController
+import com.danidev.appmovil2.ui.theme.SharedPreferencesThemeStore
+import com.danidev.appmovil2.ui.theme.ThemeController
+import com.danidev.appmovil2.ui.theme.ThemeMode
+import com.danidev.appmovil2.ui.theme.ThemeSwitch
+import com.danidev.appmovil2.ui.theme.ThemeViewModel
 
 class MainActivity : ComponentActivity() {
+
+    // HU-03: preferencia de tema (claro / oscuro), guardada entre sesiones.
+    private val themeViewModel: ThemeViewModel by viewModels {
+        viewModelFactory {
+            initializer { ThemeViewModel(SharedPreferencesThemeStore(applicationContext)) }
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
         setContent {
-            Appmovil2Theme {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    val navController = rememberNavController()
-                    AppNavGraph(navController = navController)
+            // HU-03: "sistema" solo aplica hasta que el usuario elige con el switch.
+            val themeMode by themeViewModel.themeMode.collectAsState()
+            val darkTheme = when (themeMode) {
+                ThemeMode.SYSTEM -> isSystemInDarkTheme()
+                ThemeMode.LIGHT -> false
+                ThemeMode.DARK -> true
+            }
+
+            // Las barras del sistema deben seguir el tema de la app, no el del dispositivo.
+            DisposableEffect(darkTheme) {
+                enableEdgeToEdge(
+                    statusBarStyle = SystemBarStyle.auto(
+                        lightScrim = Color.TRANSPARENT,
+                        darkScrim = Color.TRANSPARENT,
+                        detectDarkMode = { darkTheme }
+                    ),
+                    navigationBarStyle = SystemBarStyle.auto(
+                        lightScrim = Color.TRANSPARENT,
+                        darkScrim = Color.TRANSPARENT,
+                        detectDarkMode = { darkTheme }
+                    )
+                )
+                onDispose {}
+            }
+
+            CompositionLocalProvider(
+                LocalThemeController provides ThemeController(
+                    isDark = darkTheme,
+                    onDarkChange = themeViewModel::setDarkTheme
+                )
+            ) {
+                Appmovil2Theme(darkTheme = darkTheme) {
+                    Surface(
+                        modifier = Modifier.fillMaxSize(),
+                        color = MaterialTheme.colorScheme.background
+                    ) {
+                        val navController = rememberNavController()
+                        AppNavGraph(navController = navController)
+                    }
                 }
             }
         }
@@ -109,6 +160,13 @@ fun MoverDados(diceViewModel: DiceViewModel = viewModel()) {
             ),
         contentAlignment = Alignment.Center
     ) {
+        // HU-03: selector de tema claro / oscuro.
+        ThemeSwitch(
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .statusBarsPadding()
+                .padding(start = 16.dp, top = 8.dp)
+        )
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center

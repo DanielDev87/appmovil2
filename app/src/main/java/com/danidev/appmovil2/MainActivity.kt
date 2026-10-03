@@ -34,9 +34,12 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import androidx.navigation.compose.rememberNavController
+import com.danidev.appmovil2.ui.dice.DicePalettePicker
 import com.danidev.appmovil2.ui.dice.DiceViewModel
+import com.danidev.appmovil2.ui.dice.LocalDicePalette
 import com.danidev.appmovil2.ui.dice.RollHistory
 import com.danidev.appmovil2.ui.dice.diceImageRes
+import com.danidev.appmovil2.ui.dice.rememberDicePaletteViewModel
 import com.danidev.appmovil2.ui.navigation.AppNavGraph
 import com.danidev.appmovil2.ui.theme.Appmovil2Theme
 import com.danidev.appmovil2.ui.theme.LocalThemeController
@@ -119,6 +122,10 @@ fun MoverDados(diceViewModel: DiceViewModel = viewModel()) {
     // Historial de lanzamientos (HU-011); se recompone con cada nuevo registro.
     val uiState by diceViewModel.uiState.collectAsState()
 
+    // Paleta de color del dado (HU-04), guardada entre sesiones.
+    val paletteViewModel = rememberDicePaletteViewModel()
+    val palette by paletteViewModel.palette.collectAsState()
+
     // Parte del último valor registrado para que el dado no vuelva a 1 al rotar.
     var result by remember { mutableIntStateOf(uiState.currentDiceValue) }
     var score by remember { mutableIntStateOf(0) }
@@ -174,6 +181,7 @@ fun MoverDados(diceViewModel: DiceViewModel = viewModel()) {
                 Image(
                     painter = painterResource(imageResource),
                     contentDescription = result.toString(),
+                    colorFilter = palette.colorFilter,
                     modifier = Modifier
                         .size(200.dp)
                         .padding(32.dp)
@@ -182,7 +190,13 @@ fun MoverDados(diceViewModel: DiceViewModel = viewModel()) {
                 )
             }
 
-            Spacer(modifier = Modifier.height(48.dp))
+            // HU-04: selector de paleta de color del dado.
+            DicePalettePicker(
+                selected = palette,
+                onSelect = paletteViewModel::selectPalette
+            )
+
+            Spacer(modifier = Modifier.height(32.dp))
 
             Text(stringResource(R.string.score, score, TARGET_SCORE))
             Text(stringResource(R.string.launches, launches, MAX_LAUNCHES))
@@ -242,7 +256,9 @@ fun MoverDados(diceViewModel: DiceViewModel = viewModel()) {
             Spacer(modifier = Modifier.height(32.dp))
 
             // HU-011: lista desplazable con los últimos 10 lanzamientos.
-            RollHistory(history = uiState.history)
+            CompositionLocalProvider(LocalDicePalette provides palette) {
+                RollHistory(history = uiState.history)
+            }
         }
     }
 }

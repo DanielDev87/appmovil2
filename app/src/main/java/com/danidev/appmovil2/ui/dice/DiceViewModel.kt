@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.update
  * ViewModel de la pantalla de dados.
  *
  * Responsabilidades:
- * - Mantener el valor actual del dado.
+ * - Mantener la cantidad de dados activa y sus valores actuales (HU-06).
  * - Mantener el historial de los últimos [DiceUiState.MAX_HISTORY_SIZE] resultados (HU-011).
  *
  * Al vivir en un ViewModel, el estado sobrevive a cambios de configuración
@@ -28,31 +28,59 @@ class DiceViewModel : ViewModel() {
     private var nextRollId = 0L
 
     /**
-     * Genera un valor aleatorio entre 1 y 6 y lo registra como resultado final.
+     * Cambia la cantidad de dados en juego (HU-06).
+     *
+     * @param count Número de dados a usar (mínimo 1).
      */
-    fun rollDice() {
-        registerResult((1..6).random())
+    fun setDiceCount(count: Int) {
+        val validCount = count.coerceAtLeast(1)
+        _uiState.update { currentState ->
+            val newValues = List(validCount) { index ->
+                currentState.currentDiceValues.getOrElse(index) { 1 }
+            }
+            currentState.copy(
+                diceCount = validCount,
+                currentDiceValues = newValues
+            )
+        }
     }
 
     /**
-     * Registra el resultado final de un lanzamiento.
-     *
-     * Actualiza el valor actual y lo inserta al inicio del historial, conservando
-     * solo los [DiceUiState.MAX_HISTORY_SIZE] más recientes.
-     *
-     * Debe llamarse una única vez por lanzamiento, cuando termina la animación:
-     * los valores intermedios que se muestran mientras el dado gira no son
-     * resultados reales y no deben guardarse en el historial.
+     * Genera valores aleatorios entre 1 y 6 para la cantidad de dados activa
+     * y los registra como resultado final.
+     */
+    fun rollDice() {
+        val count = _uiState.value.diceCount
+        val values = List(count) { (1..6).random() }
+        registerResult(values)
+    }
+
+    /**
+     * Registra el resultado de un solo dado (para compatibilidad).
      *
      * @param value Valor obtenido en el dado (1..6).
      */
     fun registerResult(value: Int) {
-        // El registro se crea fuera de `update` porque su lambda puede reintentarse.
-        val newRecord = RollRecord(id = nextRollId++, value = value)
+        registerResult(listOf(value))
+    }
+
+    /**
+     * Registra el resultado final de un lanzamiento de múltiples dados (HU-06).
+     *
+     * Actualiza los valores actuales y los inserta al inicio del historial, conservando
+     * solo los [DiceUiState.MAX_HISTORY_SIZE] más recientes.
+     *
+     * Debe llamarse una única vez por lanzamiento, cuando termina la animación:
+     * los valores intermedios que se muestran mientras los dados giran no son
+     * resultados reales y no deben guardarse en el historial.
+     *
+     * @param values Lista de valores obtenidos en los dados (1..6 cada uno).
+     */
+    fun registerResult(values: List<Int>) {
+        val newRecord = RollRecord(id = nextRollId++, values = values)
         _uiState.update { currentState ->
             currentState.copy(
-                currentDiceValue = value,
-                // El más reciente va primero; se descartan los que exceden el límite.
+                currentDiceValues = values,
                 history = (listOf(newRecord) + currentState.history)
                     .take(DiceUiState.MAX_HISTORY_SIZE)
             )

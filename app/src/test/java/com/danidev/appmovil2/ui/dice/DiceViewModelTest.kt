@@ -69,4 +69,35 @@ class DiceViewModelTest {
         val value = viewModel.uiState.value.history.single().value
         assertTrue(value in 1..6)
     }
+
+    @Test
+    fun `setDiceCount actualiza la cantidad de dados y sus valores`() {
+        viewModel.setDiceCount(2)
+
+        val state = viewModel.uiState.value
+        assertEquals(2, state.diceCount)
+        assertEquals(2, state.currentDiceValues.size)
+    }
+
+    @Test
+    fun `registerResult con lista de dados registra los valores y calcula la suma`() {
+        viewModel.registerResult(listOf(3, 5))
+
+        val state = viewModel.uiState.value
+        assertEquals(listOf(3, 5), state.currentDiceValues)
+        assertEquals(8, state.currentDiceValue)
+        assertEquals(listOf(3, 5), state.history.first().values)
+        assertEquals(8, state.history.first().value)
+    }
+
+    @Test
+    fun `rollDice con dos dados genera dos valores entre 1 y 6`() {
+        viewModel.setDiceCount(2)
+        viewModel.rollDice()
+
+        val state = viewModel.uiState.value
+        assertEquals(2, state.currentDiceValues.size)
+        assertTrue(state.currentDiceValues.all { it in 1..6 })
+        assertEquals(state.currentDiceValues.sum(), state.currentDiceValue)
+    }
 }

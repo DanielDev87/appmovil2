@@ -15,4 +15,10 @@
     <string name="dice_palette_lila">Lila</string>
     <string name="dice_palette_rosa">Rosa</string>
     <string name="dice_palette_menta">Menta</string>
+    <!-- HU-06: Modo de dos dados simultáneos -->
+    <string name="dice_mode_label">Dados:</string>
+    <string name="one_die">1 Dado</string>
+    <string name="two_dice">2 Dados</string>
+    <string name="dice_sum_single">Suma: %1$d</string>
+    <string name="dice_sum_multiple">Suma: %1$d + %2$d = %3$d</string>
 </resources>

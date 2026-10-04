@@ -11,6 +11,8 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -108,32 +110,38 @@ class MainActivity : ComponentActivity() {
 }
 
 /**
- * Pantalla principal: muestra el dado, el botón para lanzarlo y el historial
- * de los últimos lanzamientos (HU-011).
+ * Pantalla principal: muestra uno o dos dados (HU-06), el botón para lanzarlos,
+ * el cálculo sumatorio y el historial de los últimos lanzamientos (HU-011).
  *
- * La animación del lanzamiento usa estado local (`result`, `isRolling`) porque
+ * La animación del lanzamiento usa estado local (`currentDiceValues`, `isRolling`) porque
  * es puramente visual. El resultado final se registra en [DiceViewModel], que
  * es quien conserva el historial.
  *
- * @param diceViewModel ViewModel con el historial de lanzamientos.
+ * @param diceViewModel ViewModel con el historial y modo de dados.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MoverDados(diceViewModel: DiceViewModel = viewModel()) {
-    // Historial de lanzamientos (HU-011); se recompone con cada nuevo registro.
+    // Historial y estado del dado (HU-06 / HU-011); se recompone con cada nuevo registro.
     val uiState by diceViewModel.uiState.collectAsState()
 
     // Paleta de color del dado (HU-04), guardada entre sesiones.
     val paletteViewModel = rememberDicePaletteViewModel()
     val palette by paletteViewModel.palette.collectAsState()
 
-    // Parte del último valor registrado para que el dado no vuelva a 1 al rotar.
-    var result by remember { mutableIntStateOf(uiState.currentDiceValue) }
+    var currentDiceValues by remember { mutableStateOf(uiState.currentDiceValues) }
     var score by remember { mutableIntStateOf(0) }
     var launches by remember { mutableIntStateOf(0) }
     val outcome = determineGameOutcome(score, launches)
     var isRolling by remember { mutableStateOf(false) }
     var rollAnimationKey by remember { mutableIntStateOf(0) }
     val coroutineScope = rememberCoroutineScope()
+
+    LaunchedEffect(uiState.diceCount, uiState.currentDiceValues) {
+        if (!isRolling) {
+            currentDiceValues = uiState.currentDiceValues
+        }
+    }
 
     val rotation by animateFloatAsState(
         targetValue = rollAnimationKey * 720f,
@@ -145,7 +153,6 @@ fun MoverDados(diceViewModel: DiceViewModel = viewModel()) {
         animationSpec = tween(durationMillis = 180),
         label = "diceScale"
     )
-    val imageResource = diceImageRes(result)
 
     Box(
         modifier = Modifier
@@ -169,24 +176,102 @@ fun MoverDados(diceViewModel: DiceViewModel = viewModel()) {
         )
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(vertical = 32.dp, horizontal = 16.dp)
         ) {
-            Card(
-                modifier = Modifier
-                    .padding(16.dp),
-                elevation = CardDefaults.cardElevation(defaultElevation = 12.dp),
-                shape = MaterialTheme.shapes.extraLarge,
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+            // HU-06: Selección de modo de dados (1 Dado / 2 Dados)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center,
+                modifier = Modifier.padding(bottom = 12.dp)
             ) {
-                Image(
-                    painter = painterResource(imageResource),
-                    contentDescription = result.toString(),
-                    colorFilter = palette.colorFilter,
-                    modifier = Modifier
-                        .size(200.dp)
-                        .padding(32.dp)
-                        .scale(scale)
-                        .rotate(rotation)
+                Text(
+                    text = stringResource(R.string.dice_mode_label),
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier.padding(end = 8.dp)
+                )
+                SingleChoiceSegmentedButtonRow {
+                    SegmentedButton(
+                        selected = uiState.diceCount == 1,
+                        onClick = {
+                            if (!isRolling) {
+                                diceViewModel.setDiceCount(1)
+                            }
+                        },
+                        shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2)
+                    ) {
+                        Text(stringResource(R.string.one_die))
+                    }
+                    SegmentedButton(
+                        selected = uiState.diceCount == 2,
+                        onClick = {
+                            if (!isRolling) {
+                                diceViewModel.setDiceCount(2)
+                            }
+                        },
+                        shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2)
+                    ) {
+                        Text(stringResource(R.string.two_dice))
+                    }
+                }
+            }
+
+            // HU-06: Renderizado de múltiples dados simultáneos
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally),
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(16.dp)
+            ) {
+                val diceSize = if (currentDiceValues.size > 1) 130.dp else 200.dp
+                val dicePadding = if (currentDiceValues.size > 1) 16.dp else 32.dp
+
+                currentDiceValues.forEachIndexed { index, dieVal ->
+                    Card(
+                        elevation = CardDefaults.cardElevation(defaultElevation = 12.dp),
+                        shape = MaterialTheme.shapes.extraLarge,
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                    ) {
+                        Image(
+                            painter = painterResource(diceImageRes(dieVal)),
+                            contentDescription = dieVal.toString(),
+                            colorFilter = palette.colorFilter,
+                            modifier = Modifier
+                                .size(diceSize)
+                                .padding(dicePadding)
+                                .scale(scale)
+                                .rotate(if (index % 2 == 0) rotation else -rotation)
+                        )
+                    }
+                }
+            }
+
+            // HU-06: Cálculo sumatorio de los dados
+            val currentSum = currentDiceValues.sum()
+            Surface(
+                shape = MaterialTheme.shapes.medium,
+                color = MaterialTheme.colorScheme.primaryContainer,
+                modifier = Modifier.padding(vertical = 8.dp)
+            ) {
+                Text(
+                    text = if (currentDiceValues.size == 2) {
+                        stringResource(
+                            R.string.dice_sum_multiple,
+                            currentDiceValues.getOrElse(0) { 1 },
+                            currentDiceValues.getOrElse(1) { 1 },
+                            currentSum
+                        )
+                    } else {
+                        stringResource(R.string.dice_sum_single, currentSum)
+                    },
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
                 )
             }
 
@@ -196,7 +281,7 @@ fun MoverDados(diceViewModel: DiceViewModel = viewModel()) {
                 onSelect = paletteViewModel::selectPalette
             )
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
             Text(stringResource(R.string.score, score, TARGET_SCORE))
             Text(stringResource(R.string.launches, launches, MAX_LAUNCHES))
@@ -206,6 +291,8 @@ fun MoverDados(diceViewModel: DiceViewModel = viewModel()) {
                 GameOutcome.IN_PROGRESS -> Unit
             }
 
+            Spacer(modifier = Modifier.height(8.dp))
+
             Button(
                 onClick = {
                     if (!isRolling && outcome == GameOutcome.IN_PROGRESS) {
@@ -214,13 +301,14 @@ fun MoverDados(diceViewModel: DiceViewModel = viewModel()) {
                             rollAnimationKey++
 
                             repeat(9) {
-                                result = (1..6).random()
+                                currentDiceValues = List(uiState.diceCount) { (1..6).random() }
                                 delay(100)
                             }
 
-                            result = (1..6).random()
-                            diceViewModel.registerResult(result)
-                            score += result
+                            val finalValues = List(uiState.diceCount) { (1..6).random() }
+                            currentDiceValues = finalValues
+                            diceViewModel.registerResult(finalValues)
+                            score += finalValues.sum()
                             launches++
                             isRolling = false
                         }
@@ -244,16 +332,19 @@ fun MoverDados(diceViewModel: DiceViewModel = viewModel()) {
                 )
             }
             if (outcome != GameOutcome.IN_PROGRESS) {
-                OutlinedButton(onClick = {
-                    result = 1
-                    score = 0
-                    launches = 0
-                }) {
+                OutlinedButton(
+                    onClick = {
+                        currentDiceValues = List(uiState.diceCount) { 1 }
+                        score = 0
+                        launches = 0
+                    },
+                    modifier = Modifier.padding(top = 8.dp)
+                ) {
                     Text(stringResource(R.string.play_again))
                 }
             }
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
             // HU-011: lista desplazable con los últimos 10 lanzamientos.
             CompositionLocalProvider(LocalDicePalette provides palette) {
@@ -270,3 +361,4 @@ fun MoverDadosPreview() {
         MoverDados()
     }
 }
+

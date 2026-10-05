@@ -334,6 +334,7 @@ fun MoverDados(diceViewModel: DiceViewModel = viewModel()) {
             if (outcome != GameOutcome.IN_PROGRESS) {
                 OutlinedButton(
                     onClick = {
+                        diceViewModel.clearHistory()
                         currentDiceValues = List(uiState.diceCount) { 1 }
                         score = 0
                         launches = 0

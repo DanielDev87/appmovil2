@@ -86,4 +86,19 @@ class DiceViewModel : ViewModel() {
             )
         }
     }
+
+    /**
+     * Limpia el historial de lanzamientos (HU-011) y reinicia los valores de los dados.
+     *
+     * Se invoca al reiniciar la partida ("Jugar de nuevo") para que la nueva partida
+     * comience sin los lanzamientos anteriores.
+     */
+    fun clearHistory() {
+        _uiState.update { currentState ->
+            currentState.copy(
+                currentDiceValues = List(currentState.diceCount) { 1 },
+                history = emptyList()
+            )
+        }
+    }
 }

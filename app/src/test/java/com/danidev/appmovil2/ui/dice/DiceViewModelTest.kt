@@ -100,4 +100,18 @@ class DiceViewModelTest {
         assertTrue(state.currentDiceValues.all { it in 1..6 })
         assertEquals(state.currentDiceValues.sum(), state.currentDiceValue)
     }
+
+    @Test
+    fun `clearHistory reinicia el historial y los valores de los dados`() {
+        viewModel.setDiceCount(2)
+        viewModel.registerResult(listOf(3, 5))
+        assertEquals(1, viewModel.uiState.value.history.size)
+
+        viewModel.clearHistory()
+
+        val state = viewModel.uiState.value
+        assertTrue(state.history.isEmpty())
+        assertEquals(listOf(1, 1), state.currentDiceValues)
+        assertEquals(2, state.diceCount)
+    }
 }

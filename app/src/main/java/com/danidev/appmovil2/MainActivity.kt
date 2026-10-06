@@ -7,6 +7,8 @@ import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -16,6 +18,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -231,38 +235,87 @@ fun MoverDados(diceViewModel: DiceViewModel = viewModel()) {
                 val dicePadding = if (currentDiceValues.size > 1) 16.dp else 32.dp
 
                 currentDiceValues.forEachIndexed { index, dieVal ->
+                    val isLocked = index in uiState.lockedIndices
                     Card(
-                        elevation = CardDefaults.cardElevation(defaultElevation = 12.dp),
+                        elevation = CardDefaults.cardElevation(
+                            defaultElevation = if (isLocked) 4.dp else 12.dp
+                        ),
                         shape = MaterialTheme.shapes.extraLarge,
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                        colors = CardDefaults.cardColors(
+                            containerColor = if (isLocked) {
+                                MaterialTheme.colorScheme.secondaryContainer
+                            } else {
+                                MaterialTheme.colorScheme.surface
+                            }
+                        ),
+                        border = if (isLocked) {
+                            BorderStroke(3.dp, MaterialTheme.colorScheme.primary)
+                        } else null,
+                        modifier = Modifier.clickable(
+                            enabled = !isRolling && outcome == GameOutcome.IN_PROGRESS
+                        ) {
+                            diceViewModel.toggleLock(index)
+                        }
                     ) {
-                        Image(
-                            painter = painterResource(diceImageRes(dieVal)),
-                            contentDescription = dieVal.toString(),
-                            colorFilter = palette.colorFilter,
-                            modifier = Modifier
-                                .size(diceSize)
-                                .padding(dicePadding)
-                                .scale(scale)
-                                .rotate(if (index % 2 == 0) rotation else -rotation)
-                        )
+                        Box(contentAlignment = Alignment.TopEnd) {
+                            Image(
+                                painter = painterResource(diceImageRes(dieVal)),
+                                contentDescription = if (isLocked) {
+                                    stringResource(R.string.dice_locked_description, dieVal)
+                                } else {
+                                    dieVal.toString()
+                                },
+                                colorFilter = palette.colorFilter,
+                                modifier = Modifier
+                                    .size(diceSize)
+                                    .padding(dicePadding)
+                                    .scale(if (isLocked) 1f else scale)
+                                    .rotate(if (isLocked) 0f else if (index % 2 == 0) rotation else -rotation)
+                            )
+                            if (isLocked) {
+                                Surface(
+                                    shape = MaterialTheme.shapes.small,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                                    modifier = Modifier.padding(6.dp)
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Lock,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(14.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(2.dp))
+                                        Text(
+                                            text = stringResource(R.string.dice_locked_label),
+                                            style = MaterialTheme.typography.labelSmall,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
 
-            // HU-06: Cálculo sumatorio de los dados
-            val currentSum = currentDiceValues.sum()
+            // HU-06: Cálculo sumatorio de los dados no bloqueados
+            val unlockedDiceValues = currentDiceValues.filterIndexed { index, _ -> index !in uiState.lockedIndices }
+            val currentSum = unlockedDiceValues.sum()
             Surface(
                 shape = MaterialTheme.shapes.medium,
                 color = MaterialTheme.colorScheme.primaryContainer,
                 modifier = Modifier.padding(vertical = 8.dp)
             ) {
                 Text(
-                    text = if (currentDiceValues.size == 2) {
+                    text = if (unlockedDiceValues.size == 2) {
                         stringResource(
                             R.string.dice_sum_multiple,
-                            currentDiceValues.getOrElse(0) { 1 },
-                            currentDiceValues.getOrElse(1) { 1 },
+                            unlockedDiceValues.getOrElse(0) { 1 },
+                            unlockedDiceValues.getOrElse(1) { 1 },
                             currentSum
                         )
                     } else {
@@ -293,28 +346,45 @@ fun MoverDados(diceViewModel: DiceViewModel = viewModel()) {
 
             Spacer(modifier = Modifier.height(8.dp))
 
+            val hasUnlockedDice = uiState.lockedIndices.size < uiState.diceCount
             Button(
                 onClick = {
-                    if (!isRolling && outcome == GameOutcome.IN_PROGRESS) {
+                    if (!isRolling && outcome == GameOutcome.IN_PROGRESS && hasUnlockedDice) {
                         coroutineScope.launch {
                             isRolling = true
                             rollAnimationKey++
 
+                            val initialValues = currentDiceValues
                             repeat(9) {
-                                currentDiceValues = List(uiState.diceCount) { (1..6).random() }
+                                currentDiceValues = List(uiState.diceCount) { index ->
+                                    if (index in uiState.lockedIndices) {
+                                        initialValues.getOrElse(index) { 1 }
+                                    } else {
+                                        (1..6).random()
+                                    }
+                                }
                                 delay(100)
                             }
 
-                            val finalValues = List(uiState.diceCount) { (1..6).random() }
+                            val finalValues = List(uiState.diceCount) { index ->
+                                if (index in uiState.lockedIndices) {
+                                    initialValues.getOrElse(index) { 1 }
+                                } else {
+                                    (1..6).random()
+                                }
+                            }
                             currentDiceValues = finalValues
-                            diceViewModel.registerResult(finalValues)
-                            score += finalValues.sum()
+
+                            val unlockedValues = finalValues.filterIndexed { index, _ -> index !in uiState.lockedIndices }
+                            diceViewModel.registerResult(finalValues, unlockedValues)
+
+                            score += unlockedValues.sum()
                             launches++
                             isRolling = false
                         }
                     }
                 },
-                enabled = !isRolling && outcome == GameOutcome.IN_PROGRESS,
+                enabled = !isRolling && outcome == GameOutcome.IN_PROGRESS && hasUnlockedDice,
                 modifier = Modifier
                     .fillMaxWidth(0.6f)
                     .height(56.dp),
@@ -334,6 +404,7 @@ fun MoverDados(diceViewModel: DiceViewModel = viewModel()) {
             if (outcome != GameOutcome.IN_PROGRESS) {
                 OutlinedButton(
                     onClick = {
+                        diceViewModel.clearLocks()
                         currentDiceValues = List(uiState.diceCount) { 1 }
                         score = 0
                         launches = 0

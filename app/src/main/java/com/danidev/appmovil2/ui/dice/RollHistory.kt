@@ -4,6 +4,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -29,6 +30,7 @@ import com.danidev.appmovil2.ui.theme.Appmovil2Theme
 
 /*
  * HU-011: Historial de lanzamientos.
+ * HU-06: Soporte para múltiples dados en el historial.
  *
  * "Como usuario, quiero ver una lista desplazable con los últimos 10 resultados
  * obtenidos, para revisar tiros anteriores."
@@ -107,11 +109,11 @@ fun RollHistory(
 
 // region Elemento de la lista
 
-/** Tamaño de cada elemento del historial. */
+/** Altura de cada elemento del historial. */
 private val RollHistoryItemSize = 56.dp
 
 /**
- * Tarjeta que muestra la cara del dado de un lanzamiento del historial.
+ * Tarjeta que muestra las caras de los dados y la suma total de un lanzamiento del historial.
  *
  * @param record Lanzamiento a mostrar.
  * @param isLatest `true` si es el lanzamiento más reciente; se resalta con el
@@ -125,7 +127,7 @@ private fun RollHistoryItem(
     modifier: Modifier = Modifier
 ) {
     Card(
-        modifier = modifier.size(RollHistoryItemSize),
+        modifier = modifier.height(RollHistoryItemSize),
         shape = MaterialTheme.shapes.medium,
         elevation = CardDefaults.cardElevation(defaultElevation = if (isLatest) 6.dp else 2.dp),
         colors = CardDefaults.cardColors(
@@ -136,13 +138,34 @@ private fun RollHistoryItem(
             }
         )
     ) {
-        Image(
-            painter = painterResource(diceImageRes(record.value)),
-            contentDescription = record.value.toString(),
-            modifier = Modifier
-                .size(RollHistoryItemSize)
-                .padding(8.dp)
-        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+        ) {
+            record.values.forEach { valItem ->
+                Image(
+                    painter = painterResource(diceImageRes(valItem)),
+                    contentDescription = valItem.toString(),
+                    // HU-04: el historial usa la misma paleta que el dado principal.
+                    colorFilter = LocalDicePalette.current.colorFilter,
+                    modifier = Modifier.size(36.dp)
+                )
+            }
+            if (record.values.size > 1) {
+                Text(
+                    text = "=${record.value}",
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = if (isLatest) {
+                        MaterialTheme.colorScheme.onPrimary
+                    } else {
+                        MaterialTheme.colorScheme.onSurface
+                    },
+                    modifier = Modifier.padding(start = 2.dp, end = 4.dp)
+                )
+            }
+        }
     }
 }
 
@@ -155,8 +178,11 @@ private fun RollHistoryItem(
 private fun RollHistoryPreview() {
     Appmovil2Theme {
         RollHistory(
-            history = listOf(6, 2, 4, 4, 1, 5, 3, 6, 2, 1)
-                .mapIndexed { index, value -> RollRecord(id = index.toLong(), value = value) }
+            history = listOf(
+                RollRecord(id = 0L, values = listOf(6, 2)),
+                RollRecord(id = 1L, values = listOf(4)),
+                RollRecord(id = 2L, values = listOf(3, 5))
+            )
         )
     }
 }

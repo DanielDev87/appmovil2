@@ -4,6 +4,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -18,6 +19,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -25,6 +27,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.danidev.appmovil2.R
+import com.danidev.appmovil2.ui.theme.LocalThemeController
+import com.danidev.appmovil2.ui.theme.ThemeSwitch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -32,6 +36,13 @@ fun AboutScreen(onNavigateBack: () -> Unit) {
     var visible by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) { visible = true }
+
+    // En oscuro la superficie es casi negra y la sombra no se ve: un borde fino delimita la tarjeta.
+    val cardBorder = if (LocalThemeController.current.isDark) {
+        BorderStroke(1.dp, Color.White.copy(alpha = 0.3f))
+    } else {
+        null
+    }
 
     Scaffold(
         topBar = {
@@ -49,6 +60,10 @@ fun AboutScreen(onNavigateBack: () -> Unit) {
                             contentDescription = "Volver"
                         )
                     }
+                },
+                actions = {
+                    // HU-03: selector de tema claro / oscuro.
+                    ThemeSwitch(modifier = Modifier.padding(end = 8.dp))
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
@@ -75,7 +90,7 @@ fun AboutScreen(onNavigateBack: () -> Unit) {
                 modifier = Modifier
                     .fillMaxSize()
                     .verticalScroll(rememberScrollState())
-                    .padding(24.dp),
+                    .padding(horizontal = 16.dp, vertical = 24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
@@ -122,7 +137,7 @@ fun AboutScreen(onNavigateBack: () -> Unit) {
                             Text(
                                 text = "Versión 1.0",
                                 fontSize = 13.sp,
-                                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+                                color = MaterialTheme.colorScheme.onBackground,
                                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
                             )
                         }
@@ -139,10 +154,12 @@ fun AboutScreen(onNavigateBack: () -> Unit) {
                     Card(
                         shape = RoundedCornerShape(20.dp),
                         colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.6f)
+                            containerColor = MaterialTheme.colorScheme.surface
                         ),
                         elevation = CardDefaults.cardElevation(4.dp),
-                        modifier = Modifier.fillMaxWidth()
+                        border = cardBorder,
+                        // El padding deja espacio para la sombra: AnimatedVisibility recorta lo que sale de sus límites.
+                        modifier = Modifier.fillMaxWidth().padding(8.dp)
                     ) {
                         Column(modifier = Modifier.padding(20.dp)) {
                             Text(
@@ -156,7 +173,7 @@ fun AboutScreen(onNavigateBack: () -> Unit) {
                                 text = "Up Dice es una aplicación de dados digital construida con Jetpack Compose. " +
                                         "Diseñada para partidas de rol, juegos de mesa y cualquier momento en que necesites la suerte de un dado.",
                                 fontSize = 14.sp,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
+                                color = MaterialTheme.colorScheme.onSurface,
                                 lineHeight = 22.sp
                             )
                         }
@@ -171,10 +188,12 @@ fun AboutScreen(onNavigateBack: () -> Unit) {
                     Card(
                         shape = RoundedCornerShape(20.dp),
                         colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.6f)
+                            containerColor = MaterialTheme.colorScheme.surface
                         ),
                         elevation = CardDefaults.cardElevation(4.dp),
-                        modifier = Modifier.fillMaxWidth()
+                        border = cardBorder,
+                        // El padding deja espacio para la sombra: AnimatedVisibility recorta lo que sale de sus límites.
+                        modifier = Modifier.fillMaxWidth().padding(8.dp)
                     ) {
                         Column(modifier = Modifier.padding(20.dp)) {
                             Text(
@@ -187,7 +206,7 @@ fun AboutScreen(onNavigateBack: () -> Unit) {
                             Text(
                                 text = "Estudiantes del curso de Programación Móvil 2",
                                 fontSize = 14.sp,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
+                                color = MaterialTheme.colorScheme.onSurface,
                                 lineHeight = 22.sp
                             )
                         }
@@ -203,7 +222,7 @@ fun AboutScreen(onNavigateBack: () -> Unit) {
                     Text(
                         text = "Proyecto Grupal — Desarrollo Móvil II · 2026",
                         fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                        color = MaterialTheme.colorScheme.onSurface,
                         textAlign = TextAlign.Center,
                         lineHeight = 20.sp
                     )

@@ -7,14 +7,22 @@ package com.danidev.appmovil2.ui.dice
  * (`MoverDados`). Al ser una `data class` inmutable, cada cambio genera una copia
  * nueva, lo que permite a Compose detectar la actualización y recomponer.
  *
- * @property currentDiceValue Valor (1..6) del último lanzamiento completado.
+ * @property diceCount Cantidad de dados en juego (HU-06).
+ * @property currentDiceValues Lista de valores (1..6) del último lanzamiento completado para cada dado.
+ * @property lockedIndices Conjunto de índices de dados bloqueados para no ser regenerados en la siguiente tirada.
  * @property history Historial de los últimos lanzamientos (HU-011), ordenado del
  * más reciente al más antiguo. Nunca supera [MAX_HISTORY_SIZE] elementos.
  */
 data class DiceUiState(
-    val currentDiceValue: Int = 1,
+    val diceCount: Int = 1,
+    val currentDiceValues: List<Int> = listOf(1),
+    val lockedIndices: Set<Int> = emptySet(),
     val history: List<RollRecord> = emptyList()
 ) {
+    //Suma acumulada de los valores de los dados no bloqueados.
+    val currentDiceValue: Int
+        get() = currentDiceValues.filterIndexed { index, _ -> index !in lockedIndices }.sum()
+
     companion object {
         /** Cantidad máxima de resultados que se conservan en [history] (HU-011). */
         const val MAX_HISTORY_SIZE = 10

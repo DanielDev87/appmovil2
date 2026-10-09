@@ -69,4 +69,109 @@ class DiceViewModelTest {
         val value = viewModel.uiState.value.history.single().value
         assertTrue(value in 1..6)
     }
+
+    @Test
+    fun `setDiceCount actualiza la cantidad de dados y sus valores`() {
+        viewModel.setDiceCount(2)
+
+        val state = viewModel.uiState.value
+        assertEquals(2, state.diceCount)
+        assertEquals(2, state.currentDiceValues.size)
+    }
+
+    @Test
+    fun `registerResult con lista de dados registra los valores y calcula la suma`() {
+        viewModel.registerResult(listOf(3, 5))
+
+        val state = viewModel.uiState.value
+        assertEquals(listOf(3, 5), state.currentDiceValues)
+        assertEquals(8, state.currentDiceValue)
+        assertEquals(listOf(3, 5), state.history.first().values)
+        assertEquals(8, state.history.first().value)
+    }
+
+    @Test
+    fun `rollDice con dos dados genera dos valores entre 1 y 6`() {
+        viewModel.setDiceCount(2)
+        viewModel.rollDice()
+
+        val state = viewModel.uiState.value
+        assertEquals(2, state.currentDiceValues.size)
+        assertTrue(state.currentDiceValues.all { it in 1..6 })
+        assertEquals(state.currentDiceValues.sum(), state.currentDiceValue)
+    }
+
+    @Test
+    fun `toggleLock conmuta el estado de bloqueo de un dado`() {
+        viewModel.setDiceCount(2)
+        viewModel.toggleLock(0)
+
+        assertTrue(0 in viewModel.uiState.value.lockedIndices)
+
+        viewModel.toggleLock(0)
+        assertTrue(0 !in viewModel.uiState.value.lockedIndices)
+    }
+
+    @Test
+    fun `toggleLock ignora indices fuera de rango`() {
+        viewModel.setDiceCount(2)
+        viewModel.toggleLock(5)
+
+        assertTrue(viewModel.uiState.value.lockedIndices.isEmpty())
+    }
+
+    @Test
+    fun `rollDice mantiene los valores de los dados bloqueados`() {
+        viewModel.setDiceCount(2)
+        viewModel.registerResult(listOf(4, 2))
+        viewModel.toggleLock(0)
+
+        repeat(5) {
+            viewModel.rollDice()
+            assertEquals(4, viewModel.uiState.value.currentDiceValues[0])
+        }
+    }
+
+    @Test
+    fun `setDiceCount remueve indices bloqueados invalidos`() {
+        viewModel.setDiceCount(2)
+        viewModel.toggleLock(1)
+
+        viewModel.setDiceCount(1)
+
+        assertTrue(1 !in viewModel.uiState.value.lockedIndices)
+    }
+
+    @Test
+    fun `clearLocks desbloquea todos los dados`() {
+        viewModel.setDiceCount(2)
+        viewModel.toggleLock(0)
+        viewModel.toggleLock(1)
+
+        viewModel.clearLocks()
+
+        assertTrue(viewModel.uiState.value.lockedIndices.isEmpty())
+    }
+
+    @Test
+    fun `dados bloqueados no suman en currentDiceValue`() {
+        viewModel.setDiceCount(2)
+        viewModel.registerResult(listOf(4, 2))
+        viewModel.toggleLock(0)
+
+        val state = viewModel.uiState.value
+        assertEquals(2, state.currentDiceValue)
+    }
+
+    @Test
+    fun `rollDice registra solo los dados activos no bloqueados en el historial`() {
+        viewModel.setDiceCount(2)
+        viewModel.registerResult(listOf(3, 5))
+        viewModel.toggleLock(0) // Bloquea el dado 0
+
+        viewModel.rollDice()
+
+        val historyRecord = viewModel.uiState.value.history.first()
+        assertEquals(1, historyRecord.values.size)
+    }
 }

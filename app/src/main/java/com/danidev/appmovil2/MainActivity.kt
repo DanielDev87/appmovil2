@@ -114,6 +114,25 @@ class MainActivity : ComponentActivity() {
 }
 
 /**
+ * HU-09: Indicador de tiro afortunado.
+ *
+ * Un 6 se considera CRÍTICO.
+ * Un 1 se considera PIFIA.
+ * Cualquier otro resultado no muestra indicador.
+ */
+enum class RollIndicator {
+    CRITICAL,
+    FUMBLE,
+    NONE
+}
+
+fun determineRollIndicator(result: Int): RollIndicator = when (result) {
+    6 -> RollIndicator.CRITICAL
+    1 -> RollIndicator.FUMBLE
+    else -> RollIndicator.NONE
+}
+
+/**
  * Pantalla principal: muestra uno o dos dados (HU-06), el botón para lanzarlos,
  * el cálculo sumatorio y el historial de los últimos lanzamientos (HU-011).
  *
@@ -139,6 +158,10 @@ fun MoverDados(diceViewModel: DiceViewModel = viewModel()) {
     val outcome = determineGameOutcome(score, launches)
     var isRolling by remember { mutableStateOf(false) }
     var rollAnimationKey by remember { mutableIntStateOf(0) }
+
+    // HU-09: estado del indicador de crítico/pifia.
+    var rollIndicator by remember { mutableStateOf(RollIndicator.NONE) }
+
     val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(uiState.diceCount, uiState.currentDiceValues) {
@@ -344,6 +367,27 @@ fun MoverDados(diceViewModel: DiceViewModel = viewModel()) {
                 GameOutcome.IN_PROGRESS -> Unit
             }
 
+            // HU-09: indicador visual de crítico o pifia.
+            when (rollIndicator) {
+                RollIndicator.CRITICAL -> {
+                    Text(
+                        text = "🎯 ¡CRÍTICO!",
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.ExtraBold
+                    )
+                }
+
+                RollIndicator.FUMBLE -> {
+                    Text(
+                        text = "💥 ¡PIFIA!",
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.ExtraBold
+                    )
+                }
+
+                RollIndicator.NONE -> Unit
+            }
+
             Spacer(modifier = Modifier.height(8.dp))
 
             val hasUnlockedDice = uiState.lockedIndices.size < uiState.diceCount
@@ -352,6 +396,10 @@ fun MoverDados(diceViewModel: DiceViewModel = viewModel()) {
                     if (!isRolling && outcome == GameOutcome.IN_PROGRESS && hasUnlockedDice) {
                         coroutineScope.launch {
                             isRolling = true
+
+                            // HU-09: se limpia el indicador mientras comienza un nuevo tiro.
+                            rollIndicator = RollIndicator.NONE
+
                             rollAnimationKey++
 
                             val initialValues = currentDiceValues
@@ -380,6 +428,13 @@ fun MoverDados(diceViewModel: DiceViewModel = viewModel()) {
 
                             score += unlockedValues.sum()
                             launches++
+
+                            // HU-09: indicador basado en el resultado del dado.
+                            // Se conserva la lógica original de un solo resultado.
+                            if (finalValues.size == 1) {
+                                rollIndicator = determineRollIndicator(finalValues[0])
+                            }
+
                             isRolling = false
                         }
                     }
@@ -401,6 +456,7 @@ fun MoverDados(diceViewModel: DiceViewModel = viewModel()) {
                     fontWeight = FontWeight.Bold
                 )
             }
+
             if (outcome != GameOutcome.IN_PROGRESS) {
                 OutlinedButton(
                     onClick = {
@@ -432,4 +488,3 @@ fun MoverDadosPreview() {
         MoverDados()
     }
 }
-

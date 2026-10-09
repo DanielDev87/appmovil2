@@ -21,4 +21,7 @@
     <string name="two_dice">2 Dados</string>
     <string name="dice_sum_single">Suma: %1$d</string>
     <string name="dice_sum_multiple">Suma: %1$d + %2$d = %3$d</string>
+    <!-- Bloqueo de dados (Generala / Yahtzee) -->
+    <string name="dice_locked_label">Bloqueado</string>
+    <string name="dice_locked_description">Dado %1$d bloqueado</string>
 </resources>

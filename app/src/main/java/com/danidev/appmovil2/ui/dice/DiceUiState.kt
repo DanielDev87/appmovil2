@@ -9,19 +9,19 @@ package com.danidev.appmovil2.ui.dice
  *
  * @property diceCount Cantidad de dados en juego (HU-06).
  * @property currentDiceValues Lista de valores (1..6) del último lanzamiento completado para cada dado.
+ * @property lockedIndices Conjunto de índices de dados bloqueados para no ser regenerados en la siguiente tirada.
  * @property history Historial de los últimos lanzamientos (HU-011), ordenado del
  * más reciente al más antiguo. Nunca supera [MAX_HISTORY_SIZE] elementos.
  */
 data class DiceUiState(
     val diceCount: Int = 1,
     val currentDiceValues: List<Int> = listOf(1),
+    val lockedIndices: Set<Int> = emptySet(),
     val history: List<RollRecord> = emptyList()
 ) {
-    /**
-     * Suma acumulada de los valores actuales del último lanzamiento.
-     */
+    //Suma acumulada de los valores de los dados no bloqueados.
     val currentDiceValue: Int
-        get() = currentDiceValues.sum()
+        get() = currentDiceValues.filterIndexed { index, _ -> index !in lockedIndices }.sum()
 
     companion object {
         /** Cantidad máxima de resultados que se conservan en [history] (HU-011). */

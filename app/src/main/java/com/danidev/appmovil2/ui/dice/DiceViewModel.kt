@@ -27,6 +27,26 @@ class DiceViewModel : ViewModel() {
     // Contador para asignar un id único a cada lanzamiento (ver [RollRecord]).
     private var nextRollId = 0L
 
+
+    fun toggleLock(index: Int) {
+        _uiState.update { currentState ->
+            if (index < 0 || index >= currentState.diceCount) return@update currentState
+            val newLocked = if (index in currentState.lockedIndices) {
+                currentState.lockedIndices - index
+            } else {
+                currentState.lockedIndices + index
+            }
+            currentState.copy(lockedIndices = newLocked)
+        }
+    }
+
+    //Desbloquea los dados.
+    fun clearLocks() {
+        _uiState.update { currentState ->
+            currentState.copy(lockedIndices = emptySet())
+        }
+    }
+
     /**
      * Cambia la cantidad de dados en juego (HU-06).
      *
@@ -38,21 +58,30 @@ class DiceViewModel : ViewModel() {
             val newValues = List(validCount) { index ->
                 currentState.currentDiceValues.getOrElse(index) { 1 }
             }
+            val newLocked = currentState.lockedIndices.filter { it < validCount }.toSet()
             currentState.copy(
                 diceCount = validCount,
-                currentDiceValues = newValues
+                currentDiceValues = newValues,
+                lockedIndices = newLocked
             )
         }
     }
 
     /**
-     * Genera valores aleatorios entre 1 y 6 para la cantidad de dados activa
-     * y los registra como resultado final.
+     * Genera valores aleatorios entre 1 y 6 para los dados no bloqueados
+     * y registra el resultado final.
      */
     fun rollDice() {
-        val count = _uiState.value.diceCount
-        val values = List(count) { (1..6).random() }
-        registerResult(values)
+        val currentState = _uiState.value
+        val values = List(currentState.diceCount) { index ->
+            if (index in currentState.lockedIndices) {
+                currentState.currentDiceValues.getOrElse(index) { 1 }
+            } else {
+                (1..6).random()
+            }
+        }
+        val activeValues = values.filterIndexed { index, _ -> index !in currentState.lockedIndices }
+        registerResult(values, activeValues)
     }
 
     /**
@@ -61,7 +90,7 @@ class DiceViewModel : ViewModel() {
      * @param value Valor obtenido en el dado (1..6).
      */
     fun registerResult(value: Int) {
-        registerResult(listOf(value))
+        registerResult(listOf(value), listOf(value))
     }
 
     /**
@@ -70,14 +99,12 @@ class DiceViewModel : ViewModel() {
      * Actualiza los valores actuales y los inserta al inicio del historial, conservando
      * solo los [DiceUiState.MAX_HISTORY_SIZE] más recientes.
      *
-     * Debe llamarse una única vez por lanzamiento, cuando termina la animación:
-     * los valores intermedios que se muestran mientras los dados giran no son
-     * resultados reales y no deben guardarse en el historial.
-     *
-     * @param values Lista de valores obtenidos en los dados (1..6 cada uno).
+     * @param values Lista completa de valores obtenidos en los dados.
+     * @param activeValues Lista de valores de los dados no bloqueados que cuentan en este tiro.
      */
-    fun registerResult(values: List<Int>) {
-        val newRecord = RollRecord(id = nextRollId++, values = values)
+    fun registerResult(values: List<Int>, activeValues: List<Int> = values) {
+        val recordValues = activeValues.ifEmpty { values }
+        val newRecord = RollRecord(id = nextRollId++, values = recordValues)
         _uiState.update { currentState ->
             currentState.copy(
                 currentDiceValues = values,

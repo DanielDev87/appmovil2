@@ -54,7 +54,14 @@ import com.danidev.appmovil2.ui.theme.ThemeController
 import com.danidev.appmovil2.ui.theme.ThemeMode
 import com.danidev.appmovil2.ui.theme.ThemeSwitch
 import com.danidev.appmovil2.ui.theme.ThemeViewModel
-import androidx.compose.runtime.saveable.rememberSaveable
+import android.app.Activity
+import android.content.ActivityNotFoundException
+import android.content.Intent
+import android.widget.Toast
+import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material3.Icon
+import androidx.compose.ui.platform.LocalContext
 
 class MainActivity : ComponentActivity() {
 
@@ -165,6 +172,7 @@ fun MoverDados(diceViewModel: DiceViewModel = viewModel()) {
     var rollIndicator by remember { mutableStateOf(RollIndicator.NONE) }
 
     val coroutineScope = rememberCoroutineScope()
+    val context = LocalContext.current
 
     LaunchedEffect(uiState.diceCount, uiState.currentDiceValues) {
         if (!isRolling) {
@@ -477,6 +485,29 @@ fun MoverDados(diceViewModel: DiceViewModel = viewModel()) {
                 }
             }
 
+            // HU 18: Compartir resultado.
+            if (launches > 0) {
+                val shareMessage = if (outcome == GameOutcome.WON) {
+                    stringResource(R.string.share_message_won, score, launches)
+                } else {
+                    stringResource(R.string.share_message, score, TARGET_SCORE, launches)
+                }
+                val chooserTitle = stringResource(R.string.share_chooser_title)
+                val noApp = stringResource(R.string.share_no_app)
+
+                OutlinedButton(
+                    onClick = { shareResult(context, shareMessage, chooserTitle, noApp) }
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Share,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(stringResource(R.string.share_result))
+                }
+            }
+
             Spacer(modifier = Modifier.height(24.dp))
 
             IconButton (
@@ -498,6 +529,31 @@ fun MoverDados(diceViewModel: DiceViewModel = viewModel()) {
                 RollHistory(history = uiState.history)
             }
         }
+    }
+}
+
+/**
+ * HU 18: Compartir resultado.
+ * Lanza un Intent ACTION_SEND para enviar el texto a una app externa
+ * (WhatsApp, Gmail, Mensajes, etc.).
+ */
+private fun shareResult(
+    context: android.content.Context,
+    message: String,
+    chooserTitle: String,
+    noAppMessage: String
+) {
+    val sendIntent = Intent(Intent.ACTION_SEND).apply {
+        type = "text/plain"
+        putExtra(Intent.EXTRA_TEXT, message)
+    }
+    val chooser = Intent.createChooser(sendIntent, chooserTitle)
+    if (context !is Activity) chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+
+    try {
+        context.startActivity(chooser)
+    } catch (e: ActivityNotFoundException) {
+        Toast.makeText(context, noAppMessage, Toast.LENGTH_SHORT).show()
     }
 }
 

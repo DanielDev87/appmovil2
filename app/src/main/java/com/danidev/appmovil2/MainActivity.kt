@@ -19,7 +19,10 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.VolumeOff
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.Lock
+import com.danidev.appmovil2.audio.rememberDiceSoundManager
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -164,6 +167,14 @@ fun MoverDados(diceViewModel: DiceViewModel = viewModel()) {
     // HU-09: estado del indicador de crítico/pifia.
     var rollIndicator by remember { mutableStateOf(RollIndicator.NONE) }
 
+    // HU-15: Gestor de sonido SoundPool vinculado al ciclo de vida
+    val soundManager = rememberDiceSoundManager()
+    var isSoundMuted by rememberSaveable { mutableStateOf(false) }
+
+    LaunchedEffect(isSoundMuted) {
+        soundManager.setMuted(isSoundMuted)
+    }
+
     val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(uiState.diceCount, uiState.currentDiceValues) {
@@ -203,6 +214,24 @@ fun MoverDados(diceViewModel: DiceViewModel = viewModel()) {
                 .statusBarsPadding()
                 .padding(start = 16.dp, top = 8.dp)
         )
+        // HU-15: Botón para alternar sonido (silenciar / activar)
+        IconButton(
+            onClick = {
+                isSoundMuted = !isSoundMuted
+            },
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .statusBarsPadding()
+                .padding(end = 16.dp, top = 8.dp)
+        ) {
+            Icon(
+                imageVector = if (isSoundMuted) Icons.AutoMirrored.Filled.VolumeOff else Icons.AutoMirrored.Filled.VolumeUp,
+                contentDescription = stringResource(
+                    if (isSoundMuted) R.string.sound_disabled else R.string.sound_enabled
+                ),
+                tint = MaterialTheme.colorScheme.onBackground
+            )
+        }
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
@@ -402,6 +431,9 @@ fun MoverDados(diceViewModel: DiceViewModel = viewModel()) {
                             rollCount++
                             isRolling = true
 
+                            // HU-15: Reproducir sonido de lanzamiento (ciclo de vida - inicio del tiro)
+                            soundManager.playRollSound()
+
                             // HU-09: se limpia el indicador mientras comienza un nuevo tiro.
                             rollIndicator = RollIndicator.NONE
 
@@ -427,6 +459,9 @@ fun MoverDados(diceViewModel: DiceViewModel = viewModel()) {
                                 }
                             }
                             currentDiceValues = finalValues
+
+                            // HU-15: Reproducir sonido de impacto de dados (ciclo de vida - fin del tiro)
+                            soundManager.playLandSound()
 
                             val unlockedValues = finalValues.filterIndexed { index, _ -> index !in uiState.lockedIndices }
                             diceViewModel.registerResult(finalValues, unlockedValues)
@@ -465,6 +500,7 @@ fun MoverDados(diceViewModel: DiceViewModel = viewModel()) {
             if (outcome != GameOutcome.IN_PROGRESS) {
                 OutlinedButton(
                     onClick = {
+                        soundManager.stopRollSound()
                         diceViewModel.clearHistory()
                         diceViewModel.clearLocks()
                         currentDiceValues = List(uiState.diceCount) { 1 }

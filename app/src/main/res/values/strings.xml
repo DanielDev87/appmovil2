@@ -27,4 +27,9 @@
     <!-- Bloqueo de dados (Generala / Yahtzee) -->
     <string name="dice_locked_label">Bloqueado</string>
     <string name="dice_locked_description">Dado %1$d bloqueado</string>
+    <string name="share_result">Compartir resultado</string>
+    <string name="share_chooser_title">Compartir con…</string>
+    <string name="share_no_app">No hay aplicaciones para compartir</string>
+    <string name="share_message">🎲 En Mover Dados llevo %1$d de %2$d puntos en %3$d lanzamientos. ¿Puedes superarme?</string>
+    <string name="share_message_won">🎲 ¡Gané en Mover Dados! Llegué a %1$d puntos en %2$d lanzamientos. ¿Puedes superarme?</string>
 </resources>

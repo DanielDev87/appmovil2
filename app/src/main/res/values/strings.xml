@@ -27,6 +27,10 @@
     <!-- Bloqueo de dados (Generala / Yahtzee) -->
     <string name="dice_locked_label">Bloqueado</string>
     <string name="dice_locked_description">Dado %1$d bloqueado</string>
+    <!-- HU-15: Efectos de sonido al lanzar -->
+    <string name="sound_toggle_description">Alternar sonido de los dados</string>
+    <string name="sound_enabled">Sonido activado</string>
+    <string name="sound_disabled">Sonido silenciado</string>
     <string name="share_result">Compartir resultado</string>
     <string name="share_chooser_title">Compartir con…</string>
     <string name="share_no_app">No hay aplicaciones para compartir</string>

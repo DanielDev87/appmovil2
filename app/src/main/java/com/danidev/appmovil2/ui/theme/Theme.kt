@@ -10,18 +10,22 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.Color
 
 private val DarkColorScheme = darkColorScheme(
     primary = DiceTopFace,
     secondary = DiceSideFace,
     tertiary = DiceShadow,
-    background = DiceBlack,
-    surface = DiceBlack,
-    onPrimary = DiceBlack,
-    onSecondary = DiceBlack,
-    onTertiary = DiceBlack,
-    onBackground = DiceWhite,
-    onSurface = DiceWhite
+    background = Color(0xFF13091B),
+    surface = Color(0xFF281834),
+    surfaceVariant = Color(0xFF3B234D),
+    onPrimary = Color(0xFF2A0C30),
+    onSecondary = Color(0xFFFFFFFF),
+    onTertiary = Color(0xFFFFFFFF),
+    onBackground = Color(0xFFF6E8F2),
+    onSurface = Color(0xFFF6E8F2),
+    primaryContainer = Color(0xFF452250),
+    onPrimaryContainer = Color(0xFFFFD6F0)
 )
 
 private val LightColorScheme = lightColorScheme(

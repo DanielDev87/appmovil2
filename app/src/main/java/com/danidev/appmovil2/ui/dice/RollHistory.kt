@@ -1,5 +1,6 @@
 package com.danidev.appmovil2.ui.dice
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -136,7 +137,10 @@ private fun RollHistoryItem(
             } else {
                 MaterialTheme.colorScheme.surface
             }
-        )
+        ),
+        border = if (!isLatest) {
+            BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.2f))
+        } else null
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,

@@ -28,9 +28,7 @@ fun AppNavGraph(navController: NavHostController) {
         composable(Screen.Welcome.route) {
             WelcomeScreen(
                 onStartClicked = {
-                    navController.navigate(Screen.Main.route) {
-                        popUpTo(Screen.Welcome.route) { inclusive = true }
-                    }
+                    navController.navigate(Screen.Main.route)
                 },
                 onNavigateToAbout = {
                     navController.navigate(Screen.About.route)
@@ -38,7 +36,13 @@ fun AppNavGraph(navController: NavHostController) {
             )
         }
         composable(Screen.Main.route) {
-            MoverDados()
+            MoverDados(
+                onNavigateToMenu = {
+                    navController.navigate(Screen.Welcome.route) {
+                        popUpTo(Screen.Welcome.route) { inclusive = true }
+                    }
+                }
+            )
         }
         composable(Screen.About.route) {
             AboutScreen(onNavigateBack = {

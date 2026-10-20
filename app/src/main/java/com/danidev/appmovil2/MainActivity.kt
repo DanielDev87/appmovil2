@@ -1,6 +1,7 @@
 package com.danidev.appmovil2
 
-import android.graphics.Color
+import android.graphics.Color as AndroidColor
+import androidx.compose.ui.graphics.Color
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
@@ -19,17 +20,19 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.VolumeOff
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.Lock
 import com.danidev.appmovil2.audio.rememberDiceSoundManager
+import com.danidev.appmovil2.sensor.rememberShakeDetector
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -91,13 +94,13 @@ class MainActivity : ComponentActivity() {
             DisposableEffect(darkTheme) {
                 enableEdgeToEdge(
                     statusBarStyle = SystemBarStyle.auto(
-                        lightScrim = Color.TRANSPARENT,
-                        darkScrim = Color.TRANSPARENT,
+                        lightScrim = AndroidColor.TRANSPARENT,
+                        darkScrim = AndroidColor.TRANSPARENT,
                         detectDarkMode = { darkTheme }
                     ),
                     navigationBarStyle = SystemBarStyle.auto(
-                        lightScrim = Color.TRANSPARENT,
-                        darkScrim = Color.TRANSPARENT,
+                        lightScrim = AndroidColor.TRANSPARENT,
+                        darkScrim = AndroidColor.TRANSPARENT,
                         detectDarkMode = { darkTheme }
                     )
                 )
@@ -155,7 +158,7 @@ fun determineRollIndicator(result: Int): RollIndicator = when (result) {
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MoverDados(diceViewModel: DiceViewModel = viewModel()) {
+fun MoverDados(diceViewModel: DiceViewModel = viewModel(), onNavigateToMenu: () -> Unit = {}) {
     // Historial y estado del dado (HU-06 / HU-011); se recompone con cada nuevo registro.
     val uiState by diceViewModel.uiState.collectAsState()
 
@@ -193,60 +196,87 @@ fun MoverDados(diceViewModel: DiceViewModel = viewModel()) {
 
     val rotation by animateFloatAsState(
         targetValue = rollAnimationKey * 720f,
-        animationSpec = tween(durationMillis = 900, easing = FastOutSlowInEasing),
+        animationSpec = tween(durationMillis = 650, easing = FastOutSlowInEasing),
         label = "diceRotation"
     )
     val scale by animateFloatAsState(
-        targetValue = if (isRolling) 0.8f else 1f,
-        animationSpec = tween(durationMillis = 180),
+        targetValue = if (isRolling) 0.85f else 1f,
+        animationSpec = tween(durationMillis = 150),
         label = "diceScale"
     )
 
-    Box(
+    val isDark = LocalThemeController.current.isDark
+    val backgroundBrush = if (isDark) {
+        Brush.verticalGradient(
+            colors = listOf(
+                Color(0xFF381B46),
+                Color(0xFF13091B)
+            )
+        )
+    } else {
+        Brush.verticalGradient(
+            colors = listOf(
+                MaterialTheme.colorScheme.primary,
+                MaterialTheme.colorScheme.background
+            )
+        )
+    }
+
+    Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                brush = Brush.verticalGradient(
-                    colors = listOf(
-                        MaterialTheme.colorScheme.primary,
-                        MaterialTheme.colorScheme.background
-                    )
-                )
-            ),
-        contentAlignment = Alignment.Center
+            .background(brush = backgroundBrush)
+            .statusBarsPadding()
+            .navigationBarsPadding()
     ) {
-        // HU-03: selector de tema claro / oscuro.
-        ThemeSwitch(
+        // Barra superior con botones funcionales sin superposicion ni bloqueo de toques
+        Row(
             modifier = Modifier
-                .align(Alignment.TopStart)
-                .statusBarsPadding()
-                .padding(start = 16.dp, top = 8.dp)
-        )
-        // HU-15: Botón para alternar sonido (silenciar / activar)
-        IconButton(
-            onClick = {
-                isSoundMuted = !isSoundMuted
-            },
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .statusBarsPadding()
-                .padding(end = 16.dp, top = 8.dp)
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                imageVector = if (isSoundMuted) Icons.AutoMirrored.Filled.VolumeOff else Icons.AutoMirrored.Filled.VolumeUp,
-                contentDescription = stringResource(
-                    if (isSoundMuted) R.string.sound_disabled else R.string.sound_enabled
-                ),
-                tint = MaterialTheme.colorScheme.onBackground
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                // Botón para regresar al menú principal
+                IconButton(onClick = onNavigateToMenu) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = stringResource(R.string.back_to_menu),
+                        tint = MaterialTheme.colorScheme.onBackground
+                    )
+                }
+
+                // HU-03: selector de tema claro / oscuro.
+                ThemeSwitch()
+            }
+
+            // HU-15: Botón para alternar sonido (silenciar / activar)
+            IconButton(
+                onClick = {
+                    isSoundMuted = !isSoundMuted
+                }
+            ) {
+                Icon(
+                    imageVector = if (isSoundMuted) Icons.AutoMirrored.Filled.VolumeOff else Icons.AutoMirrored.Filled.VolumeUp,
+                    contentDescription = stringResource(
+                        if (isSoundMuted) R.string.sound_disabled else R.string.sound_enabled
+                    ),
+                    tint = MaterialTheme.colorScheme.onBackground
+                )
+            }
         }
+
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
             modifier = Modifier
-                .fillMaxSize()
+                .fillMaxWidth()
+                .weight(1f)
                 .verticalScroll(rememberScrollState())
-                .padding(vertical = 32.dp, horizontal = 16.dp)
+                .padding(horizontal = 16.dp, vertical = 8.dp)
         ) {
             // HU-06: Selección de modo de dados (1 Dado / 2 Dados)
             Row(
@@ -300,18 +330,22 @@ fun MoverDados(diceViewModel: DiceViewModel = viewModel()) {
                     val isLocked = index in uiState.lockedIndices
                     Card(
                         elevation = CardDefaults.cardElevation(
-                            defaultElevation = if (isLocked) 4.dp else 12.dp
+                            defaultElevation = if (isLocked) 4.dp else if (isDark) 6.dp else 12.dp
                         ),
                         shape = MaterialTheme.shapes.extraLarge,
                         colors = CardDefaults.cardColors(
                             containerColor = if (isLocked) {
                                 MaterialTheme.colorScheme.secondaryContainer
+                            } else if (isDark) {
+                                Color(0xFF2C183B).copy(alpha = 0.65f)
                             } else {
                                 MaterialTheme.colorScheme.surface
                             }
                         ),
                         border = if (isLocked) {
                             BorderStroke(3.dp, MaterialTheme.colorScheme.primary)
+                        } else if (isDark) {
+                            BorderStroke(1.dp, Color(0xFFF6B5DA).copy(alpha = 0.25f))
                         } else null,
                         modifier = Modifier.clickable(
                             enabled = !isRolling && outcome == GameOutcome.IN_PROGRESS
@@ -331,8 +365,12 @@ fun MoverDados(diceViewModel: DiceViewModel = viewModel()) {
                                 modifier = Modifier
                                     .size(diceSize)
                                     .padding(dicePadding)
-                                    .scale(if (isLocked) 1f else scale)
-                                    .rotate(if (isLocked) 0f else if (index % 2 == 0) rotation else -rotation)
+                                    .graphicsLayer {
+                                        val s = if (isLocked) 1f else scale
+                                        scaleX = s
+                                        scaleY = s
+                                        rotationZ = if (isLocked) 0f else if (index % 2 == 0) rotation else -rotation
+                                    }
                             )
                             if (isLocked) {
                                 Surface(
@@ -369,7 +407,8 @@ fun MoverDados(diceViewModel: DiceViewModel = viewModel()) {
             val currentSum = unlockedDiceValues.sum()
             Surface(
                 shape = MaterialTheme.shapes.medium,
-                color = MaterialTheme.colorScheme.primaryContainer,
+                color = if (isDark) Color(0xFF381C48).copy(alpha = 0.85f) else MaterialTheme.colorScheme.primaryContainer,
+                border = if (isDark) BorderStroke(1.dp, Color(0xFFF6B5DA).copy(alpha = 0.25f)) else null,
                 modifier = Modifier.padding(vertical = 8.dp)
             ) {
                 Text(
@@ -432,61 +471,70 @@ fun MoverDados(diceViewModel: DiceViewModel = viewModel()) {
             Spacer(modifier = Modifier.height(8.dp))
 
             val hasUnlockedDice = uiState.lockedIndices.size < uiState.diceCount
-            Button(
-                onClick = {
-                    if (!isRolling && outcome == GameOutcome.IN_PROGRESS && hasUnlockedDice) {
-                        coroutineScope.launch {
-                            rollCount++
-                            isRolling = true
 
-                            // HU-15: Reproducir sonido de lanzamiento (ciclo de vida - inicio del tiro)
-                            soundManager.playRollSound()
+            val triggerRoll: () -> Unit = {
+                if (!isRolling && outcome == GameOutcome.IN_PROGRESS && hasUnlockedDice) {
+                    coroutineScope.launch {
+                        rollCount++
+                        isRolling = true
 
-                            // HU-09: se limpia el indicador mientras comienza un nuevo tiro.
-                            rollIndicator = RollIndicator.NONE
+                        // HU-15: Reproducir sonido de lanzamiento (ciclo de vida - inicio del tiro)
+                        soundManager.playRollSound()
 
-                            rollAnimationKey++
+                        // HU-09: se limpia el indicador mientras comienza un nuevo tiro.
+                        rollIndicator = RollIndicator.NONE
 
-                            val initialValues = currentDiceValues
-                            repeat(9) {
-                                currentDiceValues = List(uiState.diceCount) { index ->
-                                    if (index in uiState.lockedIndices) {
-                                        initialValues.getOrElse(index) { 1 }
-                                    } else {
-                                        (1..6).random()
-                                    }
-                                }
-                                delay(100)
-                            }
+                        rollAnimationKey++
 
-                            val finalValues = List(uiState.diceCount) { index ->
+                        val initialValues = currentDiceValues
+                        repeat(7) {
+                            currentDiceValues = List(uiState.diceCount) { index ->
                                 if (index in uiState.lockedIndices) {
                                     initialValues.getOrElse(index) { 1 }
                                 } else {
                                     (1..6).random()
                                 }
                             }
-                            currentDiceValues = finalValues
-
-                            // HU-15: Reproducir sonido de impacto de dados (ciclo de vida - fin del tiro)
-                            soundManager.playLandSound()
-
-                            val unlockedValues = finalValues.filterIndexed { index, _ -> index !in uiState.lockedIndices }
-                            diceViewModel.registerResult(finalValues, unlockedValues)
-
-                            score += unlockedValues.sum()
-                            launches++
-
-                            // HU-09: indicador basado en el resultado del dado.
-                            // Se conserva la lógica original de un solo resultado.
-                            if (finalValues.size == 1) {
-                                rollIndicator = determineRollIndicator(finalValues[0])
-                            }
-
-                            isRolling = false
+                            delay(75)
                         }
+
+                        val finalValues = List(uiState.diceCount) { index ->
+                            if (index in uiState.lockedIndices) {
+                                initialValues.getOrElse(index) { 1 }
+                            } else {
+                                (1..6).random()
+                            }
+                        }
+                        currentDiceValues = finalValues
+
+                        // HU-15: Reproducir sonido de impacto de dados (ciclo de vida - fin del tiro)
+                        soundManager.playLandSound()
+
+                        val unlockedValues = finalValues.filterIndexed { index, _ -> index !in uiState.lockedIndices }
+                        diceViewModel.registerResult(finalValues, unlockedValues)
+
+                        score += unlockedValues.sum()
+                        launches++
+
+                        // HU-09: indicador basado en el resultado del dado.
+                        // Se conserva la lógica original de un solo resultado.
+                        if (finalValues.size == 1) {
+                            rollIndicator = determineRollIndicator(finalValues[0])
+                        }
+
+                        isRolling = false
                     }
-                },
+                }
+            }
+
+            // HU-19: Detección de sacudida por acelerómetro para lanzar dados
+            rememberShakeDetector(
+                enabled = !isRolling && outcome == GameOutcome.IN_PROGRESS && hasUnlockedDice,
+                onShake = triggerRoll
+            )
+
+            Button(
+                onClick = triggerRoll,
                 enabled = !isRolling && outcome == GameOutcome.IN_PROGRESS && hasUnlockedDice,
                 modifier = Modifier
                     .fillMaxWidth(0.6f)
@@ -523,6 +571,7 @@ fun MoverDados(diceViewModel: DiceViewModel = viewModel()) {
 
             // HU 18: Compartir resultado.
             if (launches > 0) {
+                Spacer(modifier = Modifier.height(14.dp))
                 val shareMessage = if (outcome == GameOutcome.WON) {
                     stringResource(R.string.share_message_won, score, launches)
                 } else {
@@ -532,7 +581,13 @@ fun MoverDados(diceViewModel: DiceViewModel = viewModel()) {
                 val noApp = stringResource(R.string.share_no_app)
 
                 OutlinedButton(
-                    onClick = { shareResult(context, shareMessage, chooserTitle, noApp) }
+                    onClick = { shareResult(context, shareMessage, chooserTitle, noApp) },
+                    shape = MaterialTheme.shapes.medium,
+                    border = BorderStroke(
+                        1.dp,
+                        MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
+                    ),
+                    modifier = Modifier.fillMaxWidth(0.55f)
                 ) {
                     Icon(
                         imageVector = Icons.Default.Share,
@@ -540,7 +595,10 @@ fun MoverDados(diceViewModel: DiceViewModel = viewModel()) {
                         modifier = Modifier.size(18.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text(stringResource(R.string.share_result))
+                    Text(
+                        stringResource(R.string.share_result),
+                        fontWeight = FontWeight.SemiBold
+                    )
                 }
             }
 
@@ -564,6 +622,8 @@ fun MoverDados(diceViewModel: DiceViewModel = viewModel()) {
             CompositionLocalProvider(LocalDicePalette provides palette) {
                 RollHistory(history = uiState.history)
             }
+
+            Spacer(modifier = Modifier.height(48.dp))
         }
     }
 }

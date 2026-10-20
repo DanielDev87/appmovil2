@@ -36,4 +36,5 @@
     <string name="share_no_app">No hay aplicaciones para compartir</string>
     <string name="share_message">🎲 En Mover Dados llevo %1$d de %2$d puntos en %3$d lanzamientos. ¿Puedes superarme?</string>
     <string name="share_message_won">🎲 ¡Gané en Mover Dados! Llegué a %1$d puntos en %2$d lanzamientos. ¿Puedes superarme?</string>
+    <string name="back_to_menu">Volver al menú principal</string>
 </resources>

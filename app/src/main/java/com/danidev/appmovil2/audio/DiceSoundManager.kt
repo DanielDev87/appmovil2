@@ -129,6 +129,7 @@ class DiceSoundManager(
      */
     override fun playLandSound() {
         if (isMuted) return
+        stopRollSound()
         soundPool?.let { pool ->
             if (isLandLoaded && landSoundId != 0) {
                 pool.play(landSoundId, 1f, 1f, 1, 0, 1f)

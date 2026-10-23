@@ -83,4 +83,29 @@ class RollStatisticsTest {
         assertEquals(mapOf(1 to 1), original)
         assertEquals(mapOf(1 to 2, 2 to 1), result)
     }
+
+    @Test
+    fun `topFaces devuelve las mas frecuentes de mayor a menor`() {
+        val counts = mapOf(1 to 2, 2 to 5, 3 to 0, 4 to 3, 5 to 1)
+
+        assertEquals(listOf(2 to 5, 4 to 3, 1 to 2), counts.topFaces(3))
+    }
+
+    @Test
+    fun `topFaces desempata por la cara mas baja y omite las que no salieron`() {
+        val counts = mapOf(6 to 2, 3 to 2, 4 to 0)
+
+        assertEquals(listOf(3 to 2, 6 to 2), counts.topFaces(3))
+        assertTrue(emptyMap<Int, Int>().topFaces().isEmpty())
+    }
+
+    @Test
+    fun `en una tablet caben mas tarjetas por fila segun el dado`() {
+        assertEquals(3, columnsFor(6, wide = false))
+        assertEquals(4, columnsFor(12, wide = false))
+        assertEquals(3, columnsFor(6, wide = true))
+        assertEquals(4, columnsFor(8, wide = true))
+        assertEquals(4, columnsFor(12, wide = true))
+        assertEquals(5, columnsFor(20, wide = true))
+    }
 }

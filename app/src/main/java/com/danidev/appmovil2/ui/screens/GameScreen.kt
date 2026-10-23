@@ -55,6 +55,7 @@ import com.danidev.appmovil2.ui.game.RecentRolls
 import com.danidev.appmovil2.ui.game.RollButton
 import com.danidev.appmovil2.ui.game.ScoreCards
 import com.danidev.appmovil2.ui.game.ShareResultButton
+import com.danidev.appmovil2.ui.game.TopFaces
 import com.danidev.appmovil2.ui.player.LocalPlayerName
 import com.danidev.appmovil2.ui.settings.SettingsSheet
 import com.danidev.appmovil2.ui.settings.rememberGameSettingsViewModel
@@ -62,6 +63,7 @@ import com.danidev.appmovil2.ui.style.AppBackground
 import com.danidev.appmovil2.ui.style.LocalAppTokens
 import com.danidev.appmovil2.ui.style.MAX_CONTENT_WIDTH
 import com.danidev.appmovil2.ui.style.StyledButton
+import com.danidev.appmovil2.ui.style.isTablet
 import com.danidev.appmovil2.ui.theme.Appmovil2Theme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -303,6 +305,11 @@ fun GameScreen(
                     history = uiState.history,
                     onOpenStats = onNavigateToStats
                 )
+
+                // En una tablet sobra espacio: se adelantan las caras que más han salido.
+                if (isTablet()) {
+                    TopFaces(counts = uiState.faceCounts)
+                }
             }
         }
     }

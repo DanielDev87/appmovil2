@@ -29,7 +29,7 @@ import com.danidev.appmovil2.ui.style.StyledCard
  * Igual que [PlayerNameField], cada letra se guarda al instante y "Listo" cierra el teclado.
  */
 @Composable
-fun StyledNameField(modifier: Modifier = Modifier, scale: Float = 1f) {
+fun StyledNameField(modifier: Modifier = Modifier) {
     val tokens = LocalAppTokens.current
     val controller = LocalPlayerName.current
     val focusManager = LocalFocusManager.current
@@ -38,7 +38,7 @@ fun StyledNameField(modifier: Modifier = Modifier, scale: Float = 1f) {
         Column(modifier = Modifier.padding(horizontal = 18.dp, vertical = 12.dp)) {
             Text(
                 text = stringResource(R.string.player_name_label),
-                fontSize = (12 * scale).sp,
+                fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
                 color = tokens.muted
             )
@@ -48,7 +48,7 @@ fun StyledNameField(modifier: Modifier = Modifier, scale: Float = 1f) {
                 singleLine = true,
                 textStyle = TextStyle(
                     color = tokens.ink,
-                    fontSize = (20 * scale).sp,
+                    fontSize = 20.sp,
                     fontWeight = FontWeight.Bold
                 ),
                 cursorBrush = SolidColor(tokens.accent),
@@ -62,7 +62,7 @@ fun StyledNameField(modifier: Modifier = Modifier, scale: Float = 1f) {
                         if (controller.name.isEmpty()) {
                             Text(
                                 text = stringResource(R.string.player_name_hint),
-                                fontSize = (16 * scale).sp,
+                                fontSize = 16.sp,
                                 color = tokens.muted.copy(alpha = 0.7f)
                             )
                         }

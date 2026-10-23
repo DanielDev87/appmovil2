@@ -102,15 +102,15 @@ fun AboutScreen(onNavigateBack: () -> Unit) {
                             .verticalScroll(rememberScrollState())
                             .padding(vertical = 16.dp)
                     ) {
-                        AboutHeader(visible, scale = WIDE_SCALE, modifier = Modifier.weight(1f))
-                        AboutDetails(visible, scale = WIDE_SCALE, modifier = Modifier.weight(1.3f))
+                        AboutHeader(visible, modifier = Modifier.weight(1f))
+                        AboutDetails(visible, modifier = Modifier.weight(1.3f))
                     }
                 } else {
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(16.dp),
                         modifier = Modifier
-                            .align(Alignment.TopCenter)
+                            .align(Alignment.Center)
                             .widthIn(max = MAX_CONTENT_WIDTH)
                             .fillMaxWidth()
                             .verticalScroll(rememberScrollState())
@@ -128,12 +128,9 @@ fun AboutScreen(onNavigateBack: () -> Unit) {
 /** Ancho a partir del cual "Acerca de" se reparte en dos columnas, si además está en horizontal. */
 private val WIDE_LAYOUT_MIN_WIDTH = 720.dp
 
-/** Factor con el que crece el texto y el logo en el diseño de dos columnas. */
-private const val WIDE_SCALE = 1.3f
-
 /** Logo, nombre y versión de la app. */
 @Composable
-private fun AboutHeader(visible: Boolean, modifier: Modifier = Modifier, scale: Float = 1f) {
+private fun AboutHeader(visible: Boolean, modifier: Modifier = Modifier) {
     val tokens = LocalAppTokens.current
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -152,7 +149,7 @@ private fun AboutHeader(visible: Boolean, modifier: Modifier = Modifier, scale: 
                     contentDescription = stringResource(R.string.about_logo),
                     modifier = Modifier
                         .padding(12.dp)
-                        .size((110 * scale).dp)
+                        .size(110.dp)
                 )
             }
         }
@@ -164,7 +161,7 @@ private fun AboutHeader(visible: Boolean, modifier: Modifier = Modifier, scale: 
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
                     text = stringResource(R.string.about_app_name),
-                    fontSize = (32 * scale).sp,
+                    fontSize = 32.sp,
                     fontWeight = FontWeight.ExtraBold,
                     color = tokens.bgInk,
                     textAlign = TextAlign.Center
@@ -176,7 +173,7 @@ private fun AboutHeader(visible: Boolean, modifier: Modifier = Modifier, scale: 
                 ) {
                     Text(
                         text = stringResource(R.string.about_version),
-                        fontSize = (13 * scale).sp,
+                        fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
                         color = if (tokens.isPlayful) tokens.onAccent else tokens.ink,
                         modifier = Modifier.padding(horizontal = 14.dp, vertical = 4.dp)
@@ -189,7 +186,7 @@ private fun AboutHeader(visible: Boolean, modifier: Modifier = Modifier, scale: 
 
 /** Tarjetas de descripción y equipo, y la línea final del proyecto. */
 @Composable
-private fun AboutDetails(visible: Boolean, modifier: Modifier = Modifier, scale: Float = 1f) {
+private fun AboutDetails(visible: Boolean, modifier: Modifier = Modifier) {
     val tokens = LocalAppTokens.current
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -203,8 +200,7 @@ private fun AboutDetails(visible: Boolean, modifier: Modifier = Modifier, scale:
             AboutCard(
                 title = stringResource(R.string.about_what_title),
                 body = stringResource(R.string.about_what_body),
-                tilt = if (tokens.isPlayful) -1f else 0f,
-                scale = scale
+                tilt = if (tokens.isPlayful) -1f else 0f
             )
         }
 
@@ -215,8 +211,7 @@ private fun AboutDetails(visible: Boolean, modifier: Modifier = Modifier, scale:
             AboutCard(
                 title = stringResource(R.string.about_team_title),
                 body = stringResource(R.string.about_team_body),
-                tilt = if (tokens.isPlayful) 1f else 0f,
-                scale = scale
+                tilt = if (tokens.isPlayful) 1f else 0f
             )
         }
 
@@ -226,32 +221,32 @@ private fun AboutDetails(visible: Boolean, modifier: Modifier = Modifier, scale:
         ) {
             Text(
                 text = stringResource(R.string.about_footer),
-                fontSize = (12 * scale).sp,
+                fontSize = 12.sp,
                 color = tokens.bgMuted,
                 textAlign = TextAlign.Center,
-                lineHeight = (20 * scale).sp
+                lineHeight = 20.sp
             )
         }
     }
 }
 
 @Composable
-private fun AboutCard(title: String, body: String, tilt: Float, scale: Float = 1f) {
+private fun AboutCard(title: String, body: String, tilt: Float) {
     val tokens = LocalAppTokens.current
     StyledCard(tilt = tilt, modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding((20 * scale).dp)) {
+        Column(modifier = Modifier.padding(20.dp)) {
             Text(
                 text = title,
                 fontWeight = FontWeight.ExtraBold,
-                fontSize = (16 * scale).sp,
+                fontSize = 16.sp,
                 color = tokens.ink
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = body,
-                fontSize = (14 * scale).sp,
+                fontSize = 14.sp,
                 color = tokens.muted,
-                lineHeight = (22 * scale).sp
+                lineHeight = 22.sp
             )
         }
     }

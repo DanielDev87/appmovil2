@@ -16,6 +16,7 @@ import com.danidev.appmovil2.R
 import com.danidev.appmovil2.RollIndicator
 import com.danidev.appmovil2.ui.style.LocalAppTokens
 import com.danidev.appmovil2.ui.style.StyledCard
+import com.danidev.appmovil2.ui.style.isTablet
 
 /**
  * Escenario donde se ven los dados: una tarjeta grande con la insignia de crítico o
@@ -33,17 +34,18 @@ fun DiceStage(
     content: @Composable () -> Unit
 ) {
     val tokens = LocalAppTokens.current
+    val minHeight = if (isTablet()) 360.dp else 290.dp
     StyledCard(
         radius = 32.dp,
         modifier = modifier
             .fillMaxWidth()
-            .heightIn(min = 290.dp)
+            .heightIn(min = minHeight)
     ) {
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(min = 290.dp)
+                .heightIn(min = minHeight)
                 .padding(top = 44.dp, bottom = 52.dp)
         ) {
             content()

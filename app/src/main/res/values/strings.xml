@@ -151,4 +151,5 @@
     <string name="bg_hue_help">Desliza para elegir el color</string>
     <string name="bg_brightness_label">Claridad</string>
     <string name="bg_brightness_help">Desliza para hacerlo más claro u oscuro</string>
+    <string name="top_faces_title">Más frecuentes</string>
 </resources>

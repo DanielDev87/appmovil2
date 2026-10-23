@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.danidev.appmovil2.R
 import com.danidev.appmovil2.ui.style.LocalAppTokens
+import com.danidev.appmovil2.ui.style.isTablet
 import com.danidev.appmovil2.ui.style.StyledCard
 import com.danidev.appmovil2.ui.theme.Appmovil2Theme
 
@@ -80,7 +81,7 @@ fun RollStatistics(
                 color = tokens.muted
             )
         } else {
-            val columns = columnsFor(faces)
+            val columns = columnsFor(faces, wide = isTablet())
             (1..faces).chunked(columns).forEach { rowFaces ->
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -104,8 +105,26 @@ fun RollStatistics(
     }
 }
 
-/** Cantidad de tarjetas por fila: 3 para un dado de 6 caras y 4 para los de más caras. */
-private fun columnsFor(faces: Int): Int = if (faces > 6) 4 else 3
+/**
+ * Cantidad de tarjetas por fila. En un teléfono: 3 para un dado de 6 caras y 4 para los de
+ * más caras. En una tablet caben más: 4 con D4, D8 y D12, y 5 con D20.
+ */
+internal fun columnsFor(faces: Int, wide: Boolean = false): Int = when {
+    wide && faces >= 20 -> 5
+    wide && faces != 6 -> 4
+    faces > 6 -> 4
+    else -> 3
+}
+
+/**
+ * Las [n] caras que más han salido, de más a menos frecuente; si hay empate, primero la cara
+ * más baja. Solo cuenta las caras que salieron al menos una vez.
+ */
+fun Map<Int, Int>.topFaces(n: Int = 3): List<Pair<Int, Int>> =
+    filterValues { it > 0 }
+        .toList()
+        .sortedWith(compareByDescending<Pair<Int, Int>> { it.second }.thenBy { it.first })
+        .take(n)
 
 /** Tarjeta de una cara: su número, cuántas veces salió y su peso frente a la más frecuente. */
 @Composable

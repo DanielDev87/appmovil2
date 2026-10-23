@@ -35,6 +35,7 @@ import com.danidev.appmovil2.ui.style.LocalStyleController
 import com.danidev.appmovil2.ui.style.SharedPreferencesStyleStore
 import com.danidev.appmovil2.ui.style.StyleController
 import com.danidev.appmovil2.ui.style.StyleViewModel
+import com.danidev.appmovil2.ui.style.TabletScaling
 import com.danidev.appmovil2.ui.style.appTokens
 import com.danidev.appmovil2.ui.theme.Appmovil2Theme
 import com.danidev.appmovil2.ui.theme.LocalThemeController
@@ -130,12 +131,14 @@ class MainActivity : ComponentActivity() {
                 LocalAppTokens provides applyBackground(appTokens(appStyle, darkTheme), background)
             ) {
                 Appmovil2Theme(darkTheme = darkTheme) {
-                    Surface(
-                        modifier = Modifier.fillMaxSize(),
-                        color = MaterialTheme.colorScheme.background
-                    ) {
-                        val navController = rememberNavController()
-                        AppNavGraph(navController = navController)
+                    TabletScaling {
+                        Surface(
+                            modifier = Modifier.fillMaxSize(),
+                            color = MaterialTheme.colorScheme.background
+                        ) {
+                            val navController = rememberNavController()
+                            AppNavGraph(navController = navController)
+                        }
                     }
                 }
             }

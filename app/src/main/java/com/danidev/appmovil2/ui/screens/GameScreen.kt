@@ -48,7 +48,6 @@ import com.danidev.appmovil2.ui.dice.rememberDiceSizeViewModel
 import com.danidev.appmovil2.ui.dice.rememberDiceTypeViewModel
 import com.danidev.appmovil2.ui.game.DiceBoard
 import com.danidev.appmovil2.ui.game.GameInfoPanel
-import com.danidev.appmovil2.ui.game.GameModeChip
 import com.danidev.appmovil2.ui.game.GameOverDialog
 import com.danidev.appmovil2.ui.game.GameStatus
 import com.danidev.appmovil2.ui.game.GameTopBar
@@ -240,15 +239,6 @@ fun GameScreen(
             )
 
             // Piezas de la partida; se acomodan distinto en vertical y en una tablet horizontal.
-            val modeChip: @Composable () -> Unit = {
-                // HU-06 y HU-07: los dados y sus caras se cambian desde los ajustes; aquí solo
-                // se muestra un resumen.
-                GameModeChip(
-                    diceCount = uiState.diceCount,
-                    diceType = diceType,
-                    onClick = { showSettings = true }
-                )
-            }
             val stage: @Composable (Modifier, Dp) -> Unit = { stageModifier, stageMinHeight ->
                 DiceStage(
                     indicator = uiState.rollIndicator,
@@ -347,7 +337,12 @@ fun GameScreen(
                         .padding(top = 8.dp)
                 ) {
                     ScoreCards(uiState = uiState)
-                    modeChip()
+                    GameInfoPanel(
+                        diceCount = uiState.diceCount,
+                        diceType = diceType,
+                        rollCount = uiState.rollCount,
+                        onClick = { showSettings = true }
+                    )
                     stage(Modifier.weight(1f), if (isTablet()) 300.dp else 200.dp)
                     if (outcome != GameOutcome.IN_PROGRESS) {
                         GameStatus(uiState = uiState)

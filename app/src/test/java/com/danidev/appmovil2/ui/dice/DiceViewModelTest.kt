@@ -1,5 +1,8 @@
 package com.danidev.appmovil2.ui.dice
 
+import com.danidev.appmovil2.GameOutcome
+import com.danidev.appmovil2.MAX_LAUNCHES
+import com.danidev.appmovil2.RollIndicator
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -187,5 +190,77 @@ class DiceViewModelTest {
 
         val historyRecord = viewModel.uiState.value.history.first()
         assertEquals(1, historyRecord.values.size)
+    }
+
+    // --- Estado de la partida que vive en el ViewModel ---
+
+    @Test
+    fun `cada tiro suma los puntos de los dados que cuentan y un lanzamiento`() {
+        viewModel.registerResult(listOf(3, 4), activeValues = listOf(3, 4))
+        viewModel.registerResult(listOf(5, 1), activeValues = listOf(5))
+
+        val state = viewModel.uiState.value
+        assertEquals(12, state.score)
+        assertEquals(2, state.launches)
+    }
+
+    @Test
+    fun `startRoll cuenta tiros consecutivos y resetRollCount los reinicia`() {
+        repeat(3) { viewModel.startRoll() }
+        assertEquals(3, viewModel.uiState.value.rollCount)
+
+        viewModel.resetRollCount()
+
+        assertEquals(0, viewModel.uiState.value.rollCount)
+    }
+
+    @Test
+    fun `un solo dado en la cara maxima es critico y en 1 es pifia`() {
+        viewModel.registerResult(listOf(6), listOf(6), sides = 6)
+        assertEquals(RollIndicator.CRITICAL, viewModel.uiState.value.rollIndicator)
+
+        viewModel.registerResult(listOf(1), listOf(1), sides = 6)
+        assertEquals(RollIndicator.FUMBLE, viewModel.uiState.value.rollIndicator)
+
+        viewModel.registerResult(listOf(20), listOf(20), sides = 20)
+        assertEquals(RollIndicator.CRITICAL, viewModel.uiState.value.rollIndicator)
+    }
+
+    @Test
+    fun `con dos dados no hay indicador y startRoll lo limpia`() {
+        viewModel.registerResult(listOf(6), listOf(6))
+        viewModel.startRoll()
+        assertEquals(RollIndicator.NONE, viewModel.uiState.value.rollIndicator)
+
+        viewModel.registerResult(listOf(6, 6), listOf(6, 6))
+        assertEquals(RollIndicator.NONE, viewModel.uiState.value.rollIndicator)
+    }
+
+    @Test
+    fun `clearHistory reinicia puntos y lanzamientos pero conserva el contador de tiros`() {
+        viewModel.startRoll()
+        viewModel.registerResult(listOf(6), listOf(6))
+
+        viewModel.clearHistory()
+
+        val state = viewModel.uiState.value
+        assertEquals(0, state.score)
+        assertEquals(0, state.launches)
+        assertEquals(RollIndicator.NONE, state.rollIndicator)
+        assertEquals(1, state.rollCount)
+    }
+
+    @Test
+    fun `la partida termina al llegar a la meta de puntos`() {
+        repeat(5) { viewModel.registerResult(listOf(6), listOf(6)) }
+
+        assertEquals(GameOutcome.WON, viewModel.uiState.value.outcome)
+    }
+
+    @Test
+    fun `la partida termina al agotar los lanzamientos`() {
+        repeat(MAX_LAUNCHES) { viewModel.registerResult(listOf(1), listOf(1)) }
+
+        assertEquals(GameOutcome.LAUNCH_LIMIT_REACHED, viewModel.uiState.value.outcome)
     }
 }

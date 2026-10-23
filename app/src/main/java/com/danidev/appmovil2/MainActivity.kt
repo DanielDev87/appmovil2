@@ -154,25 +154,6 @@ class MainActivity : ComponentActivity() {
 }
 
 /**
- * HU-09: Indicador de tiro afortunado.
- *
- * La cara más alta del dado (un 6 en el dado tradicional) se considera CRÍTICO.
- * Un 1 se considera PIFIA.
- * Cualquier otro resultado no muestra indicador.
- */
-enum class RollIndicator {
-    CRITICAL,
-    FUMBLE,
-    NONE
-}
-
-fun determineRollIndicator(result: Int, sides: Int = 6): RollIndicator = when (result) {
-    sides -> RollIndicator.CRITICAL
-    1 -> RollIndicator.FUMBLE
-    else -> RollIndicator.NONE
-}
-
-/**
  * Pantalla principal: muestra uno o dos dados (HU-06), el botón para lanzarlos,
  * el cálculo sumatorio y el historial de los últimos lanzamientos (HU-011).
  *
@@ -200,15 +181,14 @@ fun MoverDados(diceViewModel: DiceViewModel = viewModel(), onNavigateToMenu: () 
     val sizeFactor by sizeViewModel.factor.collectAsState()
 
     var currentDiceValues by remember { mutableStateOf(uiState.currentDiceValues) }
-    var score by remember { mutableIntStateOf(0) }
-    var launches by remember { mutableIntStateOf(0) }
-    val outcome = determineGameOutcome(score, launches)
+    val score = uiState.score
+    val launches = uiState.launches
+    val outcome = uiState.outcome
     var isRolling by remember { mutableStateOf(false) }
     var rollAnimationKey by remember { mutableIntStateOf(0) }
-    var rollCount by remember { mutableIntStateOf(0) }
-
-    // HU-09: estado del indicador de crítico/pifia.
-    var rollIndicator by remember { mutableStateOf(RollIndicator.NONE) }
+    // HU-08 y HU-09: contador de tiros e indicador de crítico/pifia viven en el ViewModel.
+    val rollCount = uiState.rollCount
+    val rollIndicator = uiState.rollIndicator
 
     // HU-15: Gestor de sonido SoundPool vinculado al ciclo de vida
     val soundManager = rememberDiceSoundManager()
@@ -231,9 +211,6 @@ fun MoverDados(diceViewModel: DiceViewModel = viewModel(), onNavigateToMenu: () 
         diceViewModel.clearHistory()
         diceViewModel.clearLocks()
         currentDiceValues = List(uiState.diceCount) { 1 }
-        score = 0
-        launches = 0
-        rollIndicator = RollIndicator.NONE
     }
 
     LaunchedEffect(uiState.diceCount, uiState.currentDiceValues) {
@@ -575,14 +552,11 @@ fun MoverDados(diceViewModel: DiceViewModel = viewModel(), onNavigateToMenu: () 
             val triggerRoll: () -> Unit = {
                 if (!isRolling && outcome == GameOutcome.IN_PROGRESS && hasUnlockedDice) {
                     coroutineScope.launch {
-                        rollCount++
+                        diceViewModel.startRoll()
                         isRolling = true
 
                         // HU-15: Reproducir sonido de lanzamiento (ciclo de vida - inicio del tiro)
                         soundManager.playRollSound()
-
-                        // HU-09: se limpia el indicador mientras comienza un nuevo tiro.
-                        rollIndicator = RollIndicator.NONE
 
                         rollAnimationKey++
 
@@ -613,17 +587,10 @@ fun MoverDados(diceViewModel: DiceViewModel = viewModel(), onNavigateToMenu: () 
                         val unlockedValues = finalValues.filterIndexed { index, _ -> index !in uiState.lockedIndices }
                         diceViewModel.registerResult(finalValues, unlockedValues, diceType.sides)
 
-                        score += unlockedValues.sum()
-                        launches++
-
-                        // HU-09: indicador basado en el resultado del dado.
-                        // Se conserva la lógica original de un solo resultado.
-                        if (finalValues.size == 1) {
-                            rollIndicator = determineRollIndicator(finalValues[0], diceType.sides)
-                        }
-
                         // HU-16: vibración al detenerse el dado; más larga en crítico o pifia.
-                        haptics.vibrateOnLand(strong = rollIndicator != RollIndicator.NONE)
+                        haptics.vibrateOnLand(
+                            strong = diceViewModel.uiState.value.rollIndicator != RollIndicator.NONE
+                        )
 
                         isRolling = false
                     }
@@ -701,9 +668,7 @@ fun MoverDados(diceViewModel: DiceViewModel = viewModel(), onNavigateToMenu: () 
             Spacer(modifier = Modifier.height(24.dp))
 
             IconButton (
-                onClick = {
-                    rollCount = 0
-                }
+                onClick = diceViewModel::resetRollCount
             ) {
                 Image(
                     painter = painterResource(R.drawable.reiniciar),

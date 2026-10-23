@@ -1,6 +1,8 @@
 package com.danidev.appmovil2.ui.dice
 
 import androidx.lifecycle.ViewModel
+import com.danidev.appmovil2.RollIndicator
+import com.danidev.appmovil2.determineRollIndicator
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -12,6 +14,8 @@ import kotlinx.coroutines.flow.update
  * Responsabilidades:
  * - Mantener la cantidad de dados activa y sus valores actuales (HU-06).
  * - Mantener el historial de los últimos [DiceUiState.MAX_HISTORY_SIZE] resultados (HU-011).
+ * - Llevar los puntos, los lanzamientos, el contador de tiros (HU-08) y el indicador
+ *   de crítico o pifia (HU-09), para que no se pierdan al rotar la pantalla.
  *
  * Al vivir en un ViewModel, el estado sobrevive a cambios de configuración
  * (p. ej. rotar la pantalla), a diferencia de un `remember` dentro del Composable.
@@ -27,6 +31,19 @@ class DiceViewModel : ViewModel() {
     // Contador para asignar un id único a cada lanzamiento (ver [RollRecord]).
     private var nextRollId = 0L
 
+
+    /**
+     * Marca el inicio de un tiro: suma al contador de tiros consecutivos (HU-08)
+     * y limpia el indicador de crítico o pifia (HU-09).
+     */
+    fun startRoll() {
+        _uiState.update { it.copy(rollCount = it.rollCount + 1, rollIndicator = RollIndicator.NONE) }
+    }
+
+    /** Reinicia el contador de tiros consecutivos (HU-08). */
+    fun resetRollCount() {
+        _uiState.update { it.copy(rollCount = 0) }
+    }
 
     fun toggleLock(index: Int) {
         _uiState.update { currentState ->
@@ -114,7 +131,15 @@ class DiceViewModel : ViewModel() {
                 history = (listOf(newRecord) + currentState.history)
                     .take(DiceUiState.MAX_HISTORY_SIZE),
                 // HU-13: cada dado que cuenta en este tiro suma una salida de su cara.
-                faceCounts = currentState.faceCounts.plusRolls(recordValues)
+                faceCounts = currentState.faceCounts.plusRolls(recordValues),
+                score = currentState.score + activeValues.sum(),
+                launches = currentState.launches + 1,
+                // HU-09: solo se evalúa el tiro cuando hay un único dado en juego.
+                rollIndicator = if (values.size == 1) {
+                    determineRollIndicator(values[0], sides)
+                } else {
+                    RollIndicator.NONE
+                }
             )
         }
     }
@@ -130,7 +155,10 @@ class DiceViewModel : ViewModel() {
             currentState.copy(
                 currentDiceValues = List(currentState.diceCount) { 1 },
                 history = emptyList(),
-                faceCounts = emptyMap()
+                faceCounts = emptyMap(),
+                score = 0,
+                launches = 0,
+                rollIndicator = RollIndicator.NONE
             )
         }
     }

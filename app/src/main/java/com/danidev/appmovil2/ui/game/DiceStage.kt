@@ -12,7 +12,11 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -59,14 +63,31 @@ fun DiceStage(
             .fillMaxWidth()
             .heightIn(min = minHeight)
     ) {
-        Box(
-            contentAlignment = Alignment.Center,
+        // El dado y la suma forman un solo grupo centrado: la suma queda justo debajo de la
+        // sombra, con un espacio entre ambas.
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
             modifier = Modifier
                 .fillMaxWidth()
                 .heightIn(min = minHeight)
-                .padding(top = 36.dp, bottom = 44.dp)
+                .padding(top = 44.dp)
         ) {
             content()
+            Spacer(modifier = Modifier.height(18.dp))
+            StyledCard(
+                color = if (tokens.isPlayful) tokens.sky else tokens.surface,
+                radius = 999.dp,
+                tilt = if (tokens.isPlayful) -2f else 0f
+            ) {
+                Text(
+                    text = stringResource(R.string.sum_pill, sum),
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = if (tokens.isPlayful) tokens.onAccent else tokens.ink,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+                )
+            }
         }
 
         AnimatedVisibility(
@@ -99,23 +120,6 @@ fun DiceStage(
                     modifier = Modifier.padding(horizontal = 18.dp, vertical = 7.dp)
                 )
             }
-        }
-
-        StyledCard(
-            color = if (tokens.isPlayful) tokens.sky else tokens.surface,
-            radius = 999.dp,
-            tilt = if (tokens.isPlayful) -2f else 0f,
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(bottom = 10.dp)
-        ) {
-            Text(
-                text = stringResource(R.string.sum_pill, sum),
-                fontSize = 16.sp,
-                fontWeight = FontWeight.ExtraBold,
-                color = if (tokens.isPlayful) tokens.onAccent else tokens.ink,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
-            )
         }
     }
 }

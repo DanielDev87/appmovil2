@@ -21,6 +21,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.danidev.appmovil2.R
+import com.danidev.appmovil2.ui.style.LocalAppTokens
 
 /*
  * HU-03: Selector de tema claro / oscuro manual.
@@ -64,6 +65,8 @@ val LocalThemeController = compositionLocalOf { ThemeController(isDark = false, 
 fun ThemeSwitch(modifier: Modifier = Modifier) {
     val controller = LocalThemeController.current
     val description = stringResource(R.string.theme_switch_description)
+    // Los colores salen del estilo y del fondo elegidos, no del rosa fijo del tema base.
+    val tokens = LocalAppTokens.current
 
     Row(
         modifier = modifier.semantics { contentDescription = description },
@@ -72,7 +75,7 @@ fun ThemeSwitch(modifier: Modifier = Modifier) {
         Icon(
             imageVector = if (controller.isDark) Icons.Filled.DarkMode else Icons.Filled.LightMode,
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.onBackground,
+            tint = tokens.bgInk,
             modifier = Modifier.size(20.dp)
         )
         Switch(
@@ -82,12 +85,13 @@ fun ThemeSwitch(modifier: Modifier = Modifier) {
             // ambos estados; sin él, apagada mide 16 dp y encendida 24 dp.
             thumbContent = { Spacer(modifier = Modifier.size(1.dp)) },
             colors = SwitchDefaults.colors(
-                // Activado = tema oscuro: pista rosa y círculo oscuro para que contraste con el fondo negro.
-                checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
-                checkedTrackColor = MaterialTheme.colorScheme.primary,
-                checkedBorderColor = MaterialTheme.colorScheme.primary,
-                uncheckedThumbColor = MaterialTheme.colorScheme.onBackground,
-                uncheckedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)
+                // Activado = tema oscuro: pista del color de acento y círculo que contraste con ella.
+                checkedThumbColor = tokens.onAccent,
+                checkedTrackColor = tokens.accent,
+                checkedBorderColor = tokens.accent,
+                uncheckedThumbColor = tokens.bgInk,
+                uncheckedTrackColor = tokens.accent.copy(alpha = 0.4f),
+                uncheckedBorderColor = tokens.accent
             ),
             modifier = Modifier.padding(start = 8.dp)
         )

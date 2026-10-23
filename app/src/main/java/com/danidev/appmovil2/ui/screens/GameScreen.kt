@@ -77,7 +77,7 @@ import kotlinx.coroutines.launch
 private const val THROW_LANDING = 0.7f
 
 /** Pausa (ms) entre el último tiro y la pantalla de fin de partida. */
-private const val GAME_OVER_DELAY_MS = 800L
+private const val GAME_OVER_DELAY_MS = 450L
 
 /**
  * Pantalla de juego: muestra uno o dos dados (HU-06), el botón para lanzarlos,
@@ -171,6 +171,9 @@ fun GameScreen(
     val isWideLandscape = isTablet() && configuration.screenWidthDp > configuration.screenHeightDp
 
     val hasUnlockedDice = uiState.lockedIndices.size < uiState.diceCount
+    // "Jugar de nuevo" reemplaza a "Tirar" solo después de que el jugador vio la ventana de fin de
+    // partida; así, si tira rápido, no reinicia por accidente antes de enterarse de cómo terminó.
+    val showPlayAgain = outcome != GameOutcome.IN_PROGRESS && gameOverDismissed
     val canRoll = !isRolling && outcome == GameOutcome.IN_PROGRESS && hasUnlockedDice
 
     val triggerRoll: () -> Unit = {
@@ -267,24 +270,13 @@ fun GameScreen(
                     )
                 }
             }
-            val actions: @Composable () -> Unit = {
-                GameStatus(uiState = uiState)
-
-                // Al terminar la partida, "Jugar de nuevo" ocupa el lugar del botón de tirar.
-                if (outcome == GameOutcome.IN_PROGRESS) {
-                    RollButton(enabled = canRoll, onClick = triggerRoll)
-                } else {
+            // Botón principal: tirar, o jugar de nuevo cuando la partida terminó y ya se vio el aviso.
+            val mainButton: @Composable () -> Unit = {
+                if (showPlayAgain) {
                     PlayAgainButton(onClick = resetGame)
+                } else {
+                    RollButton(enabled = canRoll, onClick = triggerRoll)
                 }
-
-                if (uiState.launches > 0) {
-                    ShareResultButton(uiState = uiState)
-                }
-
-                RecentRolls(
-                    history = uiState.history,
-                    onOpenStats = onNavigateToStats
-                )
             }
 
             if (isWideLandscape) {
@@ -340,28 +332,42 @@ fun GameScreen(
                         if (uiState.launches > 0) {
                             ShareResultButton(uiState = uiState)
                         }
-                        // Al terminar la partida, "Jugar de nuevo" ocupa el lugar del botón de tirar.
-                        if (outcome == GameOutcome.IN_PROGRESS) {
-                            RollButton(enabled = canRoll, onClick = triggerRoll)
-                        } else {
-                            PlayAgainButton(onClick = resetGame)
-                        }
+                        mainButton()
                     }
                 }
             } else {
+                // Vertical: arriba los marcadores; el dado ocupa el espacio que sobra; abajo, pegados
+                // al pulgar, los últimos tiros y el botón principal.
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(14.dp),
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f)
-                        .verticalScroll(rememberScrollState())
-                        .padding(vertical = 8.dp)
+                        .padding(top = 8.dp)
                 ) {
                     ScoreCards(uiState = uiState)
                     modeChip()
-                    stage(Modifier, if (isTablet()) 300.dp else 230.dp)
-                    actions()
+                    stage(Modifier.weight(1f), if (isTablet()) 300.dp else 200.dp)
+                    if (outcome != GameOutcome.IN_PROGRESS) {
+                        GameStatus(uiState = uiState)
+                    }
+                }
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 12.dp, bottom = 12.dp)
+                ) {
+                    RecentRolls(
+                        history = uiState.history,
+                        onOpenStats = onNavigateToStats
+                    )
+                    if (uiState.launches > 0 && outcome != GameOutcome.IN_PROGRESS) {
+                        ShareResultButton(uiState = uiState)
+                    }
+                    mainButton()
                 }
             }
         }

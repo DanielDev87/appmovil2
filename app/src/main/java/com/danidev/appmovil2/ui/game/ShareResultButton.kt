@@ -5,7 +5,10 @@ import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.widget.Toast
-import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
@@ -13,11 +16,11 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -26,6 +29,8 @@ import com.danidev.appmovil2.GameOutcome
 import com.danidev.appmovil2.R
 import com.danidev.appmovil2.TARGET_SCORE
 import com.danidev.appmovil2.ui.dice.DiceUiState
+import com.danidev.appmovil2.ui.style.LocalAppTokens
+import com.danidev.appmovil2.ui.style.StyledCard
 
 /** HU-18: botón para compartir el resultado de la partida con otra app. */
 @Composable
@@ -39,19 +44,33 @@ fun ShareResultButton(uiState: DiceUiState, modifier: Modifier = Modifier) {
     val chooserTitle = stringResource(R.string.share_chooser_title)
     val noApp = stringResource(R.string.share_no_app)
 
-    OutlinedButton(
-        onClick = { shareResult(context, shareMessage, chooserTitle, noApp) },
-        shape = MaterialTheme.shapes.medium,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)),
-        modifier = modifier.fillMaxWidth(0.55f)
+    val tokens = LocalAppTokens.current
+    StyledCard(
+        radius = 16.dp,
+        modifier = modifier
+            .fillMaxWidth(0.55f)
+            .clickable(role = Role.Button) { shareResult(context, shareMessage, chooserTitle, noApp) }
     ) {
-        Icon(
-            imageVector = Icons.Default.Share,
-            contentDescription = null,
-            modifier = Modifier.size(18.dp)
-        )
-        Spacer(modifier = Modifier.width(8.dp))
-        Text(stringResource(R.string.share_result), fontWeight = FontWeight.SemiBold)
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(44.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Share,
+                contentDescription = null,
+                tint = tokens.ink,
+                modifier = Modifier.size(18.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = stringResource(R.string.share_result),
+                fontWeight = FontWeight.ExtraBold,
+                color = tokens.ink
+            )
+        }
     }
 }
 

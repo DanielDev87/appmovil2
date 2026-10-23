@@ -263,4 +263,16 @@ class DiceViewModelTest {
 
         assertEquals(GameOutcome.LAUNCH_LIMIT_REACHED, viewModel.uiState.value.outcome)
     }
+
+    @Test
+    fun `se cuentan los criticos de la partida y clearHistory los reinicia`() {
+        viewModel.registerResult(listOf(6), listOf(6), sides = 6)
+        viewModel.registerResult(listOf(3), listOf(3), sides = 6)
+        viewModel.registerResult(listOf(6), listOf(6), sides = 6)
+        assertEquals(2, viewModel.uiState.value.criticalCount)
+
+        viewModel.clearHistory()
+
+        assertEquals(0, viewModel.uiState.value.criticalCount)
+    }
 }

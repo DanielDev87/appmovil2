@@ -23,6 +23,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -44,6 +45,7 @@ import com.danidev.appmovil2.ui.dice.rememberDiceSizeViewModel
 import com.danidev.appmovil2.ui.dice.rememberDiceTypeViewModel
 import com.danidev.appmovil2.ui.game.DiceBoard
 import com.danidev.appmovil2.ui.game.DiceCountSelector
+import com.danidev.appmovil2.ui.game.GameOverDialog
 import com.danidev.appmovil2.ui.game.GameStatus
 import com.danidev.appmovil2.ui.game.GameTopBar
 import com.danidev.appmovil2.ui.game.DiceStage
@@ -51,6 +53,7 @@ import com.danidev.appmovil2.ui.game.RecentRolls
 import com.danidev.appmovil2.ui.game.RollButton
 import com.danidev.appmovil2.ui.game.ScoreCards
 import com.danidev.appmovil2.ui.game.ShareResultButton
+import com.danidev.appmovil2.ui.player.LocalPlayerName
 import com.danidev.appmovil2.ui.settings.SettingsSheet
 import com.danidev.appmovil2.ui.settings.rememberGameSettingsViewModel
 import com.danidev.appmovil2.ui.style.AppBackground
@@ -100,6 +103,13 @@ fun GameScreen(
     val settingsViewModel = rememberGameSettingsViewModel()
     val settings by settingsViewModel.settings.collectAsState()
     var showSettings by remember { mutableStateOf(false) }
+
+    // Pantalla de fin de partida: se puede cerrar para ver cómo quedó y vuelve a mostrarse
+    // en la partida siguiente.
+    var gameOverDismissed by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(uiState.outcome) {
+        if (uiState.outcome == GameOutcome.IN_PROGRESS) gameOverDismissed = false
+    }
     LaunchedEffect(settings.soundMuted) {
         soundManager.setMuted(settings.soundMuted)
     }
@@ -289,6 +299,16 @@ fun GameScreen(
                 )
             }
         }
+    }
+
+    if (outcome != GameOutcome.IN_PROGRESS && !isRolling && !gameOverDismissed) {
+        GameOverDialog(
+            uiState = uiState,
+            playerName = LocalPlayerName.current.displayName,
+            onPlayAgain = resetGame,
+            onNavigateToMenu = onNavigateToMenu,
+            onDismiss = { gameOverDismissed = true }
+        )
     }
 
     if (showSettings) {

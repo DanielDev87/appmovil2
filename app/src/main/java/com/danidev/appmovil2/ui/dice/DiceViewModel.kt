@@ -126,6 +126,12 @@ class DiceViewModel : ViewModel() {
         val recordValues = activeValues.ifEmpty { values }
         val newRecord = RollRecord(id = nextRollId++, values = recordValues, sides = sides)
         _uiState.update { currentState ->
+            // HU-09: solo se evalúa el tiro cuando hay un único dado en juego.
+            val indicator = if (values.size == 1) {
+                determineRollIndicator(values[0], sides)
+            } else {
+                RollIndicator.NONE
+            }
             currentState.copy(
                 currentDiceValues = values,
                 history = (listOf(newRecord) + currentState.history)
@@ -134,12 +140,9 @@ class DiceViewModel : ViewModel() {
                 faceCounts = currentState.faceCounts.plusRolls(recordValues),
                 score = currentState.score + activeValues.sum(),
                 launches = currentState.launches + 1,
-                // HU-09: solo se evalúa el tiro cuando hay un único dado en juego.
-                rollIndicator = if (values.size == 1) {
-                    determineRollIndicator(values[0], sides)
-                } else {
-                    RollIndicator.NONE
-                }
+                rollIndicator = indicator,
+                criticalCount = currentState.criticalCount +
+                    if (indicator == RollIndicator.CRITICAL) 1 else 0
             )
         }
     }
@@ -158,7 +161,8 @@ class DiceViewModel : ViewModel() {
                 faceCounts = emptyMap(),
                 score = 0,
                 launches = 0,
-                rollIndicator = RollIndicator.NONE
+                rollIndicator = RollIndicator.NONE,
+                criticalCount = 0
             )
         }
     }

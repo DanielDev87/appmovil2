@@ -22,6 +22,7 @@ import com.danidev.appmovil2.determineGameOutcome
  * @property launches Lanzamientos hechos en la partida en curso.
  * @property rollCount Tiros consecutivos del contador (HU-08); se reinicia a mano.
  * @property rollIndicator Crítico o pifia del último tiro de un solo dado (HU-09).
+ * @property criticalCount Cuántos tiros críticos van en la partida en curso.
  */
 data class DiceUiState(
     val diceCount: Int = 1,
@@ -32,7 +33,8 @@ data class DiceUiState(
     val score: Int = 0,
     val launches: Int = 0,
     val rollCount: Int = 0,
-    val rollIndicator: RollIndicator = RollIndicator.NONE
+    val rollIndicator: RollIndicator = RollIndicator.NONE,
+    val criticalCount: Int = 0
 ) {
     /** Resultado de la partida según los puntos y lanzamientos acumulados. */
     val outcome: GameOutcome

@@ -122,4 +122,19 @@
     <string name="bg_brightness">Claridad del fondo</string>
     <string name="bg_gradient">Fondo en degradado</string>
     <string name="bg_note">El texto cambia solo a claro u oscuro para que siempre se lea bien sobre el fondo que elijas.</string>
+    <!-- Rediseño: fin de partida -->
+    <string name="end_win_title">¡Victoria!</string>
+    <string name="end_win_title_playful">¡GANASTE!</string>
+    <string name="end_lose_title">Fin de la partida</string>
+    <string name="end_win_message">Llegaste a la meta de %1$d puntos en %2$d lanzamientos.</string>
+    <string name="end_win_message_named">%1$s, llegaste a la meta de %2$d puntos en %3$d lanzamientos.</string>
+    <string name="end_lose_message">Se agotaron los lanzamientos: sumaste %1$d de %2$d puntos.</string>
+    <string name="end_lose_message_named">%1$s, se agotaron los lanzamientos: sumaste %2$d de %3$d puntos.</string>
+    <string name="end_points">Puntos</string>
+    <string name="end_launches">Lanzamientos</string>
+    <string name="end_criticals">Críticos</string>
+    <string name="end_play_again">Jugar de nuevo</string>
+    <string name="end_play_again_playful">¡OTRA VEZ!</string>
+    <string name="end_menu">Volver al menú</string>
+    <string name="end_close">Ver la partida</string>
 </resources>

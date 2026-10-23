@@ -7,8 +7,8 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.danidev.appmovil2.MoverDados
 import com.danidev.appmovil2.ui.screens.AboutScreen
+import com.danidev.appmovil2.ui.screens.GameScreen
 import com.danidev.appmovil2.ui.screens.WelcomeScreen
 
 sealed class Screen(val route: String) {
@@ -36,7 +36,7 @@ fun AppNavGraph(navController: NavHostController) {
             )
         }
         composable(Screen.Main.route) {
-            MoverDados(
+            GameScreen(
                 onNavigateToMenu = {
                     navController.navigate(Screen.Welcome.route) {
                         popUpTo(Screen.Welcome.route) { inclusive = true }

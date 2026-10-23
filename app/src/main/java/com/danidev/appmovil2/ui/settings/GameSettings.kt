@@ -137,11 +137,18 @@ class GameSettingsViewModel(private val store: GameSettingsStore) : ViewModel() 
     }
 }
 
-/** Obtiene el [GameSettingsViewModel] de la pantalla actual, con el almacén de la app. */
+/**
+ * Obtiene el [GameSettingsViewModel] de la app. Se comparte entre la bienvenida y la partida, para
+ * que lo que se elige en una (jugadores, nombres, meta) lo vea la otra al instante.
+ */
 @Composable
 fun rememberGameSettingsViewModel(): GameSettingsViewModel {
     val appContext = LocalContext.current.applicationContext
+    val owner = generateSequence(LocalContext.current) { (it as? android.content.ContextWrapper)?.baseContext }
+        .filterIsInstance<androidx.activity.ComponentActivity>()
+        .first()
     return viewModel(
+        viewModelStoreOwner = owner,
         factory = viewModelFactory {
             initializer { GameSettingsViewModel(SharedPreferencesGameSettingsStore(appContext)) }
         }

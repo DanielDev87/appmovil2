@@ -38,12 +38,20 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.danidev.appmovil2.R
+import com.danidev.appmovil2.ui.style.StyledSegmented
+import com.danidev.appmovil2.ui.settings.rememberGameSettingsViewModel
+import com.danidev.appmovil2.ui.settings.GameSettings
+import com.danidev.appmovil2.ui.player.StyledTextField
+import com.danidev.appmovil2.MIN_PLAYERS
+import com.danidev.appmovil2.MAX_PLAYERS
 import com.danidev.appmovil2.ui.dice.DiceFace
 import com.danidev.appmovil2.ui.dice.DicePalette
 import com.danidev.appmovil2.ui.player.LocalPlayerName
@@ -64,6 +72,9 @@ import com.danidev.appmovil2.ui.theme.ThemeSwitch
  * Pantalla de bienvenida: título, saludo con el nombre del jugador (HU-12), campo
  * para escribirlo y el botón para empezar. Desde aquí se abre "Personalizar".
  */
+/** Alto de pantalla (dp) por debajo del cual, con varios jugadores, se compacta la bienvenida. */
+private const val COMPACT_BELOW_DP = 900f
+
 @Composable
 fun WelcomeScreen(onStartClicked: () -> Unit, onNavigateToAbout: () -> Unit = {}) {
     val tokens = LocalAppTokens.current
@@ -72,6 +83,8 @@ fun WelcomeScreen(onStartClicked: () -> Unit, onNavigateToAbout: () -> Unit = {}
     var visible by remember { mutableStateOf(false) }
     var showPersonalize by remember { mutableStateOf(false) }
     var showProgress by remember { mutableStateOf(false) }
+    val settingsViewModel = rememberGameSettingsViewModel()
+    val gameSettings by settingsViewModel.settings.collectAsState()
     val progress by rememberProgressViewModel().progress.collectAsState()
 
     LaunchedEffect(Unit) {
@@ -88,6 +101,17 @@ fun WelcomeScreen(onStartClicked: () -> Unit, onNavigateToAbout: () -> Unit = {}
         ),
         label = "scale"
     )
+
+    // Con varios jugadores aparecen más campos; si la pantalla es baja, los dados se achican y se
+    // quitan la frase y el saludo para que el botón de jugar siga a la vista.
+    val density = LocalDensity.current
+    val compact = gameSettings.playerCount > 1 &&
+        LocalWindowInfo.current.containerSize.height / density.density < COMPACT_BELOW_DP
+    val heroDice = when {
+        compact -> 84.dp
+        isTablet -> 150.dp
+        else -> 118.dp
+    }
 
     AppBackground {
         Column(
@@ -142,7 +166,7 @@ fun WelcomeScreen(onStartClicked: () -> Unit, onNavigateToAbout: () -> Unit = {}
                             palette = DicePalette.ROSA,
                             contentDescription = "",
                             modifier = Modifier
-                                .size(if (isTablet) 150.dp else 118.dp)
+                                .size(heroDice)
                                 .rotate(-8f)
                         )
                         DiceFace(
@@ -151,7 +175,7 @@ fun WelcomeScreen(onStartClicked: () -> Unit, onNavigateToAbout: () -> Unit = {}
                             palette = DicePalette.LILA,
                             contentDescription = "",
                             modifier = Modifier
-                                .size(if (isTablet) 150.dp else 118.dp)
+                                .size(heroDice)
                                 .rotate(10f)
                         )
                     }
@@ -168,15 +192,17 @@ fun WelcomeScreen(onStartClicked: () -> Unit, onNavigateToAbout: () -> Unit = {}
                         textAlign = TextAlign.Center
                     )
 
-                    Spacer(Modifier.height(4.dp))
+                    if (!compact) {
+                        Spacer(Modifier.height(4.dp))
 
-                    Text(
-                        text = stringResource(R.string.welcome_tagline),
-                        fontSize = 16.sp,
-                        color = tokens.bgMuted,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(horizontal = 8.dp)
-                    )
+                        Text(
+                            text = stringResource(R.string.welcome_tagline),
+                            fontSize = 16.sp,
+                            color = tokens.bgMuted,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(horizontal = 8.dp)
+                        )
+                    }
 
                     // HU-12: saludo con el nombre. Se reserva el espacio aunque no haya nombre
                     // para que la pantalla no se mueva al empezar a escribir.
@@ -184,8 +210,8 @@ fun WelcomeScreen(onStartClicked: () -> Unit, onNavigateToAbout: () -> Unit = {}
                     Box(
                         contentAlignment = Alignment.Center,
                         modifier = Modifier
-                            .padding(top = 12.dp)
-                            .height(32.dp)
+                            .padding(top = if (compact) 4.dp else 12.dp)
+                            .height(if (compact) 0.dp else 32.dp)
                     ) {
                         if (playerName.isNotEmpty()) {
                             Text(
@@ -215,8 +241,12 @@ fun WelcomeScreen(onStartClicked: () -> Unit, onNavigateToAbout: () -> Unit = {}
                         .widthIn(max = MAX_CONTENT_WIDTH)
                         .fillMaxWidth()
                 ) {
-                    // HU-12: campo para escribir el nombre del jugador.
-                    StyledNameField()
+                    // Cuántas personas juegan y cómo se llama cada una.
+                    PlayersSection(
+                        settings = gameSettings,
+                        onPlayerCountChange = settingsViewModel::setPlayerCount,
+                        onPlayerNameChange = settingsViewModel::setPlayerName
+                    )
 
                     StyledButton(onClick = onStartClicked) {
                         Text(
@@ -245,5 +275,55 @@ fun WelcomeScreen(onStartClicked: () -> Unit, onNavigateToAbout: () -> Unit = {}
             onStyleChange = styleController.onStyleChange,
             onDismiss = { showPersonalize = false }
         )
+    }
+}
+
+/**
+ * Selector de la cantidad de jugadores y los campos con sus nombres. El primero usa el nombre de la
+ * bienvenida (HU-12); los demás aparecen de dos en dos para ocupar poco alto.
+ */
+@Composable
+private fun PlayersSection(
+    settings: GameSettings,
+    onPlayerCountChange: (Int) -> Unit,
+    onPlayerNameChange: (Int, String) -> Unit
+) {
+    val tokens = LocalAppTokens.current
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(
+                text = stringResource(R.string.settings_players),
+                fontSize = 14.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color = tokens.bgInk
+            )
+            StyledSegmented(
+                options = (MIN_PLAYERS..MAX_PLAYERS).map { it.toString() },
+                selectedIndex = settings.playerCount - MIN_PLAYERS,
+                onSelect = { onPlayerCountChange(it + MIN_PLAYERS) },
+                modifier = Modifier.weight(1f)
+            )
+        }
+
+        // Nombre del jugador 1, y los de los jugadores 2 a 4 en filas de dos.
+        StyledNameField()
+        (1 until settings.playerCount).chunked(2).forEach { indices ->
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
+                indices.forEach { index ->
+                    StyledTextField(
+                        label = stringResource(R.string.settings_player_name, index + 1),
+                        value = settings.playerNames[index - 1],
+                        onValueChange = { onPlayerNameChange(index, it) },
+                        hint = stringResource(R.string.settings_player_name_hint, index + 1),
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+                if (indices.size == 1) Spacer(modifier = Modifier.weight(1f))
+            }
+        }
     }
 }

@@ -53,6 +53,7 @@ import com.danidev.appmovil2.ui.dice.rememberDiceTypeViewModel
 import com.danidev.appmovil2.ui.dice.DiceViewModel
 import com.danidev.appmovil2.ui.dice.LocalDicePalette
 import com.danidev.appmovil2.ui.dice.RollHistory
+import com.danidev.appmovil2.ui.dice.RollStatistics
 import com.danidev.appmovil2.ui.dice.diceImageRes
 import com.danidev.appmovil2.ui.dice.rememberDicePaletteViewModel
 import com.danidev.appmovil2.ui.navigation.AppNavGraph
@@ -678,6 +679,11 @@ fun MoverDados(diceViewModel: DiceViewModel = viewModel(), onNavigateToMenu: () 
             CompositionLocalProvider(LocalDicePalette provides palette) {
                 RollHistory(history = uiState.history)
             }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // HU-13: cuántas veces ha salido cada cara en la partida.
+            RollStatistics(counts = uiState.faceCounts)
 
             Spacer(modifier = Modifier.height(48.dp))
         }

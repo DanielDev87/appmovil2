@@ -12,12 +12,15 @@ package com.danidev.appmovil2.ui.dice
  * @property lockedIndices Conjunto de índices de dados bloqueados para no ser regenerados en la siguiente tirada.
  * @property history Historial de los últimos lanzamientos (HU-011), ordenado del
  * más reciente al más antiguo. Nunca supera [MAX_HISTORY_SIZE] elementos.
+ * @property faceCounts Cuántas veces ha salido cada cara en la partida (HU-13); la
+ * clave es el valor de la cara. A diferencia de [history], no se recorta a 10.
  */
 data class DiceUiState(
     val diceCount: Int = 1,
     val currentDiceValues: List<Int> = listOf(1),
     val lockedIndices: Set<Int> = emptySet(),
-    val history: List<RollRecord> = emptyList()
+    val history: List<RollRecord> = emptyList(),
+    val faceCounts: Map<Int, Int> = emptyMap()
 ) {
     //Suma acumulada de los valores de los dados no bloqueados.
     val currentDiceValue: Int

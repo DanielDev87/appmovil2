@@ -112,7 +112,9 @@ class DiceViewModel : ViewModel() {
             currentState.copy(
                 currentDiceValues = values,
                 history = (listOf(newRecord) + currentState.history)
-                    .take(DiceUiState.MAX_HISTORY_SIZE)
+                    .take(DiceUiState.MAX_HISTORY_SIZE),
+                // HU-13: cada dado que cuenta en este tiro suma una salida de su cara.
+                faceCounts = currentState.faceCounts.plusRolls(recordValues)
             )
         }
     }
@@ -127,7 +129,8 @@ class DiceViewModel : ViewModel() {
         _uiState.update { currentState ->
             currentState.copy(
                 currentDiceValues = List(currentState.diceCount) { 1 },
-                history = emptyList()
+                history = emptyList(),
+                faceCounts = emptyMap()
             )
         }
     }

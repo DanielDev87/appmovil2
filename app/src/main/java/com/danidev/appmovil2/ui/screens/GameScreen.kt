@@ -29,7 +29,6 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -65,6 +64,8 @@ import com.danidev.appmovil2.ui.game.RollButton
 import com.danidev.appmovil2.ui.game.RollSum
 import com.danidev.appmovil2.ui.game.ShareResultButton
 import com.danidev.appmovil2.ui.player.LocalPlayerName
+import com.danidev.appmovil2.ui.settings.SettingsSheet
+import com.danidev.appmovil2.ui.settings.rememberGameSettingsViewModel
 import com.danidev.appmovil2.ui.theme.Appmovil2Theme
 import com.danidev.appmovil2.ui.theme.LocalThemeController
 import kotlinx.coroutines.delay
@@ -103,9 +104,11 @@ fun GameScreen(diceViewModel: DiceViewModel = viewModel(), onNavigateToMenu: () 
 
     // HU-15: gestor de sonido vinculado al ciclo de vida.
     val soundManager = rememberDiceSoundManager()
-    var isSoundMuted by rememberSaveable { mutableStateOf(false) }
-    LaunchedEffect(isSoundMuted) {
-        soundManager.setMuted(isSoundMuted)
+    val settingsViewModel = rememberGameSettingsViewModel()
+    val settings by settingsViewModel.settings.collectAsState()
+    var showSettings by remember { mutableStateOf(false) }
+    LaunchedEffect(settings.soundMuted) {
+        soundManager.setMuted(settings.soundMuted)
     }
 
     // HU-16: vibración al detenerse el dado; el usuario puede desactivarla.
@@ -204,7 +207,7 @@ fun GameScreen(diceViewModel: DiceViewModel = viewModel(), onNavigateToMenu: () 
     }
 
     // HU-19: detección de sacudida por acelerómetro para lanzar los dados.
-    rememberShakeDetector(enabled = canRoll, onShake = triggerRoll)
+    rememberShakeDetector(enabled = canRoll && settings.shakeEnabled, onShake = triggerRoll)
 
     Column(
         modifier = Modifier
@@ -215,9 +218,10 @@ fun GameScreen(diceViewModel: DiceViewModel = viewModel(), onNavigateToMenu: () 
     ) {
         GameTopBar(
             haptics = haptics,
-            isSoundMuted = isSoundMuted,
-            onToggleSound = { isSoundMuted = !isSoundMuted },
-            onNavigateToMenu = onNavigateToMenu
+            isSoundMuted = settings.soundMuted,
+            onToggleSound = { settingsViewModel.setSoundMuted(!settings.soundMuted) },
+            onNavigateToMenu = onNavigateToMenu,
+            onOpenSettings = { showSettings = true }
         )
 
         Column(
@@ -340,6 +344,21 @@ fun GameScreen(diceViewModel: DiceViewModel = viewModel(), onNavigateToMenu: () 
 
             Spacer(modifier = Modifier.height(48.dp))
         }
+    }
+
+    if (showSettings) {
+        SettingsSheet(
+            palette = palette,
+            onPaletteChange = paletteViewModel::selectPalette,
+            sizeFactor = sizeFactor,
+            diceCount = uiState.diceCount,
+            onSizeChange = sizeViewModel::setFactor,
+            haptics = haptics,
+            settings = settings,
+            onSoundMutedChange = settingsViewModel::setSoundMuted,
+            onShakeChange = settingsViewModel::setShakeEnabled,
+            onDismiss = { showSettings = false }
+        )
     }
 }
 

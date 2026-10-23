@@ -76,4 +76,15 @@ class ThemeViewModelTest {
         assertEquals(ThemeMode.DARK, viewModel.themeMode.value)
         assertEquals(ThemeMode.DARK, store.saved)
     }
+
+    @Test
+    fun `se puede volver a seguir al sistema y se guarda`() {
+        val store = FakeThemeStore(saved = ThemeMode.DARK)
+        val viewModel = ThemeViewModel(store)
+
+        viewModel.setThemeMode(ThemeMode.SYSTEM)
+
+        assertEquals(ThemeMode.SYSTEM, viewModel.themeMode.value)
+        assertEquals(ThemeMode.SYSTEM, store.saved)
+    }
 }

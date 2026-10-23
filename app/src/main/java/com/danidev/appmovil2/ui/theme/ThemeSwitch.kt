@@ -39,10 +39,14 @@ import com.danidev.appmovil2.R
  *
  * @property isDark Tema que se está mostrando realmente (ya resuelto el modo "sistema").
  * @property onDarkChange Se invoca con el tema que el usuario eligió.
+ * @property mode Preferencia guardada: claro, oscuro o seguir al sistema.
+ * @property onModeChange Se invoca con el modo que el usuario eligió en Ajustes.
  */
 class ThemeController(
     val isDark: Boolean,
-    val onDarkChange: (Boolean) -> Unit
+    val onDarkChange: (Boolean) -> Unit,
+    val mode: ThemeMode = ThemeMode.SYSTEM,
+    val onModeChange: (ThemeMode) -> Unit = {}
 )
 
 /** Controlador por defecto (previews y tests de UI): no hace nada al cambiar. */

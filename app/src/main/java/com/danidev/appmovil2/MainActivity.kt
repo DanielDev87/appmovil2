@@ -96,7 +96,9 @@ class MainActivity : ComponentActivity() {
             CompositionLocalProvider(
                 LocalThemeController provides ThemeController(
                     isDark = darkTheme,
-                    onDarkChange = themeViewModel::setDarkTheme
+                    onDarkChange = themeViewModel::setDarkTheme,
+                    mode = themeMode,
+                    onModeChange = themeViewModel::setThemeMode
                 ),
                 LocalPlayerName provides PlayerNameController(
                     name = playerName,

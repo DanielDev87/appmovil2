@@ -8,6 +8,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.VolumeOff
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Vibration
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -31,6 +32,7 @@ fun GameTopBar(
     isSoundMuted: Boolean,
     onToggleSound: () -> Unit,
     onNavigateToMenu: () -> Unit,
+    onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Row(
@@ -75,6 +77,13 @@ fun GameTopBar(
                     contentDescription = stringResource(
                         if (isSoundMuted) R.string.sound_disabled else R.string.sound_enabled
                     ),
+                    tint = MaterialTheme.colorScheme.onBackground
+                )
+            }
+            IconButton(onClick = onOpenSettings) {
+                Icon(
+                    imageVector = Icons.Filled.Settings,
+                    contentDescription = stringResource(R.string.settings_open),
                     tint = MaterialTheme.colorScheme.onBackground
                 )
             }

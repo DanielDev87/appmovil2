@@ -221,4 +221,6 @@
     <string name="ach_d20_win_desc">Gana una partida con un D20</string>
     <string name="ach_played_10">Jugador fiel</string>
     <string name="ach_played_10_desc">Juega 10 partidas</string>
+    <string name="records_streak">Racha</string>
+    <string name="records_to_beat">A superar</string>
 </resources>

@@ -61,6 +61,7 @@ import com.danidev.appmovil2.ui.game.DiceStage
 import com.danidev.appmovil2.ui.game.RecentRolls
 import com.danidev.appmovil2.ui.game.PlayAgainButton
 import com.danidev.appmovil2.ui.game.ResetGameDialog
+import com.danidev.appmovil2.ui.game.RecordsStrip
 import com.danidev.appmovil2.ui.game.RollButton
 import com.danidev.appmovil2.ui.game.ScoreCards
 import com.danidev.appmovil2.ui.game.ShareResultButton
@@ -140,6 +141,7 @@ fun GameScreen(
     // Récords, racha y logros: se guarda cada partida terminada una sola vez.
     val progressViewModel = rememberProgressViewModel()
     val lastRecord by progressViewModel.lastRecord.collectAsState()
+    val progress by progressViewModel.progress.collectAsState()
     var recorded by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(uiState.outcome, isRolling) {
         if (uiState.outcome != GameOutcome.IN_PROGRESS && !isRolling) {
@@ -349,6 +351,7 @@ fun GameScreen(
                                 rollCount = uiState.rollCount,
                                 onClick = { showSettings = true }
                             )
+                            RecordsStrip(progress = progress)
                             StyledCard(modifier = Modifier.fillMaxWidth()) {
                                 RecentRolls(
                                     history = uiState.history,
@@ -382,6 +385,7 @@ fun GameScreen(
                         rollCount = uiState.rollCount,
                         onClick = { showSettings = true }
                     )
+                    RecordsStrip(progress = progress)
                 }
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,

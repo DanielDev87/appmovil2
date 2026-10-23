@@ -364,9 +364,9 @@ private fun PaletteOption(
 
 /** Tamaños que se pueden elegir y el factor que usa cada uno (1.0 es el tamaño original). */
 private enum class SizeChoice(val labelRes: Int, val factor: Float) {
-    SMALL(R.string.size_small, 0.7f),
+    SMALL(R.string.size_small, 0.6f),
     NORMAL(R.string.size_normal, 1.0f),
-    LARGE(R.string.size_large, 1.3f)
+    LARGE(R.string.size_large, 1.4f)
 }
 
 /**

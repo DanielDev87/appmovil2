@@ -223,4 +223,23 @@
     <string name="ach_played_10_desc">Juega 10 partidas</string>
     <string name="records_streak">Racha</string>
     <string name="records_to_beat">A superar</string>
+    <!-- Varios jugadores -->
+    <string name="player_default_name">Jugador %1$d</string>
+    <string name="settings_players">Jugadores</string>
+    <string name="settings_player_name">Nombre del jugador %1$d</string>
+    <string name="settings_player_name_hint">Jugador %1$d</string>
+    <string name="settings_players_note">El jugador 1 usa el nombre de la bienvenida. Cambiar la cantidad empieza una partida nueva.</string>
+    <string name="players_count_1">1</string>
+    <string name="players_count_2">2</string>
+    <string name="players_count_3">3</string>
+    <string name="players_count_4">4</string>
+    <string name="game_over_multi">Partida terminada</string>
+    <string name="end_multi_winner">¡Gana %1$s!</string>
+    <string name="end_multi_tie">¡Empate!</string>
+    <string name="end_multi_reached">%1$s llegó a la meta de %2$d puntos.</string>
+    <string name="end_multi_most">Nadie llegó a la meta. %1$s sumó más: %2$d puntos.</string>
+    <string name="end_multi_tie_message">Empatan con %2$d puntos: %1$s.</string>
+    <string name="end_multi_points">%1$d pts</string>
+    <string name="share_message_multi">🎲 En Up Dice ganó %1$s con %2$d puntos. ¿Quién me supera?</string>
+    <string name="share_message_multi_tie">🎲 En Up Dice empatamos con %1$d puntos. ¿Quién desempata?</string>
 </resources>

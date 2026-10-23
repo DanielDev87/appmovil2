@@ -1,6 +1,9 @@
 package com.danidev.appmovil2.ui.dice
 
 import androidx.lifecycle.ViewModel
+import com.danidev.appmovil2.GameOutcome
+import com.danidev.appmovil2.MAX_PLAYERS
+import com.danidev.appmovil2.MIN_PLAYERS
 import com.danidev.appmovil2.RollIndicator
 import com.danidev.appmovil2.determineRollIndicator
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -152,18 +155,37 @@ class DiceViewModel : ViewModel() {
         _uiState.update { currentState ->
             // HU-09: crítico si algún dado que cuenta sale en la cara más alta; pifia si todos en 1.
             val indicator = determineRollIndicator(recordValues, sides)
-            currentState.copy(
+            val index = currentState.currentPlayer.coerceIn(currentState.players.indices)
+            val updatedPlayers = currentState.players.mapIndexed { i, player ->
+                if (i != index) {
+                    player
+                } else {
+                    PlayerStats(
+                        score = player.score + activeValues.sum(),
+                        launches = player.launches + 1,
+                        criticals = player.criticals + if (indicator == RollIndicator.CRITICAL) 1 else 0
+                    )
+                }
+            }
+            val updated = currentState.copy(
                 currentDiceValues = values,
                 history = (listOf(newRecord) + currentState.history)
                     .take(DiceUiState.MAX_HISTORY_SIZE),
                 // HU-13: cada dado que cuenta en este tiro suma una salida de su cara.
                 faceCounts = currentState.faceCounts.plusRolls(recordValues),
-                score = currentState.score + activeValues.sum(),
-                launches = currentState.launches + 1,
-                rollIndicator = indicator,
-                criticalCount = currentState.criticalCount +
-                    if (indicator == RollIndicator.CRITICAL) 1 else 0
+                players = updatedPlayers,
+                rollIndicator = indicator
             )
+            // Con varios jugadores, si la partida sigue, el turno pasa al siguiente y los dados
+            // vuelven a quedar libres para él.
+            if (updated.isMultiplayer && updated.outcome == GameOutcome.IN_PROGRESS) {
+                updated.copy(
+                    currentPlayer = (index + 1) % updated.players.size,
+                    lockedIndices = emptySet()
+                )
+            } else {
+                updated
+            }
         }
     }
 
@@ -179,11 +201,33 @@ class DiceViewModel : ViewModel() {
                 currentDiceValues = List(currentState.diceCount) { 1 },
                 history = emptyList(),
                 faceCounts = emptyMap(),
-                score = 0,
-                launches = 0,
-                rollIndicator = RollIndicator.NONE,
-                criticalCount = 0
+                players = List(currentState.players.size) { PlayerStats() },
+                currentPlayer = 0,
+                rollIndicator = RollIndicator.NONE
             )
+        }
+    }
+
+    /**
+     * Fija cuántas personas juegan (de [MIN_PLAYERS] a [MAX_PLAYERS]). Si cambia la cantidad,
+     * la partida empieza de cero, porque los puntos de unos jugadores no valen para otros.
+     */
+    fun setPlayerCount(count: Int) {
+        val valid = count.coerceIn(MIN_PLAYERS, MAX_PLAYERS)
+        _uiState.update { currentState ->
+            if (currentState.players.size == valid) {
+                currentState
+            } else {
+                currentState.copy(
+                    currentDiceValues = List(currentState.diceCount) { 1 },
+                    lockedIndices = emptySet(),
+                    history = emptyList(),
+                    faceCounts = emptyMap(),
+                    players = List(valid) { PlayerStats() },
+                    currentPlayer = 0,
+                    rollIndicator = RollIndicator.NONE
+                )
+            }
         }
     }
 }

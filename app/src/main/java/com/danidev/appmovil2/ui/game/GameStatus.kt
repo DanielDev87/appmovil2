@@ -20,8 +20,14 @@ import com.danidev.appmovil2.ui.style.LocalAppTokens
 fun GameStatus(uiState: DiceUiState, modifier: Modifier = Modifier) {
     val tokens = LocalAppTokens.current
     val text = when (uiState.outcome) {
-        GameOutcome.WON -> stringResource(R.string.game_won)
-        GameOutcome.LAUNCH_LIMIT_REACHED -> stringResource(R.string.launch_limit_reached)
+        GameOutcome.WON, GameOutcome.LAUNCH_LIMIT_REACHED ->
+            if (uiState.isMultiplayer) {
+                stringResource(R.string.game_over_multi)
+            } else if (uiState.outcome == GameOutcome.WON) {
+                stringResource(R.string.game_won)
+            } else {
+                stringResource(R.string.launch_limit_reached)
+            }
         GameOutcome.IN_PROGRESS -> stringResource(R.string.roll_count, uiState.rollCount)
     }
     Text(

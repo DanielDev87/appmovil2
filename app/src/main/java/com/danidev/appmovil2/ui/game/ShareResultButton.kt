@@ -45,7 +45,11 @@ import com.danidev.appmovil2.ui.style.StyledCard
  * sistema, muestra primero una ventana con el mensaje, con el mismo diseño de la app.
  */
 @Composable
-fun ShareResultButton(uiState: DiceUiState, modifier: Modifier = Modifier) {
+fun ShareResultButton(
+    uiState: DiceUiState,
+    modifier: Modifier = Modifier,
+    names: List<String> = emptyList()
+) {
     val tokens = LocalAppTokens.current
     var showDialog by remember { mutableStateOf(false) }
 
@@ -78,16 +82,24 @@ fun ShareResultButton(uiState: DiceUiState, modifier: Modifier = Modifier) {
     }
 
     if (showDialog) {
-        ShareDialog(uiState = uiState, onDismiss = { showDialog = false })
+        ShareDialog(uiState = uiState, names = names, onDismiss = { showDialog = false })
     }
 }
 
 /** Ventana centrada con el mensaje que se va a compartir y los botones para enviarlo o cerrar. */
 @Composable
-private fun ShareDialog(uiState: DiceUiState, onDismiss: () -> Unit) {
+private fun ShareDialog(uiState: DiceUiState, names: List<String>, onDismiss: () -> Unit) {
     val tokens = LocalAppTokens.current
     val context = LocalContext.current
-    val message = if (uiState.outcome == GameOutcome.WON) {
+    val winners = uiState.winners
+    val message = if (uiState.isMultiplayer && winners.isNotEmpty()) {
+        val top = uiState.players[winners.first()].score
+        if (winners.size == 1) {
+            stringResource(R.string.share_message_multi, names.getOrElse(winners.first()) { "" }, top)
+        } else {
+            stringResource(R.string.share_message_multi_tie, top)
+        }
+    } else if (uiState.outcome == GameOutcome.WON) {
         stringResource(R.string.share_message_won, uiState.score, uiState.launches)
     } else {
         stringResource(R.string.share_message, uiState.score, uiState.targetScore, uiState.launches)

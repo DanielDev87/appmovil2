@@ -85,4 +85,58 @@ class GameSettingsViewModelTest {
         viewModel.setTargetScore(10_000)
         assertEquals(MAX_TARGET_SCORE, viewModel.settings.value.targetScore)
     }
+
+    @Test
+    fun `por defecto juega una persona y los nombres estan vacios`() {
+        val settings = GameSettingsViewModel(FakeGameSettingsStore()).settings.value
+
+        assertEquals(1, settings.playerCount)
+        assertEquals(listOf("", "", ""), settings.playerNames)
+    }
+
+    @Test
+    fun `la cantidad de jugadores se guarda y se limita entre 1 y 4`() {
+        val store = FakeGameSettingsStore()
+        val viewModel = GameSettingsViewModel(store)
+
+        viewModel.setPlayerCount(3)
+        assertEquals(3, store.saved.playerCount)
+
+        viewModel.setPlayerCount(10)
+        assertEquals(4, viewModel.settings.value.playerCount)
+        viewModel.setPlayerCount(-2)
+        assertEquals(1, viewModel.settings.value.playerCount)
+    }
+
+    @Test
+    fun `se guarda el nombre de cada jugador adicional sin mezclarlos`() {
+        val store = FakeGameSettingsStore()
+        val viewModel = GameSettingsViewModel(store)
+
+        viewModel.setPlayerName(1, "Ana")
+        viewModel.setPlayerName(3, "Luis")
+
+        assertEquals(listOf("Ana", "", "Luis"), store.saved.playerNames)
+    }
+
+    @Test
+    fun `el nombre se recorta y no admite caracteres de control`() {
+        val viewModel = GameSettingsViewModel(FakeGameSettingsStore())
+
+        viewModel.setPlayerName(1, "a" + 10.toChar() + "b" + "x".repeat(40))
+
+        val name = viewModel.settings.value.playerNames[0]
+        assertEquals(MAX_PLAYER_NAME_LENGTH, name.length)
+        assertFalse(name.any { it.isISOControl() })
+    }
+
+    @Test
+    fun `una posicion de jugador fuera de rango se ignora`() {
+        val viewModel = GameSettingsViewModel(FakeGameSettingsStore())
+
+        viewModel.setPlayerName(0, "Yo")
+        viewModel.setPlayerName(4, "Otro")
+
+        assertEquals(listOf("", "", ""), viewModel.settings.value.playerNames)
+    }
 }

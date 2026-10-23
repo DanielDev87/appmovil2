@@ -24,6 +24,8 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -80,13 +82,16 @@ private val STEP_DELAYS_MS = longArrayOf(150, 300, 250, 500)
 fun GameOverDialog(
     uiState: DiceUiState,
     playerName: String,
+    names: List<String>,
     record: GameRecord?,
     onPlayAgain: () -> Unit,
     onNavigateToMenu: () -> Unit,
     onDismiss: () -> Unit
 ) {
     val tokens = LocalAppTokens.current
-    val won = uiState.outcome == GameOutcome.WON
+    val multi = uiState.isMultiplayer
+    // Con varios jugadores siempre hay quien gane, así que se celebra siempre.
+    val won = multi || uiState.outcome == GameOutcome.WON
 
     var step by remember { mutableIntStateOf(0) }
     LaunchedEffect(Unit) {
@@ -147,7 +152,9 @@ fun GameOverDialog(
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             Text(
-                                text = stringResource(
+                                text = if (multi) {
+                                    multiTitle(uiState, names)
+                                } else stringResource(
                                     when {
                                         won && tokens.isPlayful -> R.string.end_win_title_playful
                                         won -> R.string.end_win_title
@@ -161,7 +168,7 @@ fun GameOverDialog(
                                 textAlign = TextAlign.Center
                             )
                             Text(
-                                text = endMessage(won, playerName, uiState),
+                                text = if (multi) multiMessage(uiState, names) else endMessage(won, playerName, uiState),
                                 fontSize = 15.sp,
                                 color = tokens.muted,
                                 textAlign = TextAlign.Center
@@ -173,7 +180,9 @@ fun GameOverDialog(
                         visible = step >= STEP_STATS,
                         enter = fadeIn(tween(400)) + slideInVertically(tween(400)) { it / 2 }
                     ) {
-                        Row(
+                        if (multi) {
+                            Scoreboard(uiState = uiState, names = names)
+                        } else Row(
                             horizontalArrangement = Arrangement.spacedBy(10.dp),
                             modifier = Modifier.fillMaxWidth()
                         ) {
@@ -223,7 +232,7 @@ fun GameOverDialog(
                                     color = tokens.onAccent
                                 )
                             }
-                            ShareResultButton(uiState = uiState, modifier = Modifier)
+                            ShareResultButton(uiState = uiState, modifier = Modifier, names = names)
                             Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
                                 TextAction(stringResource(R.string.end_menu), onNavigateToMenu)
                                 TextAction(stringResource(R.string.end_close), onDismiss)
@@ -461,6 +470,82 @@ private fun Rain() {
                 end = Offset(x - len * 0.15f, y + len),
                 strokeWidth = 2.5.dp.toPx()
             )
+        }
+    }
+}
+
+/** Título de la pantalla de fin con varios jugadores: quién ganó, o empate. */
+@Composable
+private fun multiTitle(uiState: DiceUiState, names: List<String>): String {
+    val winners = uiState.winners
+    return if (winners.size == 1) {
+        stringResource(R.string.end_multi_winner, names.getOrElse(winners.first()) { "" })
+    } else {
+        stringResource(R.string.end_multi_tie)
+    }
+}
+
+/** Mensaje bajo el título con varios jugadores: cómo se ganó. */
+@Composable
+private fun multiMessage(uiState: DiceUiState, names: List<String>): String {
+    val winners = uiState.winners
+    val points = winners.firstOrNull()?.let { uiState.players[it].score } ?: 0
+    val winnerNames = winners.joinToString(" y ") { names.getOrElse(it) { "" } }
+    return when {
+        winners.size > 1 -> stringResource(R.string.end_multi_tie_message, winnerNames, points)
+        uiState.outcome == GameOutcome.WON ->
+            stringResource(R.string.end_multi_reached, winnerNames, uiState.targetScore)
+        else -> stringResource(R.string.end_multi_most, winnerNames, points)
+    }
+}
+
+/**
+ * Tabla de posiciones: los jugadores de más a menos puntos, con un trofeo para quien ganó. Cada
+ * fila entra con un pequeño retraso, una tras otra.
+ */
+@Composable
+private fun Scoreboard(uiState: DiceUiState, names: List<String>) {
+    val tokens = LocalAppTokens.current
+    val ranking = uiState.players.indices.sortedByDescending { uiState.players[it].score }
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+        ranking.forEachIndexed { place, index ->
+            val isWinner = index in uiState.winners
+            StyledCard(
+                color = if (isWinner) tokens.accent else tokens.soft,
+                radius = 16.dp,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 14.dp, vertical = 10.dp)
+                ) {
+                    Text(
+                        text = if (isWinner) "🏆" else "${place + 1}",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = if (isWinner) tokens.onAccent else tokens.muted,
+                        modifier = Modifier.width(28.dp)
+                    )
+                    Text(
+                        text = names.getOrElse(index) { "" },
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = if (isWinner) tokens.onAccent else tokens.ink,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Text(
+                        text = stringResource(R.string.end_multi_points, uiState.players[index].score),
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = if (isWinner) tokens.onAccent else tokens.ink
+                    )
+                }
+            }
         }
     }
 }

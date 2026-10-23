@@ -4,6 +4,8 @@ import android.content.Context
 import androidx.compose.runtime.Composable
 import com.danidev.appmovil2.MAX_LAUNCHES
 import com.danidev.appmovil2.MAX_MAX_LAUNCHES
+import com.danidev.appmovil2.MAX_PLAYERS
+import com.danidev.appmovil2.MIN_PLAYERS
 import com.danidev.appmovil2.MAX_TARGET_SCORE
 import com.danidev.appmovil2.MIN_MAX_LAUNCHES
 import com.danidev.appmovil2.MIN_TARGET_SCORE
@@ -25,12 +27,17 @@ import kotlinx.coroutines.flow.update
  * @property shakeEnabled `true` si sacudir el teléfono lanza los dados (HU-19).
  * @property targetScore Puntos que hay que alcanzar para ganar.
  * @property maxLaunches Lanzamientos disponibles en cada partida.
+ * @property playerCount Personas que juegan, turnándose en el mismo teléfono.
+ * @property playerNames Nombres de los jugadores 2 a 4; vacío usa "Jugador N". El del jugador 1 es
+ * el nombre que se escribe en la bienvenida.
  */
 data class GameSettings(
     val soundMuted: Boolean = false,
     val shakeEnabled: Boolean = true,
     val targetScore: Int = TARGET_SCORE,
-    val maxLaunches: Int = MAX_LAUNCHES
+    val maxLaunches: Int = MAX_LAUNCHES,
+    val playerCount: Int = MIN_PLAYERS,
+    val playerNames: List<String> = List(MAX_PLAYERS - 1) { "" }
 )
 
 /**
@@ -56,7 +63,9 @@ class SharedPreferencesGameSettingsStore(context: Context) : GameSettingsStore {
         targetScore = preferences.getInt(KEY_TARGET_SCORE, TARGET_SCORE)
             .coerceIn(MIN_TARGET_SCORE, MAX_TARGET_SCORE),
         maxLaunches = preferences.getInt(KEY_MAX_LAUNCHES, MAX_LAUNCHES)
-            .coerceIn(MIN_MAX_LAUNCHES, MAX_MAX_LAUNCHES)
+            .coerceIn(MIN_MAX_LAUNCHES, MAX_MAX_LAUNCHES),
+        playerCount = preferences.getInt(KEY_PLAYER_COUNT, MIN_PLAYERS).coerceIn(MIN_PLAYERS, MAX_PLAYERS),
+        playerNames = List(MAX_PLAYERS - 1) { preferences.getString(KEY_PLAYER_NAME + (it + 2), "").orEmpty() }
     )
 
     override fun save(settings: GameSettings) {
@@ -65,6 +74,10 @@ class SharedPreferencesGameSettingsStore(context: Context) : GameSettingsStore {
             .putBoolean(KEY_SHAKE_ENABLED, settings.shakeEnabled)
             .putInt(KEY_TARGET_SCORE, settings.targetScore)
             .putInt(KEY_MAX_LAUNCHES, settings.maxLaunches)
+            .putInt(KEY_PLAYER_COUNT, settings.playerCount)
+            .apply {
+                settings.playerNames.forEachIndexed { i, name -> putString(KEY_PLAYER_NAME + (i + 2), name) }
+            }
             .apply()
     }
 
@@ -74,8 +87,13 @@ class SharedPreferencesGameSettingsStore(context: Context) : GameSettingsStore {
         const val KEY_SHAKE_ENABLED = "shake_enabled"
         const val KEY_TARGET_SCORE = "target_score"
         const val KEY_MAX_LAUNCHES = "max_launches"
+        const val KEY_PLAYER_COUNT = "player_count"
+        const val KEY_PLAYER_NAME = "player_name_"
     }
 }
+
+/** Largo máximo del nombre de un jugador adicional. */
+const val MAX_PLAYER_NAME_LENGTH = 14
 
 /** ViewModel de los ajustes de la partida: los mantiene y los guarda al cambiar. */
 class GameSettingsViewModel(private val store: GameSettingsStore) : ViewModel() {
@@ -96,6 +114,22 @@ class GameSettingsViewModel(private val store: GameSettingsStore) : ViewModel() 
     /** Fija los lanzamientos disponibles, dentro de los límites permitidos. */
     fun setMaxLaunches(value: Int) =
         change { it.copy(maxLaunches = value.coerceIn(MIN_MAX_LAUNCHES, MAX_MAX_LAUNCHES)) }
+
+    /** Fija cuántas personas juegan, dentro de los límites permitidos. */
+    fun setPlayerCount(value: Int) =
+        change { it.copy(playerCount = value.coerceIn(MIN_PLAYERS, MAX_PLAYERS)) }
+
+    /**
+     * Fija el nombre del jugador en la posición [index] (de 1 a 3, es decir, los jugadores 2 a 4).
+     * Se limita a [MAX_PLAYER_NAME_LENGTH] caracteres y se quitan los de control.
+     */
+    fun setPlayerName(index: Int, name: String) {
+        if (index !in 1 until MAX_PLAYERS) return
+        val clean = name.filterNot { it.isISOControl() }.take(MAX_PLAYER_NAME_LENGTH)
+        change { settings ->
+            settings.copy(playerNames = settings.playerNames.mapIndexed { i, old -> if (i == index - 1) clean else old })
+        }
+    }
 
     private fun change(transform: (GameSettings) -> GameSettings) {
         _settings.update(transform)

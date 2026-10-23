@@ -76,3 +76,23 @@ enum class Difficulty(val targetScore: Int, val maxLaunches: Int) {
             entries.firstOrNull { it.targetScore == targetScore && it.maxLaunches == maxLaunches }
     }
 }
+
+/** Cantidad mínima y máxima de jugadores en una partida. */
+const val MIN_PLAYERS = 1
+const val MAX_PLAYERS = 4
+
+/**
+ * Resultado de una partida con varios jugadores que se turnan: gana quien llega primero a
+ * [targetScore] puntos; si todos agotan sus [maxLaunches] lanzamientos antes, la partida termina
+ * y gana quien sumó más (ver `DiceUiState.winners`).
+ */
+fun determineMultiplayerOutcome(
+    scores: List<Int>,
+    launches: List<Int>,
+    targetScore: Int = TARGET_SCORE,
+    maxLaunches: Int = MAX_LAUNCHES
+): GameOutcome = when {
+    scores.any { it >= targetScore } -> GameOutcome.WON
+    launches.all { it >= maxLaunches } -> GameOutcome.LAUNCH_LIMIT_REACHED
+    else -> GameOutcome.IN_PROGRESS
+}

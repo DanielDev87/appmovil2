@@ -21,7 +21,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.danidev.appmovil2.R
-import com.danidev.appmovil2.ui.player.LocalPlayerName
 import com.danidev.appmovil2.ui.style.LocalAppTokens
 import com.danidev.appmovil2.ui.style.StyledCard
 import com.danidev.appmovil2.ui.style.StyledIconButton
@@ -37,10 +36,11 @@ fun GameTopBar(
     onNavigateToMenu: () -> Unit,
     onOpenSettings: () -> Unit,
     onReset: () -> Unit,
+    turnName: String,
     modifier: Modifier = Modifier
 ) {
     val tokens = LocalAppTokens.current
-    val playerName = LocalPlayerName.current.displayName
+    val playerName = turnName
     Row(
         modifier = modifier
             .fillMaxWidth()

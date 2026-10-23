@@ -44,6 +44,8 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.danidev.appmovil2.Difficulty
 import com.danidev.appmovil2.MAX_MAX_LAUNCHES
+import com.danidev.appmovil2.MAX_PLAYERS
+import com.danidev.appmovil2.MIN_PLAYERS
 import com.danidev.appmovil2.MAX_TARGET_SCORE
 import com.danidev.appmovil2.MIN_MAX_LAUNCHES
 import com.danidev.appmovil2.MIN_TARGET_SCORE
@@ -53,6 +55,7 @@ import com.danidev.appmovil2.ui.dice.DiceFace
 import com.danidev.appmovil2.ui.dice.DicePalette
 import com.danidev.appmovil2.ui.dice.DiceSize
 import com.danidev.appmovil2.ui.dice.DiceType
+import com.danidev.appmovil2.ui.player.StyledTextField
 import com.danidev.appmovil2.ui.style.LocalAppTokens
 import com.danidev.appmovil2.ui.style.LocalStyleController
 import com.danidev.appmovil2.ui.style.PersonalizeContent
@@ -81,6 +84,8 @@ class GameOptions(
     val onShakeChange: (Boolean) -> Unit,
     val onTargetScoreChange: (Int) -> Unit,
     val onMaxLaunchesChange: (Int) -> Unit,
+    val onPlayerCountChange: (Int) -> Unit,
+    val onPlayerNameChange: (Int, String) -> Unit,
     /** `true` mientras los dados giran: no se pueden cambiar los dados en ese momento. */
     val isRolling: Boolean
 )
@@ -146,6 +151,31 @@ fun SettingsSheet(options: GameOptions, onDismiss: () -> Unit) {
 @Composable
 private fun GameTab(options: GameOptions) {
     val tokens = LocalAppTokens.current
+
+    Label(stringResource(R.string.settings_players))
+    StyledSegmented(
+        options = (MIN_PLAYERS..MAX_PLAYERS).map { it.toString() },
+        selectedIndex = options.settings.playerCount - MIN_PLAYERS,
+        onSelect = { options.onPlayerCountChange(it + MIN_PLAYERS) },
+        enabled = !options.isRolling,
+        modifier = Modifier.fillMaxWidth()
+    )
+    // Jugadores 2 a 4: un campo para el nombre de cada uno; el 1 usa el de la bienvenida.
+    for (index in 1 until options.settings.playerCount) {
+        StyledTextField(
+            label = stringResource(R.string.settings_player_name, index + 1),
+            value = options.settings.playerNames[index - 1],
+            onValueChange = { options.onPlayerNameChange(index, it) },
+            hint = stringResource(R.string.settings_player_name_hint, index + 1)
+        )
+    }
+    if (options.settings.playerCount > 1) {
+        Text(
+            text = stringResource(R.string.settings_players_note),
+            fontSize = 12.sp,
+            color = tokens.muted
+        )
+    }
 
     Label(stringResource(R.string.settings_dice))
     StyledSegmented(

@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.danidev.appmovil2.GameOutcome
+import com.danidev.appmovil2.MAX_PLAYERS
 import com.danidev.appmovil2.R
 import com.danidev.appmovil2.RollIndicator
 import com.danidev.appmovil2.audio.rememberDiceSoundManager
@@ -62,6 +63,9 @@ import com.danidev.appmovil2.ui.game.RecentRolls
 import com.danidev.appmovil2.ui.game.PlayAgainButton
 import com.danidev.appmovil2.ui.game.ResetGameDialog
 import com.danidev.appmovil2.ui.game.RecordsStrip
+import com.danidev.appmovil2.ui.progress.PlayerProgress
+import com.danidev.appmovil2.ui.player.resolvePlayerNames
+import com.danidev.appmovil2.ui.game.PlayersBar
 import com.danidev.appmovil2.ui.game.RollButton
 import com.danidev.appmovil2.ui.game.ScoreCards
 import com.danidev.appmovil2.ui.game.ShareResultButton
@@ -147,7 +151,8 @@ fun GameScreen(
         if (uiState.outcome != GameOutcome.IN_PROGRESS && !isRolling) {
             if (!recorded) {
                 recorded = true
-                progressViewModel.recordGame(
+                // Los récords y logros son de una sola persona; con varios jugadores no cuentan.
+                if (!uiState.isMultiplayer) progressViewModel.recordGame(
                     GameResult(
                         won = uiState.outcome == GameOutcome.WON,
                         score = uiState.score,
@@ -171,6 +176,18 @@ fun GameScreen(
         }
     }
     // La meta (puntos y lanzamientos) se puede cambiar en Ajustes sin perder la partida en curso.
+    // Cantidad de jugadores: al cambiarla, la partida empieza de cero con los marcadores nuevos.
+    LaunchedEffect(settings.playerCount) {
+        diceViewModel.setPlayerCount(settings.playerCount)
+    }
+    val firstPlayerName = LocalPlayerName.current.displayName
+    val fallbackNames = (1..MAX_PLAYERS).map { stringResource(R.string.player_default_name, it) }
+    val playerNames = resolvePlayerNames(
+        count = uiState.players.size,
+        firstName = firstPlayerName,
+        extras = settings.playerNames,
+        fallback = { number -> fallbackNames[number - 1] }
+    )
     LaunchedEffect(settings.targetScore, settings.maxLaunches) {
         diceViewModel.setGoals(settings.targetScore, settings.maxLaunches)
     }
@@ -279,7 +296,12 @@ fun GameScreen(
                 onToggleSound = { settingsViewModel.setSoundMuted(!settings.soundMuted) },
                 onNavigateToMenu = onNavigateToMenu,
                 onOpenSettings = { showSettings = true },
-                onReset = { if (!isRolling) showResetConfirm = true }
+                onReset = { if (!isRolling) showResetConfirm = true },
+                turnName = if (uiState.isMultiplayer) {
+                    playerNames.getOrElse(uiState.currentPlayer) { "" }
+                } else {
+                    firstPlayerName
+                }
             )
 
             // Piezas de la partida; se acomodan distinto en vertical y en una tablet horizontal.
@@ -351,7 +373,7 @@ fun GameScreen(
                                 rollCount = uiState.rollCount,
                                 onClick = { showSettings = true }
                             )
-                            RecordsStrip(progress = progress)
+                            RecordsOrPlayers(uiState, progress, playerNames)
                             RecentRolls(
                                 history = uiState.history,
                                 onOpenStats = onNavigateToStats,
@@ -361,7 +383,7 @@ fun GameScreen(
                         if (outcome != GameOutcome.IN_PROGRESS) {
                             GameStatus(uiState = uiState)
                         }
-                        ShareSlot(uiState = uiState)
+                        ShareSlot(uiState = uiState, names = playerNames)
                         mainButton()
                     }
                 }
@@ -382,7 +404,7 @@ fun GameScreen(
                         rollCount = uiState.rollCount,
                         onClick = { showSettings = true }
                     )
-                    RecordsStrip(progress = progress)
+                    RecordsOrPlayers(uiState, progress, playerNames)
                 }
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -415,7 +437,7 @@ fun GameScreen(
                 ) {
                     // Compartir aparece desde el primer tiro, justo encima del botón principal. Su
                     // lugar se reserva desde el inicio para que nada cambie de tamaño al tirar.
-                    ShareSlot(uiState = uiState)
+                    ShareSlot(uiState = uiState, names = playerNames)
                     mainButton()
                 }
             }
@@ -425,7 +447,8 @@ fun GameScreen(
     if (showGameOver && !gameOverDismissed) {
         GameOverDialog(
             uiState = uiState,
-            playerName = LocalPlayerName.current.displayName,
+            playerName = firstPlayerName,
+            names = playerNames,
             record = lastRecord,
             onPlayAgain = resetGame,
             onNavigateToMenu = onNavigateToMenu,
@@ -467,6 +490,8 @@ fun GameScreen(
                 onShakeChange = settingsViewModel::setShakeEnabled,
                 onTargetScoreChange = settingsViewModel::setTargetScore,
                 onMaxLaunchesChange = settingsViewModel::setMaxLaunches,
+                onPlayerCountChange = settingsViewModel::setPlayerCount,
+                onPlayerNameChange = settingsViewModel::setPlayerName,
                 isRolling = isRolling
             ),
             onDismiss = { showSettings = false }
@@ -487,10 +512,23 @@ private val SHARE_SLOT_HEIGHT = 44.dp
 
 /** Botón de compartir desde el primer tiro; antes, un espacio vacío del mismo alto. */
 @Composable
-private fun ShareSlot(uiState: DiceUiState) {
+private fun ShareSlot(uiState: DiceUiState, names: List<String>) {
     if (uiState.launches > 0) {
-        ShareResultButton(uiState = uiState)
+        ShareResultButton(uiState = uiState, names = names)
     } else {
         Spacer(modifier = Modifier.height(SHARE_SLOT_HEIGHT))
+    }
+}
+
+/**
+ * Con una persona, sus récords (racha, victorias y a superar); con varias, el marcador de todos los
+ * jugadores con el del turno resaltado.
+ */
+@Composable
+private fun RecordsOrPlayers(uiState: DiceUiState, progress: PlayerProgress, names: List<String>) {
+    if (uiState.isMultiplayer) {
+        PlayersBar(players = uiState.players, names = names, currentPlayer = uiState.currentPlayer)
+    } else {
+        RecordsStrip(progress = progress)
     }
 }

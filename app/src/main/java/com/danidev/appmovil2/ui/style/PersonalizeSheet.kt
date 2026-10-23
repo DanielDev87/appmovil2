@@ -13,6 +13,8 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -47,8 +49,7 @@ import com.danidev.appmovil2.ui.player.StyledNameField
 fun PersonalizeSheet(
     style: AppStyle,
     onStyleChange: (AppStyle) -> Unit,
-    onDismiss: () -> Unit,
-    extraContent: @Composable () -> Unit = {}
+    onDismiss: () -> Unit
 ) {
     val tokens = LocalAppTokens.current
     ModalBottomSheet(
@@ -61,6 +62,7 @@ fun PersonalizeSheet(
             verticalArrangement = Arrangement.spacedBy(20.dp),
             modifier = Modifier
                 .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
                 .navigationBarsPadding()
                 .padding(horizontal = 24.dp)
                 .padding(bottom = 24.dp)
@@ -92,7 +94,7 @@ fun PersonalizeSheet(
                 )
             }
 
-            extraContent()
+            BackgroundSection()
         }
     }
 }

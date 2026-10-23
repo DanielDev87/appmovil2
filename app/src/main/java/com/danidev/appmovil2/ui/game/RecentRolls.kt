@@ -46,7 +46,7 @@ fun RecentRolls(
                 text = if (tokens.isPlayful) title.uppercase() else title,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.ExtraBold,
-                color = tokens.muted
+                color = tokens.bgMuted
             )
             val link = stringResource(R.string.stats_link)
             if (tokens.isPlayful) {
@@ -80,7 +80,7 @@ fun RecentRolls(
             Text(
                 text = stringResource(R.string.roll_history_empty),
                 fontSize = 14.sp,
-                color = tokens.muted
+                color = tokens.bgMuted
             )
         } else {
             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {

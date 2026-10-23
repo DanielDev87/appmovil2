@@ -77,7 +77,7 @@ fun StatsScreen(diceViewModel: DiceViewModel = viewModel(), onNavigateBack: () -
                     fontSize = 22.sp,
                     fontWeight = FontWeight.ExtraBold,
                     letterSpacing = if (tokens.isPlayful) 1.sp else 0.sp,
-                    color = tokens.ink,
+                    color = tokens.bgInk,
                     modifier = Modifier
                         .weight(1f)
                         .padding(horizontal = 16.dp)

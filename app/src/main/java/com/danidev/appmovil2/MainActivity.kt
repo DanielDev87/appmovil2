@@ -25,7 +25,12 @@ import com.danidev.appmovil2.ui.player.LocalPlayerName
 import com.danidev.appmovil2.ui.player.PlayerNameController
 import com.danidev.appmovil2.ui.player.PlayerNameViewModel
 import com.danidev.appmovil2.ui.player.SharedPreferencesPlayerNameStore
+import com.danidev.appmovil2.ui.style.BackgroundController
+import com.danidev.appmovil2.ui.style.BackgroundViewModel
 import com.danidev.appmovil2.ui.style.LocalAppTokens
+import com.danidev.appmovil2.ui.style.LocalBackgroundController
+import com.danidev.appmovil2.ui.style.SharedPreferencesBackgroundStore
+import com.danidev.appmovil2.ui.style.applyBackground
 import com.danidev.appmovil2.ui.style.LocalStyleController
 import com.danidev.appmovil2.ui.style.SharedPreferencesStyleStore
 import com.danidev.appmovil2.ui.style.StyleController
@@ -61,6 +66,13 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    // Fondo elegido por el usuario, guardado entre sesiones.
+    private val backgroundViewModel: BackgroundViewModel by viewModels {
+        viewModelFactory {
+            initializer { BackgroundViewModel(SharedPreferencesBackgroundStore(applicationContext)) }
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
@@ -92,6 +104,7 @@ class MainActivity : ComponentActivity() {
 
             val playerName by playerNameViewModel.name.collectAsState()
             val appStyle by styleViewModel.style.collectAsState()
+            val background by backgroundViewModel.choice.collectAsState()
 
             CompositionLocalProvider(
                 LocalThemeController provides ThemeController(
@@ -108,7 +121,13 @@ class MainActivity : ComponentActivity() {
                     style = appStyle,
                     onStyleChange = styleViewModel::select
                 ),
-                LocalAppTokens provides appTokens(appStyle, darkTheme)
+                LocalBackgroundController provides BackgroundController(
+                    choice = background,
+                    onSelectColor = backgroundViewModel::selectColor,
+                    onUseStyleDefault = backgroundViewModel::useStyleDefault,
+                    onGradientChange = backgroundViewModel::setGradient
+                ),
+                LocalAppTokens provides applyBackground(appTokens(appStyle, darkTheme), background)
             ) {
                 Appmovil2Theme(darkTheme = darkTheme) {
                     Surface(

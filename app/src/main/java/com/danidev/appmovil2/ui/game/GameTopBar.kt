@@ -69,7 +69,7 @@ fun GameTopBar(
                     text = title,
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
-                    color = tokens.ink
+                    color = tokens.bgInk
                 )
             }
             if (playerName.isNotEmpty()) {
@@ -77,7 +77,7 @@ fun GameTopBar(
                     text = stringResource(R.string.player_turn, playerName),
                     fontSize = 13.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = tokens.muted
+                    color = tokens.bgMuted
                 )
             }
         }

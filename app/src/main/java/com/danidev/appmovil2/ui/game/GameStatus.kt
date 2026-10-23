@@ -46,30 +46,28 @@ fun GameStatus(
             text = message,
             fontSize = 13.sp,
             fontWeight = if (uiState.outcome == GameOutcome.IN_PROGRESS) FontWeight.Medium else FontWeight.Bold,
-            color = tokens.muted
+            color = tokens.bgMuted
         )
     }
-    run {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
-            modifier = modifier.padding(top = 4.dp)
-        ) {
-            Text(
-                text = stringResource(R.string.roll_count, uiState.rollCount),
-                fontSize = 13.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = tokens.ink
-            )
-            Text(
-                text = stringResource(R.string.reset_counter),
-                fontSize = 13.sp,
-                fontWeight = FontWeight.ExtraBold,
-                color = tokens.accent,
-                modifier = Modifier
-                    .clickable(role = Role.Button, onClick = onResetRollCount)
-                    .padding(vertical = 4.dp)
-            )
-        }
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+        modifier = modifier.padding(top = 4.dp)
+    ) {
+        Text(
+            text = stringResource(R.string.roll_count, uiState.rollCount),
+            fontSize = 13.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = tokens.bgInk
+        )
+        Text(
+            text = stringResource(R.string.reset_counter),
+            fontSize = 13.sp,
+            fontWeight = FontWeight.ExtraBold,
+            color = tokens.accent,
+            modifier = Modifier
+                .clickable(role = Role.Button, onClick = onResetRollCount)
+                .padding(vertical = 4.dp)
+        )
     }
 }

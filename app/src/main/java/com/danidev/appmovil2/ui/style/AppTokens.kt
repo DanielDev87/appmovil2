@@ -30,6 +30,9 @@ import androidx.compose.ui.unit.dp
  * @property buttonRadius Radio de los botones grandes.
  * @property borderWidth Grosor del borde de las tarjetas.
  * @property shadowOffset Desplazamiento de la sombra dura; 0 en el estilo equilibrado.
+ * @property bgInk Color del texto que va directamente sobre el fondo (no dentro de una
+ * tarjeta); cambia solo cuando el usuario elige un fondo propio, para que siempre se lea.
+ * @property bgMuted Versión secundaria de [bgInk].
  */
 @Immutable
 data class AppTokens(
@@ -52,7 +55,9 @@ data class AppTokens(
     val cardRadius: Dp,
     val buttonRadius: Dp,
     val borderWidth: Dp,
-    val shadowOffset: Dp
+    val shadowOffset: Dp,
+    val bgInk: Color = ink,
+    val bgMuted: Color = muted
 ) {
     val isPlayful: Boolean get() = style == AppStyle.PLAYFUL
 }

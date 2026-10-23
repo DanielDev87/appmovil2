@@ -107,4 +107,19 @@
     <string name="stats_rolls_label">Lanzamientos · %1$s</string>
     <string name="stats_streak_label">Racha</string>
     <string name="stats_keep_playing">¡A seguir jugando!</string>
+    <!-- Rediseño: fondo -->
+    <string name="personalize_background">Fondo</string>
+    <string name="bg_style_default">Estilo</string>
+    <string name="bg_custom">Personalizado</string>
+    <string name="bg_sky">Cielo</string>
+    <string name="bg_mint">Menta</string>
+    <string name="bg_peach">Durazno</string>
+    <string name="bg_lavender">Lavanda</string>
+    <string name="bg_rose">Rosa</string>
+    <string name="bg_night">Noche</string>
+    <string name="bg_other_color">Otro color</string>
+    <string name="bg_hue">Tono del fondo</string>
+    <string name="bg_brightness">Claridad del fondo</string>
+    <string name="bg_gradient">Fondo en degradado</string>
+    <string name="bg_note">El texto cambia solo a claro u oscuro para que siempre se lea bien sobre el fondo que elijas.</string>
 </resources>

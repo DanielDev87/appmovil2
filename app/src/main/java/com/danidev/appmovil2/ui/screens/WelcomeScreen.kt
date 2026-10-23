@@ -149,7 +149,7 @@ fun WelcomeScreen(onStartClicked: () -> Unit, onNavigateToAbout: () -> Unit = {}
                         fontSize = 44.sp,
                         fontWeight = FontWeight.ExtraBold,
                         letterSpacing = if (tokens.isPlayful) 2.sp else 0.sp,
-                        color = tokens.ink,
+                        color = tokens.bgInk,
                         textAlign = TextAlign.Center
                     )
 
@@ -158,7 +158,7 @@ fun WelcomeScreen(onStartClicked: () -> Unit, onNavigateToAbout: () -> Unit = {}
                     Text(
                         text = stringResource(R.string.welcome_tagline),
                         fontSize = 16.sp,
-                        color = tokens.muted,
+                        color = tokens.bgMuted,
                         textAlign = TextAlign.Center,
                         modifier = Modifier.padding(horizontal = 8.dp)
                     )
@@ -177,7 +177,7 @@ fun WelcomeScreen(onStartClicked: () -> Unit, onNavigateToAbout: () -> Unit = {}
                                 text = stringResource(R.string.player_greeting, playerName),
                                 fontSize = 22.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = tokens.ink,
+                                color = tokens.bgInk,
                                 textAlign = TextAlign.Center
                             )
                         }

@@ -59,6 +59,9 @@ fun DiceStage(
     // Sin tarjeta de fondo: los dados se apoyan directamente sobre la pantalla y proyectan su
     // propia sombra, así se ve más natural cuando salen despedidos al lanzar.
     Box(
+        // Centrado: si el escenario recibe más alto del que necesita (columna de la tablet en
+        // horizontal), el dado y la suma quedan en el medio y no pegados arriba.
+        contentAlignment = Alignment.Center,
         modifier = modifier
             .fillMaxWidth()
             .heightIn(min = minHeight)
@@ -71,7 +74,7 @@ fun DiceStage(
             modifier = Modifier
                 .fillMaxWidth()
                 .heightIn(min = minHeight)
-                .padding(top = 44.dp)
+                .padding(top = 12.dp)
         ) {
             content()
             Spacer(modifier = Modifier.height(18.dp))

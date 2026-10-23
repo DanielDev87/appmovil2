@@ -15,6 +15,7 @@ import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -36,6 +37,9 @@ import com.danidev.appmovil2.RollIndicator
 import com.danidev.appmovil2.ui.style.LocalAppTokens
 import com.danidev.appmovil2.ui.style.StyledCard
 import com.danidev.appmovil2.ui.style.isTablet
+
+/** Alto reservado para el aviso de crítico o pifia, encima de los dados. */
+private val BADGE_SLOT_HEIGHT = 52.dp
 
 /**
  * Escenario donde se ven los dados, sin fondo propio: con el aviso de crítico o pifia (HU-09) arriba
@@ -76,6 +80,44 @@ fun DiceStage(
                 .heightIn(min = minHeight)
                 .padding(top = 12.dp)
         ) {
+            // El aviso de crítico o pifia tiene su propio lugar encima de los dados, siempre reservado,
+            // así nunca los tapa ni mueve nada al aparecer.
+            Row(
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(BADGE_SLOT_HEIGHT)
+            ) {
+            AnimatedVisibility(
+                visible = indicator != RollIndicator.NONE,
+                enter = scaleIn(spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessLow)) + fadeIn(tween(200)),
+                exit = scaleOut(tween(200)) + fadeOut(tween(200)),
+            ) {
+                val pulse by rememberInfiniteTransition(label = "badgePulse").animateFloat(
+                    initialValue = 1f,
+                    targetValue = 1.1f,
+                    animationSpec = infiniteRepeatable(tween(600), RepeatMode.Reverse),
+                    label = "badgePulseScale"
+                )
+                val critical = indicator == RollIndicator.CRITICAL
+                val label = stringResource(if (critical) R.string.roll_critical else R.string.roll_fumble)
+                StyledCard(
+                    color = if (critical) tokens.accent else tokens.sky,
+                    radius = 999.dp,
+                    tilt = if (tokens.isPlayful) 4f else 0f,
+                    modifier = Modifier.scale(pulse)
+                ) {
+                    Text(
+                        text = if (critical) "★ $label ★" else "💥 $label",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = if (critical || tokens.isPlayful) tokens.onAccent else tokens.ink,
+                        modifier = Modifier.padding(horizontal = 18.dp, vertical = 7.dp)
+                    )
+                }
+            }
+            }
             content()
             Spacer(modifier = Modifier.height(18.dp))
             StyledCard(
@@ -89,38 +131,6 @@ fun DiceStage(
                     fontWeight = FontWeight.ExtraBold,
                     color = if (tokens.isPlayful) tokens.onAccent else tokens.ink,
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
-                )
-            }
-        }
-
-        AnimatedVisibility(
-            visible = indicator != RollIndicator.NONE,
-            enter = scaleIn(spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessLow)) + fadeIn(tween(200)),
-            exit = scaleOut(tween(200)) + fadeOut(tween(200)),
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .padding(top = 10.dp)
-        ) {
-            val pulse by rememberInfiniteTransition(label = "badgePulse").animateFloat(
-                initialValue = 1f,
-                targetValue = 1.1f,
-                animationSpec = infiniteRepeatable(tween(600), RepeatMode.Reverse),
-                label = "badgePulseScale"
-            )
-            val critical = indicator == RollIndicator.CRITICAL
-            val label = stringResource(if (critical) R.string.roll_critical else R.string.roll_fumble)
-            StyledCard(
-                color = if (critical) tokens.accent else tokens.sky,
-                radius = 999.dp,
-                tilt = if (tokens.isPlayful) 4f else 0f,
-                modifier = Modifier.scale(pulse)
-            ) {
-                Text(
-                    text = if (critical) "★ $label ★" else "💥 $label",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = if (critical || tokens.isPlayful) tokens.onAccent else tokens.ink,
-                    modifier = Modifier.padding(horizontal = 18.dp, vertical = 7.dp)
                 )
             }
         }

@@ -42,8 +42,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -54,14 +52,12 @@ import com.danidev.appmovil2.R
 import com.danidev.appmovil2.haptics.rememberDiceHaptics
 import com.danidev.appmovil2.ui.dice.DiceFace
 import com.danidev.appmovil2.ui.dice.DicePalette
-import com.danidev.appmovil2.ui.player.FriendsSection
 import com.danidev.appmovil2.ui.player.LocalPlayerName
 import com.danidev.appmovil2.ui.player.StyledNameField
 import com.danidev.appmovil2.ui.progress.ProgressDialog
 import com.danidev.appmovil2.ui.progress.rememberProgressViewModel
 import com.danidev.appmovil2.ui.settings.SettingsSheet
 import com.danidev.appmovil2.ui.settings.rememberGameOptions
-import com.danidev.appmovil2.ui.settings.rememberGameSettingsViewModel
 import com.danidev.appmovil2.ui.style.AppBackground
 import com.danidev.appmovil2.ui.style.LocalAppTokens
 import com.danidev.appmovil2.ui.style.MAX_CONTENT_WIDTH
@@ -70,14 +66,12 @@ import com.danidev.appmovil2.ui.style.StyledIconButton
 import com.danidev.appmovil2.ui.style.isTablet
 import com.danidev.appmovil2.ui.theme.ThemeSwitch
 
-/** Alto de pantalla (dp) por debajo del cual, jugando con amigos, se compacta la bienvenida. */
-private const val COMPACT_BELOW_DP = 900f
-
 /**
- * Pantalla de bienvenida: título, saludo con el nombre del jugador (HU-12), "Jugar con amigos"
- * (opcional) y el botón para empezar. Los ajustes son los mismos que dentro de la partida.
+ * Pantalla de bienvenida: título, saludo con el nombre del jugador (HU-12) y el botón para empezar.
+ * Jugar con amigos y el resto de opciones se eligen en Ajustes, que son los mismos que dentro de la
+ * partida.
  *
- * La parte de abajo se desplaza si no cabe, así el botón de jugar siempre se alcanza.
+ * El contenido se desplaza si no cabe y el botón de jugar queda fijo abajo.
  */
 @Composable
 fun WelcomeScreen(onStartClicked: () -> Unit, onNavigateToAbout: () -> Unit = {}) {
@@ -86,8 +80,6 @@ fun WelcomeScreen(onStartClicked: () -> Unit, onNavigateToAbout: () -> Unit = {}
     var visible by remember { mutableStateOf(false) }
     var showSettings by remember { mutableStateOf(false) }
     var showProgress by remember { mutableStateOf(false) }
-    val settingsViewModel = rememberGameSettingsViewModel()
-    val gameSettings by settingsViewModel.settings.collectAsState()
     val progress by rememberProgressViewModel().progress.collectAsState()
     val haptics = rememberDiceHaptics()
 
@@ -106,16 +98,7 @@ fun WelcomeScreen(onStartClicked: () -> Unit, onNavigateToAbout: () -> Unit = {}
         label = "scale"
     )
 
-    // Jugando con amigos aparecen más campos; si la pantalla es baja, los dados se achican y se quitan
-    // la frase y el saludo para dejar sitio.
-    val density = LocalDensity.current
-    val compact = gameSettings.playerCount > 1 &&
-        LocalWindowInfo.current.containerSize.height / density.density < COMPACT_BELOW_DP
-    val heroDice = when {
-        compact -> 84.dp
-        isTablet -> 150.dp
-        else -> 118.dp
-    }
+    val heroDice = if (isTablet) 150.dp else 118.dp
 
     AppBackground {
         Column(
@@ -167,7 +150,7 @@ fun WelcomeScreen(onStartClicked: () -> Unit, onNavigateToAbout: () -> Unit = {}
                         enter = fadeIn(animationSpec = tween(800)) +
                             slideInVertically(initialOffsetY = { -50 })
                     ) {
-                        Hero(heroDice = heroDice, pulse = pulse, compact = compact)
+                        Hero(heroDice = heroDice, pulse = pulse)
                     }
 
                     AnimatedVisibility(
@@ -184,13 +167,6 @@ fun WelcomeScreen(onStartClicked: () -> Unit, onNavigateToAbout: () -> Unit = {}
                         ) {
                             // HU-12: nombre principal (jugador 1).
                             StyledNameField()
-
-                            // Opcional: jugar con amigos, con sus nombres.
-                            FriendsSection(
-                                settings = gameSettings,
-                                onPlayerCountChange = settingsViewModel::setPlayerCount,
-                                onPlayerNameChange = settingsViewModel::setPlayerName
-                            )
                         }
                     }
                 }
@@ -230,7 +206,7 @@ fun WelcomeScreen(onStartClicked: () -> Unit, onNavigateToAbout: () -> Unit = {}
 
 /** Los dos dados, el título y el saludo con el nombre. */
 @Composable
-private fun Hero(heroDice: Dp, pulse: Float, compact: Boolean) {
+private fun Hero(heroDice: Dp, pulse: Float) {
     val tokens = LocalAppTokens.current
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Row(
@@ -270,17 +246,15 @@ private fun Hero(heroDice: Dp, pulse: Float, compact: Boolean) {
             textAlign = TextAlign.Center
         )
 
-        if (!compact) {
-            Spacer(Modifier.height(4.dp))
+        Spacer(Modifier.height(4.dp))
 
-            Text(
-                text = stringResource(R.string.welcome_tagline),
-                fontSize = 16.sp,
-                color = tokens.bgMuted,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(horizontal = 8.dp)
-            )
-        }
+        Text(
+            text = stringResource(R.string.welcome_tagline),
+            fontSize = 16.sp,
+            color = tokens.bgMuted,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(horizontal = 8.dp)
+        )
 
         // HU-12: saludo con el nombre. Se reserva el espacio aunque no haya nombre para que la pantalla
         // no se mueva al empezar a escribir.
@@ -288,8 +262,8 @@ private fun Hero(heroDice: Dp, pulse: Float, compact: Boolean) {
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
-                .padding(top = if (compact) 4.dp else 12.dp)
-                .height(if (compact) 0.dp else 32.dp)
+                .padding(top = 12.dp)
+                .height(32.dp)
         ) {
             if (playerName.isNotEmpty()) {
                 Text(

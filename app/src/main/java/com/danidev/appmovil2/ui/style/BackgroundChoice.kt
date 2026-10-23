@@ -6,6 +6,7 @@ import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import com.danidev.appmovil2.R
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -47,20 +48,34 @@ private const val DARK_BACKGROUND_LUMINANCE = 0.4f
  * Aplica el fondo elegido sobre los valores de diseño del estilo.
  *
  * Cambia el color (o degradado) del fondo y, según lo claro que sea, el color del texto
- * que va directamente sobre él. Las tarjetas conservan sus colores. Con
- * `colorArgb == null` devuelve [tokens] sin cambios.
+ * que va directamente sobre él. Las tarjetas se tiñen con el color del fondo en lugar de
+ * quedar blancas, para que no parezcan parches pegados, y su texto se ajusta a ese tinte.
+ * Con `colorArgb == null` devuelve [tokens] sin cambios.
  */
 fun applyBackground(tokens: AppTokens, choice: BackgroundChoice): AppTokens {
     val argb = choice.colorArgb ?: return tokens
     val base = Color(argb)
     val isDarkBackground = base.luminance() < DARK_BACKGROUND_LUMINANCE
     val fadeTo = if (isDarkBackground) Color.Black else Color.White
+
+    // Tarjetas: un tinte del fondo, más claro en fondos claros y apenas aclarado en oscuros.
+    val surface = lerp(base, Color.White, if (isDarkBackground) 0.12f else 0.6f)
+    val isDarkSurface = surface.luminance() < DARK_BACKGROUND_LUMINANCE
+    val surfaceTone = if (isDarkSurface) Color.White else Color.Black
+
     return tokens.copy(
         bgTop = base,
         bgBottom = if (choice.gradient) lerp(base, fadeTo, 0.55f) else base,
         dots = tokens.dots?.let { lerp(base, if (isDarkBackground) Color.White else Color.Black, 0.1f) },
         bgInk = if (isDarkBackground) LightInkOnDarkBackground else DarkInkOnLightBackground,
-        bgMuted = if (isDarkBackground) LightMutedOnDarkBackground else DarkMutedOnLightBackground
+        bgMuted = if (isDarkBackground) LightMutedOnDarkBackground else DarkMutedOnLightBackground,
+        surface = surface,
+        soft = lerp(surface, surfaceTone, 0.1f),
+        ink = if (isDarkSurface) LightInkOnDarkBackground else DarkInkOnLightBackground,
+        muted = if (isDarkSurface) LightMutedOnDarkBackground else DarkMutedOnLightBackground,
+        // En el estilo equilibrado un borde fino separa la tarjeta del fondo; el juguetón ya tiene el suyo.
+        outline = if (tokens.isPlayful) tokens.outline else lerp(surface, surfaceTone, 0.18f),
+        borderWidth = if (tokens.isPlayful) tokens.borderWidth else 1.dp
     )
 }
 

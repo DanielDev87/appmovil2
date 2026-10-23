@@ -47,11 +47,30 @@ class BackgroundChoiceTest {
     }
 
     @Test
-    fun `el texto de las tarjetas no cambia con el fondo`() {
-        val result = applyBackground(base, BackgroundChoice(BackgroundPreset.NIGHT.color.toArgbInt()))
+    fun `las tarjetas toman un tinte del fondo en lugar de quedar blancas`() {
+        val result = applyBackground(base, BackgroundChoice(BackgroundPreset.SKY.color.toArgbInt()))
 
-        assertEquals(base.ink, result.ink)
-        assertEquals(base.surface, result.surface)
+        assertNotEquals(Color.White, result.surface)
+        assertTrue(result.surface.blue > result.surface.red)
+    }
+
+    @Test
+    fun `el texto de las tarjetas se ajusta al tinte de la tarjeta`() {
+        val onLight = applyBackground(base, BackgroundChoice(BackgroundPreset.SKY.color.toArgbInt()))
+        val onNight = applyBackground(base, BackgroundChoice(BackgroundPreset.NIGHT.color.toArgbInt()))
+
+        assertTrue(onLight.ink.red < 0.5f)
+        assertTrue(onNight.ink.red > 0.8f)
+    }
+
+    @Test
+    fun `en el estilo equilibrado la tarjeta lleva un borde fino y en el jugueton conserva el suyo`() {
+        val argb = BackgroundPreset.MINT.color.toArgbInt()
+        val playful = appTokens(AppStyle.PLAYFUL, isDark = false)
+
+        assertTrue(applyBackground(base, BackgroundChoice(argb)).borderWidth.value > 0f)
+        assertEquals(playful.outline, applyBackground(playful, BackgroundChoice(argb)).outline)
+        assertEquals(playful.borderWidth, applyBackground(playful, BackgroundChoice(argb)).borderWidth)
     }
 
     @Test

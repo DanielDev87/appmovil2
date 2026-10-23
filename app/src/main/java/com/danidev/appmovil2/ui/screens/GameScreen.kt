@@ -54,6 +54,7 @@ import com.danidev.appmovil2.ui.game.GameStatus
 import com.danidev.appmovil2.ui.game.GameTopBar
 import com.danidev.appmovil2.ui.game.DiceStage
 import com.danidev.appmovil2.ui.game.RecentRolls
+import com.danidev.appmovil2.ui.game.PlayAgainButton
 import com.danidev.appmovil2.ui.game.RollButton
 import com.danidev.appmovil2.ui.game.ScoreCards
 import com.danidev.appmovil2.ui.game.ShareResultButton
@@ -282,16 +283,11 @@ fun GameScreen(
             val actions: @Composable () -> Unit = {
                 GameStatus(uiState = uiState)
 
-                RollButton(enabled = canRoll, onClick = triggerRoll)
-
-                if (outcome != GameOutcome.IN_PROGRESS) {
-                    StyledButton(onClick = resetGame, height = 52.dp) {
-                        Text(
-                            text = stringResource(R.string.play_again),
-                            fontWeight = FontWeight.ExtraBold,
-                            color = tokens.onAccent
-                        )
-                    }
+                // Al terminar la partida, "Jugar de nuevo" ocupa el lugar del botón de tirar.
+                if (outcome == GameOutcome.IN_PROGRESS) {
+                    RollButton(enabled = canRoll, onClick = triggerRoll)
+                } else {
+                    PlayAgainButton(onClick = resetGame)
                 }
 
                 if (uiState.launches > 0) {
@@ -353,18 +349,16 @@ fun GameScreen(
                         }
                         if (outcome != GameOutcome.IN_PROGRESS) {
                             GameStatus(uiState = uiState)
-                            StyledButton(onClick = resetGame, height = 52.dp) {
-                                Text(
-                                    text = stringResource(R.string.play_again),
-                                    fontWeight = FontWeight.ExtraBold,
-                                    color = tokens.onAccent
-                                )
-                            }
                         }
                         if (uiState.launches > 0) {
                             ShareResultButton(uiState = uiState)
                         }
-                        RollButton(enabled = canRoll, onClick = triggerRoll)
+                        // Al terminar la partida, "Jugar de nuevo" ocupa el lugar del botón de tirar.
+                        if (outcome == GameOutcome.IN_PROGRESS) {
+                            RollButton(enabled = canRoll, onClick = triggerRoll)
+                        } else {
+                            PlayAgainButton(onClick = resetGame)
+                        }
                     }
                 }
             } else {

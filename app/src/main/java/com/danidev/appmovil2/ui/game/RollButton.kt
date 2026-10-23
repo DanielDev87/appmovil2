@@ -28,3 +28,24 @@ fun RollButton(enabled: Boolean, onClick: () -> Unit, modifier: Modifier = Modif
         )
     }
 }
+
+/**
+ * Botón de "Jugar de nuevo". Ocupa el lugar del botón de tirar cuando la partida termina, con el
+ * mismo tamaño y estilo.
+ */
+@Composable
+fun PlayAgainButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val tokens = LocalAppTokens.current
+    StyledButton(
+        onClick = onClick,
+        color = if (tokens.isPlayful) tokens.highlight else tokens.accent,
+        modifier = modifier
+    ) {
+        Text(
+            text = stringResource(if (tokens.isPlayful) R.string.end_play_again_playful else R.string.play_again),
+            fontSize = if (tokens.isPlayful) 28.sp else 22.sp,
+            fontWeight = FontWeight.ExtraBold,
+            color = tokens.onAccent
+        )
+    }
+}

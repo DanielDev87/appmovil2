@@ -125,7 +125,7 @@
     <!-- Rediseño: fin de partida -->
     <string name="end_win_title">¡Victoria!</string>
     <string name="end_win_title_playful">¡GANASTE!</string>
-    <string name="end_lose_title">Fin de la partida</string>
+    <string name="end_lose_title">Perdiste</string>
     <string name="end_win_message">Llegaste a la meta de %1$d puntos en %2$d lanzamientos.</string>
     <string name="end_win_message_named">%1$s, llegaste a la meta de %2$d puntos en %3$d lanzamientos.</string>
     <string name="end_lose_message">Se agotaron los lanzamientos: sumaste %1$d de %2$d puntos.</string>
@@ -165,7 +165,7 @@
     <string name="share_dialog_title">Compartir resultado</string>
     <string name="share_dialog_send">Compartir con…</string>
     <string name="share_dialog_close">Cerrar</string>
-    <string name="end_lose_title_playful">¡UY!</string>
+    <string name="end_lose_title_playful">¡PERDISTE!</string>
     <string name="stats_average">Promedio</string>
     <string name="stats_best">Mejor tiro</string>
     <string name="stats_history_title">Tus tiros</string>

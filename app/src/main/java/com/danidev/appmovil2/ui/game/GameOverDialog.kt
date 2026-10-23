@@ -230,8 +230,8 @@ fun GameOverDialog(
 }
 
 /**
- * Trofeo que entra rebotando y se balancea si se ganó; si se perdió, un dado que cae desde
- * arriba, rebota y queda ladeado.
+ * Trofeo que entra rebotando y se balancea si se ganó; si se perdió, una cara triste que cae
+ * desde arriba, rebota y queda ladeada.
  */
 @Composable
 private fun Trophy(won: Boolean, visible: Boolean) {
@@ -259,7 +259,7 @@ private fun Trophy(won: Boolean, visible: Boolean) {
         }
     }
     Text(
-        text = if (won) "🏆" else "🎲",
+        text = if (won) "🏆" else "😢",
         fontSize = 64.sp,
         modifier = if (won) {
             Modifier.scale(bounce).rotate(wobble.value)

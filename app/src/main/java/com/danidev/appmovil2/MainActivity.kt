@@ -7,8 +7,11 @@ import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.LocalRippleConfiguration
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.CompositionLocalProvider
@@ -34,6 +37,7 @@ import com.danidev.appmovil2.ui.style.applyBackground
 import com.danidev.appmovil2.ui.style.LocalStyleController
 import com.danidev.appmovil2.ui.style.SharedPreferencesStyleStore
 import com.danidev.appmovil2.ui.style.StyleController
+import com.danidev.appmovil2.ui.style.PressIndication
 import com.danidev.appmovil2.ui.style.StyleViewModel
 import com.danidev.appmovil2.ui.style.TabletScaling
 import com.danidev.appmovil2.ui.style.appTokens
@@ -44,6 +48,7 @@ import com.danidev.appmovil2.ui.theme.ThemeController
 import com.danidev.appmovil2.ui.theme.ThemeMode
 import com.danidev.appmovil2.ui.theme.ThemeViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 class MainActivity : ComponentActivity() {
 
     // HU-03: preferencia de tema (claro / oscuro), guardada entre sesiones.
@@ -132,12 +137,18 @@ class MainActivity : ComponentActivity() {
             ) {
                 Appmovil2Theme(darkTheme = darkTheme) {
                     TabletScaling {
-                        Surface(
-                            modifier = Modifier.fillMaxSize(),
-                            color = MaterialTheme.colorScheme.background
+                        // Sin ondulado de Material: se usa el efecto de presionar propio de la app.
+                        CompositionLocalProvider(
+                            LocalIndication provides PressIndication,
+                            LocalRippleConfiguration provides null
                         ) {
-                            val navController = rememberNavController()
-                            AppNavGraph(navController = navController)
+                            Surface(
+                                modifier = Modifier.fillMaxSize(),
+                                color = MaterialTheme.colorScheme.background
+                            ) {
+                                val navController = rememberNavController()
+                                AppNavGraph(navController = navController)
+                            }
                         }
                     }
                 }

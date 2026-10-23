@@ -72,8 +72,8 @@ import com.danidev.appmovil2.ui.game.ShareResultButton
 import com.danidev.appmovil2.ui.player.LocalPlayerName
 import com.danidev.appmovil2.ui.progress.GameResult
 import com.danidev.appmovil2.ui.progress.rememberProgressViewModel
-import com.danidev.appmovil2.ui.settings.GameOptions
 import com.danidev.appmovil2.ui.settings.SettingsSheet
+import com.danidev.appmovil2.ui.settings.rememberGameOptions
 import com.danidev.appmovil2.ui.settings.rememberGameSettingsViewModel
 import com.danidev.appmovil2.ui.style.AppBackground
 import com.danidev.appmovil2.ui.style.LocalAppTokens
@@ -176,6 +176,10 @@ fun GameScreen(
         }
     }
     // La meta (puntos y lanzamientos) se puede cambiar en Ajustes sin perder la partida en curso.
+    // Cantidad de dados: se elige en Ajustes (también desde la bienvenida) y la partida la aplica.
+    LaunchedEffect(settings.diceCount) {
+        diceViewModel.setDiceCount(settings.diceCount)
+    }
     // Cantidad de jugadores: al cambiarla, la partida empieza de cero con los marcadores nuevos.
     LaunchedEffect(settings.playerCount) {
         diceViewModel.setPlayerCount(settings.playerCount)
@@ -468,31 +472,14 @@ fun GameScreen(
 
     if (showSettings) {
         SettingsSheet(
-            options = GameOptions(
-                palette = palette,
-                onPaletteChange = paletteViewModel::selectPalette,
-                sizeFactor = sizeFactor,
-                onSizeChange = sizeViewModel::setFactor,
-                diceCount = uiState.diceCount,
-                onDiceCountChange = diceViewModel::setDiceCount,
-                diceType = diceType,
-                onDiceTypeChange = { type ->
-                    if (type != diceType) {
-                        typeViewModel.select(type)
-                        // Los puntos y lanzamientos siguen; solo se limpian los dados en pantalla.
-                        diceViewModel.onDiceTypeChanged()
-                        currentDiceValues = List(uiState.diceCount) { 1 }
-                    }
-                },
+            options = rememberGameOptions(
                 haptics = haptics,
-                settings = settings,
-                onSoundMutedChange = settingsViewModel::setSoundMuted,
-                onShakeChange = settingsViewModel::setShakeEnabled,
-                onTargetScoreChange = settingsViewModel::setTargetScore,
-                onMaxLaunchesChange = settingsViewModel::setMaxLaunches,
-                onPlayerCountChange = settingsViewModel::setPlayerCount,
-                onPlayerNameChange = settingsViewModel::setPlayerName,
-                isRolling = isRolling
+                isRolling = isRolling,
+                onDiceTypeChanged = {
+                    // Los puntos y lanzamientos siguen; solo se limpian los dados en pantalla.
+                    diceViewModel.onDiceTypeChanged()
+                    currentDiceValues = List(uiState.diceCount) { 1 }
+                }
             ),
             onDismiss = { showSettings = false }
         )

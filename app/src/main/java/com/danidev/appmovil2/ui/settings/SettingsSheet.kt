@@ -26,6 +26,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import com.danidev.appmovil2.ui.dice.rememberDiceTypeViewModel
+import com.danidev.appmovil2.ui.dice.rememberDiceSizeViewModel
+import com.danidev.appmovil2.ui.dice.rememberDicePaletteViewModel
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -53,8 +57,7 @@ import com.danidev.appmovil2.ui.dice.DiceFace
 import com.danidev.appmovil2.ui.dice.DicePalette
 import com.danidev.appmovil2.ui.dice.DiceSize
 import com.danidev.appmovil2.ui.dice.DiceType
-import com.danidev.appmovil2.ui.player.PlayerCountCards
-import com.danidev.appmovil2.ui.player.StyledTextField
+import com.danidev.appmovil2.ui.player.FriendsSection
 import com.danidev.appmovil2.ui.style.LocalAppTokens
 import com.danidev.appmovil2.ui.style.LocalStyleController
 import com.danidev.appmovil2.ui.style.PersonalizeContent
@@ -151,28 +154,13 @@ fun SettingsSheet(options: GameOptions, onDismiss: () -> Unit) {
 private fun GameTab(options: GameOptions) {
     val tokens = LocalAppTokens.current
 
-    Label(stringResource(R.string.settings_players))
-    PlayerCountCards(
-        selected = options.settings.playerCount,
-        onSelect = options.onPlayerCountChange,
+    // Jugar con amigos es opcional: apagado juega una persona; encendido, 2 o 3 con sus nombres.
+    FriendsSection(
+        settings = options.settings,
+        onPlayerCountChange = options.onPlayerCountChange,
+        onPlayerNameChange = options.onPlayerNameChange,
         enabled = !options.isRolling
     )
-    // Jugadores 2 a 4: un campo para el nombre de cada uno; el 1 usa el de la bienvenida.
-    for (index in 1 until options.settings.playerCount) {
-        StyledTextField(
-            label = stringResource(R.string.settings_player_name, index + 1),
-            value = options.settings.playerNames[index - 1],
-            onValueChange = { options.onPlayerNameChange(index, it) },
-            hint = stringResource(R.string.settings_player_name_hint, index + 1)
-        )
-    }
-    if (options.settings.playerCount > 1) {
-        Text(
-            text = stringResource(R.string.settings_players_note),
-            fontSize = 12.sp,
-            color = tokens.muted
-        )
-    }
 
     Label(stringResource(R.string.settings_dice))
     StyledSegmented(
@@ -452,4 +440,56 @@ private fun DiceSizePicker(
             )
         }
     }
+}
+
+/**
+ * Arma las opciones de la hoja de ajustes con los datos guardados de la app: color y tamaño del dado,
+ * tipo de dado, dados, meta, sonido, vibración, agitar, jugadores y nombres. Sirve igual en la
+ * bienvenida que dentro de la partida, así los ajustes son los mismos en las dos.
+ *
+ * @param haptics Vibración de la pantalla que abre los ajustes.
+ * @param isRolling `true` mientras los dados giran: no se pueden cambiar los dados entonces.
+ * @param onDiceTypeChanged Se invoca cuando se elige otro tipo de dado (la partida limpia lo que
+ * tenía en pantalla; la bienvenida no hace nada).
+ */
+@Composable
+fun rememberGameOptions(
+    haptics: DiceHaptics,
+    isRolling: Boolean = false,
+    onDiceTypeChanged: () -> Unit = {}
+): GameOptions {
+    val paletteViewModel = rememberDicePaletteViewModel()
+    val sizeViewModel = rememberDiceSizeViewModel()
+    val typeViewModel = rememberDiceTypeViewModel()
+    val settingsViewModel = rememberGameSettingsViewModel()
+
+    val palette by paletteViewModel.palette.collectAsState()
+    val sizeFactor by sizeViewModel.factor.collectAsState()
+    val diceType by typeViewModel.type.collectAsState()
+    val settings by settingsViewModel.settings.collectAsState()
+
+    return GameOptions(
+        palette = palette,
+        onPaletteChange = paletteViewModel::selectPalette,
+        sizeFactor = sizeFactor,
+        onSizeChange = sizeViewModel::setFactor,
+        diceCount = settings.diceCount,
+        onDiceCountChange = settingsViewModel::setDiceCount,
+        diceType = diceType,
+        onDiceTypeChange = { type ->
+            if (type != diceType) {
+                typeViewModel.select(type)
+                onDiceTypeChanged()
+            }
+        },
+        haptics = haptics,
+        settings = settings,
+        onSoundMutedChange = settingsViewModel::setSoundMuted,
+        onShakeChange = settingsViewModel::setShakeEnabled,
+        onTargetScoreChange = settingsViewModel::setTargetScore,
+        onMaxLaunchesChange = settingsViewModel::setMaxLaunches,
+        onPlayerCountChange = settingsViewModel::setPlayerCount,
+        onPlayerNameChange = settingsViewModel::setPlayerName,
+        isRolling = isRolling
+    )
 }

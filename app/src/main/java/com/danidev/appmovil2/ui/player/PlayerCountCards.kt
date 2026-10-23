@@ -39,16 +39,18 @@ import com.danidev.appmovil2.ui.style.StyledCard
  * @param selected Cantidad de jugadores elegida.
  * @param onSelect Se invoca con la cantidad cuya tarjeta se toca.
  * @param enabled `false` para bloquearlas, por ejemplo mientras los dados giran.
+ * @param from Primera cantidad que se ofrece; con 2 se omite "1 jugador" (modo con amigos).
  */
 @Composable
 fun PlayerCountCards(
     selected: Int,
     onSelect: (Int) -> Unit,
     modifier: Modifier = Modifier,
-    enabled: Boolean = true
+    enabled: Boolean = true,
+    from: Int = MIN_PLAYERS
 ) {
     Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = modifier.fillMaxWidth()) {
-        for (count in MIN_PLAYERS..MAX_PLAYERS) {
+        for (count in from..MAX_PLAYERS) {
             PlayerCountCard(
                 count = count,
                 selected = count == selected,

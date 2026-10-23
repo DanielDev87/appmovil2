@@ -139,4 +139,19 @@ class GameSettingsViewModelTest {
 
         assertEquals(listOf("", ""), viewModel.settings.value.playerNames)
     }
+
+    @Test
+    fun `por defecto se juega con un dado y la cantidad de dados se guarda entre uno y dos`() {
+        val store = FakeGameSettingsStore()
+        val viewModel = GameSettingsViewModel(store)
+        assertEquals(1, viewModel.settings.value.diceCount)
+
+        viewModel.setDiceCount(2)
+        assertEquals(2, store.saved.diceCount)
+
+        viewModel.setDiceCount(7)
+        assertEquals(2, viewModel.settings.value.diceCount)
+        viewModel.setDiceCount(0)
+        assertEquals(1, viewModel.settings.value.diceCount)
+    }
 }

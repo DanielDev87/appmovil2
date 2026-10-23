@@ -28,6 +28,8 @@ import kotlinx.coroutines.flow.update
  * @property targetScore Puntos que hay que alcanzar para ganar.
  * @property maxLaunches Lanzamientos disponibles en cada partida.
  * @property playerCount Personas que juegan, turnándose en el mismo teléfono.
+ * @property diceCount Dados en juego: 1 o 2 (HU-06); se guarda aquí para poder elegirlo también desde la
+ * bienvenida.
  * @property playerNames Nombres de los jugadores 2 a 4; vacío usa "Jugador N". El del jugador 1 es
  * el nombre que se escribe en la bienvenida.
  */
@@ -37,6 +39,7 @@ data class GameSettings(
     val targetScore: Int = TARGET_SCORE,
     val maxLaunches: Int = MAX_LAUNCHES,
     val playerCount: Int = MIN_PLAYERS,
+    val diceCount: Int = 1,
     val playerNames: List<String> = List(MAX_PLAYERS - 1) { "" }
 )
 
@@ -65,6 +68,7 @@ class SharedPreferencesGameSettingsStore(context: Context) : GameSettingsStore {
         maxLaunches = preferences.getInt(KEY_MAX_LAUNCHES, MAX_LAUNCHES)
             .coerceIn(MIN_MAX_LAUNCHES, MAX_MAX_LAUNCHES),
         playerCount = preferences.getInt(KEY_PLAYER_COUNT, MIN_PLAYERS).coerceIn(MIN_PLAYERS, MAX_PLAYERS),
+        diceCount = preferences.getInt(KEY_DICE_COUNT, 1).coerceIn(1, 2),
         playerNames = List(MAX_PLAYERS - 1) { preferences.getString(KEY_PLAYER_NAME + (it + 2), "").orEmpty() }
     )
 
@@ -75,6 +79,7 @@ class SharedPreferencesGameSettingsStore(context: Context) : GameSettingsStore {
             .putInt(KEY_TARGET_SCORE, settings.targetScore)
             .putInt(KEY_MAX_LAUNCHES, settings.maxLaunches)
             .putInt(KEY_PLAYER_COUNT, settings.playerCount)
+            .putInt(KEY_DICE_COUNT, settings.diceCount)
             .apply {
                 settings.playerNames.forEachIndexed { i, name -> putString(KEY_PLAYER_NAME + (i + 2), name) }
             }
@@ -88,6 +93,7 @@ class SharedPreferencesGameSettingsStore(context: Context) : GameSettingsStore {
         const val KEY_TARGET_SCORE = "target_score"
         const val KEY_MAX_LAUNCHES = "max_launches"
         const val KEY_PLAYER_COUNT = "player_count"
+        const val KEY_DICE_COUNT = "dice_count"
         const val KEY_PLAYER_NAME = "player_name_"
     }
 }
@@ -114,6 +120,9 @@ class GameSettingsViewModel(private val store: GameSettingsStore) : ViewModel() 
     /** Fija los lanzamientos disponibles, dentro de los límites permitidos. */
     fun setMaxLaunches(value: Int) =
         change { it.copy(maxLaunches = value.coerceIn(MIN_MAX_LAUNCHES, MAX_MAX_LAUNCHES)) }
+
+    /** Fija cuántos dados se usan: 1 o 2. */
+    fun setDiceCount(value: Int) = change { it.copy(diceCount = value.coerceIn(1, 2)) }
 
     /** Fija cuántas personas juegan, dentro de los límites permitidos. */
     fun setPlayerCount(value: Int) =

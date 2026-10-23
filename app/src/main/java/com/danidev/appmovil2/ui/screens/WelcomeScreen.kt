@@ -11,21 +11,25 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -43,48 +47,49 @@ import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.danidev.appmovil2.R
-import com.danidev.appmovil2.ui.style.StyledSegmented
-import com.danidev.appmovil2.ui.settings.rememberGameSettingsViewModel
-import com.danidev.appmovil2.ui.settings.GameSettings
-import com.danidev.appmovil2.ui.player.StyledTextField
+import com.danidev.appmovil2.haptics.rememberDiceHaptics
 import com.danidev.appmovil2.ui.dice.DiceFace
 import com.danidev.appmovil2.ui.dice.DicePalette
+import com.danidev.appmovil2.ui.player.FriendsSection
 import com.danidev.appmovil2.ui.player.LocalPlayerName
+import com.danidev.appmovil2.ui.player.StyledNameField
 import com.danidev.appmovil2.ui.progress.ProgressDialog
 import com.danidev.appmovil2.ui.progress.rememberProgressViewModel
-import com.danidev.appmovil2.ui.player.PlayerCountCards
-import com.danidev.appmovil2.ui.player.StyledNameField
+import com.danidev.appmovil2.ui.settings.SettingsSheet
+import com.danidev.appmovil2.ui.settings.rememberGameOptions
+import com.danidev.appmovil2.ui.settings.rememberGameSettingsViewModel
 import com.danidev.appmovil2.ui.style.AppBackground
 import com.danidev.appmovil2.ui.style.LocalAppTokens
-import com.danidev.appmovil2.ui.style.LocalStyleController
-import com.danidev.appmovil2.ui.style.PersonalizeSheet
 import com.danidev.appmovil2.ui.style.MAX_CONTENT_WIDTH
-import com.danidev.appmovil2.ui.style.isTablet
 import com.danidev.appmovil2.ui.style.StyledButton
 import com.danidev.appmovil2.ui.style.StyledIconButton
+import com.danidev.appmovil2.ui.style.isTablet
 import com.danidev.appmovil2.ui.theme.ThemeSwitch
 
-/**
- * Pantalla de bienvenida: título, saludo con el nombre del jugador (HU-12), campo
- * para escribirlo y el botón para empezar. Desde aquí se abre "Personalizar".
- */
-/** Alto de pantalla (dp) por debajo del cual, con varios jugadores, se compacta la bienvenida. */
+/** Alto de pantalla (dp) por debajo del cual, jugando con amigos, se compacta la bienvenida. */
 private const val COMPACT_BELOW_DP = 900f
 
+/**
+ * Pantalla de bienvenida: título, saludo con el nombre del jugador (HU-12), "Jugar con amigos"
+ * (opcional) y el botón para empezar. Los ajustes son los mismos que dentro de la partida.
+ *
+ * La parte de abajo se desplaza si no cabe, así el botón de jugar siempre se alcanza.
+ */
 @Composable
 fun WelcomeScreen(onStartClicked: () -> Unit, onNavigateToAbout: () -> Unit = {}) {
     val tokens = LocalAppTokens.current
     val isTablet = isTablet()
-    val styleController = LocalStyleController.current
     var visible by remember { mutableStateOf(false) }
-    var showPersonalize by remember { mutableStateOf(false) }
+    var showSettings by remember { mutableStateOf(false) }
     var showProgress by remember { mutableStateOf(false) }
     val settingsViewModel = rememberGameSettingsViewModel()
     val gameSettings by settingsViewModel.settings.collectAsState()
     val progress by rememberProgressViewModel().progress.collectAsState()
+    val haptics = rememberDiceHaptics()
 
     LaunchedEffect(Unit) {
         visible = true
@@ -101,8 +106,8 @@ fun WelcomeScreen(onStartClicked: () -> Unit, onNavigateToAbout: () -> Unit = {}
         label = "scale"
     )
 
-    // Con varios jugadores aparecen más campos; si la pantalla es baja, los dados se achican y se
-    // quitan la frase y el saludo para que el botón de jugar siga a la vista.
+    // Jugando con amigos aparecen más campos; si la pantalla es baja, los dados se achican y se quitan
+    // la frase y el saludo para dejar sitio.
     val density = LocalDensity.current
     val compact = gameSettings.playerCount > 1 &&
         LocalWindowInfo.current.containerSize.height / density.density < COMPACT_BELOW_DP
@@ -135,9 +140,9 @@ fun WelcomeScreen(onStartClicked: () -> Unit, onNavigateToAbout: () -> Unit = {}
                         onClick = { showProgress = true }
                     )
                     StyledIconButton(
-                        icon = Icons.Filled.Palette,
-                        contentDescription = stringResource(R.string.personalize_open),
-                        onClick = { showPersonalize = true }
+                        icon = Icons.Filled.Settings,
+                        contentDescription = stringResource(R.string.welcome_settings),
+                        onClick = { showSettings = true }
                     )
                     StyledIconButton(
                         icon = Icons.Filled.Info,
@@ -147,120 +152,67 @@ fun WelcomeScreen(onStartClicked: () -> Unit, onNavigateToAbout: () -> Unit = {}
                 }
             }
 
-            Spacer(Modifier.weight(1f))
-
-            AnimatedVisibility(
-                visible = visible,
-                enter = fadeIn(animationSpec = tween(800)) + slideInVertically(initialOffsetY = { -50 })
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.scale(pulse)
+            // El contenido se reparte con espacios iguales y, si no cabe, se desplaza.
+            BoxWithConstraints(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.SpaceEvenly,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = maxHeight)
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    AnimatedVisibility(
+                        visible = visible,
+                        enter = fadeIn(animationSpec = tween(800)) +
+                            slideInVertically(initialOffsetY = { -50 })
                     ) {
-                        DiceFace(
-                            value = 5,
-                            sides = 6,
-                            palette = DicePalette.ROSA,
-                            contentDescription = "",
-                            modifier = Modifier
-                                .size(heroDice)
-                                .rotate(-8f)
-                        )
-                        DiceFace(
-                            value = 2,
-                            sides = 6,
-                            palette = DicePalette.LILA,
-                            contentDescription = "",
-                            modifier = Modifier
-                                .size(heroDice)
-                                .rotate(10f)
-                        )
+                        Hero(heroDice = heroDice, pulse = pulse, compact = compact)
                     }
 
-                    Spacer(Modifier.height(12.dp))
-
-                    val title = "Up Dice"
-                    Text(
-                        text = if (tokens.isPlayful) title.uppercase() else title,
-                        fontSize = 44.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        letterSpacing = if (tokens.isPlayful) 2.sp else 0.sp,
-                        color = tokens.bgInk,
-                        textAlign = TextAlign.Center
-                    )
-
-                    if (!compact) {
-                        Spacer(Modifier.height(4.dp))
-
-                        Text(
-                            text = stringResource(R.string.welcome_tagline),
-                            fontSize = 16.sp,
-                            color = tokens.bgMuted,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.padding(horizontal = 8.dp)
-                        )
-                    }
-
-                    // HU-12: saludo con el nombre. Se reserva el espacio aunque no haya nombre
-                    // para que la pantalla no se mueva al empezar a escribir.
-                    val playerName = LocalPlayerName.current.displayName
-                    Box(
-                        contentAlignment = Alignment.Center,
-                        modifier = Modifier
-                            .padding(top = if (compact) 4.dp else 12.dp)
-                            .height(if (compact) 0.dp else 32.dp)
+                    AnimatedVisibility(
+                        visible = visible,
+                        enter = fadeIn(animationSpec = tween(800, delayMillis = 400)) +
+                            slideInVertically(initialOffsetY = { 50 })
                     ) {
-                        if (playerName.isNotEmpty()) {
-                            Text(
-                                text = stringResource(R.string.player_greeting, playerName),
-                                fontSize = 22.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = tokens.bgInk,
-                                textAlign = TextAlign.Center
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                            modifier = Modifier
+                                .widthIn(max = MAX_CONTENT_WIDTH)
+                                .fillMaxWidth()
+                                .padding(top = 12.dp, bottom = 8.dp)
+                        ) {
+                            // HU-12: nombre principal (jugador 1).
+                            StyledNameField()
+
+                            // Opcional: jugar con amigos, con sus nombres.
+                            FriendsSection(
+                                settings = gameSettings,
+                                onPlayerCountChange = settingsViewModel::setPlayerCount,
+                                onPlayerNameChange = settingsViewModel::setPlayerName
                             )
                         }
                     }
                 }
             }
 
-            // En una tablet todo va en un solo bloque centrado; en un teléfono, el nombre y el
-            // botón quedan abajo, al alcance del pulgar.
-            if (isTablet) Spacer(Modifier.height(40.dp)) else Spacer(Modifier.weight(1f))
-
-            AnimatedVisibility(
-                visible = visible,
-                enter = fadeIn(animationSpec = tween(800, delayMillis = 400)) +
-                    slideInVertically(initialOffsetY = { 50 })
+            // El botón de jugar queda fijo abajo: no se desplaza con el resto, siempre está a la vista.
+            StyledButton(
+                onClick = onStartClicked,
+                modifier = Modifier
+                    .widthIn(max = MAX_CONTENT_WIDTH)
+                    .fillMaxWidth()
+                    .padding(top = 8.dp)
             ) {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                    modifier = Modifier
-                        .widthIn(max = MAX_CONTENT_WIDTH)
-                        .fillMaxWidth()
-                ) {
-                    // Cuántas personas juegan y cómo se llama cada una.
-                    PlayersSection(
-                        settings = gameSettings,
-                        onPlayerCountChange = settingsViewModel::setPlayerCount,
-                        onPlayerNameChange = settingsViewModel::setPlayerName
-                    )
-
-                    StyledButton(onClick = onStartClicked) {
-                        Text(
-                            text = stringResource(
-                                if (tokens.isPlayful) R.string.welcome_play_playful else R.string.welcome_play
-                            ),
-                            fontSize = 22.sp,
-                            fontWeight = FontWeight.ExtraBold,
-                            color = tokens.onAccent
-                        )
-                    }
-                }
+                Text(
+                    text = stringResource(
+                        if (tokens.isPlayful) R.string.welcome_play_playful else R.string.welcome_play
+                    ),
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = tokens.onAccent
+                )
             }
-
-            if (isTablet) Spacer(Modifier.weight(1f)) else Spacer(Modifier.height(16.dp))
         }
     }
 
@@ -268,46 +220,85 @@ fun WelcomeScreen(onStartClicked: () -> Unit, onNavigateToAbout: () -> Unit = {}
         ProgressDialog(progress = progress, onDismiss = { showProgress = false })
     }
 
-    if (showPersonalize) {
-        PersonalizeSheet(
-            style = styleController.style,
-            onStyleChange = styleController.onStyleChange,
-            onDismiss = { showPersonalize = false }
+    if (showSettings) {
+        SettingsSheet(
+            options = rememberGameOptions(haptics = haptics),
+            onDismiss = { showSettings = false }
         )
     }
 }
 
-/**
- * Selector de la cantidad de jugadores y los campos con sus nombres. El primero usa el nombre de la
- * bienvenida (HU-12); los demás aparecen de dos en dos para ocupar poco alto.
- */
+/** Los dos dados, el título y el saludo con el nombre. */
 @Composable
-private fun PlayersSection(
-    settings: GameSettings,
-    onPlayerCountChange: (Int) -> Unit,
-    onPlayerNameChange: (Int, String) -> Unit
-) {
+private fun Hero(heroDice: Dp, pulse: Float, compact: Boolean) {
     val tokens = LocalAppTokens.current
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        PlayerCountCards(
-            selected = settings.playerCount,
-            onSelect = onPlayerCountChange
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.scale(pulse)
+        ) {
+            DiceFace(
+                value = 5,
+                sides = 6,
+                palette = DicePalette.ROSA,
+                contentDescription = "",
+                modifier = Modifier
+                    .size(heroDice)
+                    .rotate(-8f)
+            )
+            DiceFace(
+                value = 2,
+                sides = 6,
+                palette = DicePalette.LILA,
+                contentDescription = "",
+                modifier = Modifier
+                    .size(heroDice)
+                    .rotate(10f)
+            )
+        }
+
+        Spacer(Modifier.height(12.dp))
+
+        val title = "Up Dice"
+        Text(
+            text = if (tokens.isPlayful) title.uppercase() else title,
+            fontSize = 44.sp,
+            fontWeight = FontWeight.ExtraBold,
+            letterSpacing = if (tokens.isPlayful) 2.sp else 0.sp,
+            color = tokens.bgInk,
+            textAlign = TextAlign.Center
         )
 
-        // Nombre del jugador 1, y los de los jugadores 2 a 4 en filas de dos.
-        StyledNameField()
-        (1 until settings.playerCount).chunked(2).forEach { indices ->
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
-                indices.forEach { index ->
-                    StyledTextField(
-                        label = stringResource(R.string.settings_player_name, index + 1),
-                        value = settings.playerNames[index - 1],
-                        onValueChange = { onPlayerNameChange(index, it) },
-                        hint = stringResource(R.string.settings_player_name_hint, index + 1),
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-                if (indices.size == 1) Spacer(modifier = Modifier.weight(1f))
+        if (!compact) {
+            Spacer(Modifier.height(4.dp))
+
+            Text(
+                text = stringResource(R.string.welcome_tagline),
+                fontSize = 16.sp,
+                color = tokens.bgMuted,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(horizontal = 8.dp)
+            )
+        }
+
+        // HU-12: saludo con el nombre. Se reserva el espacio aunque no haya nombre para que la pantalla
+        // no se mueva al empezar a escribir.
+        val playerName = LocalPlayerName.current.displayName
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .padding(top = if (compact) 4.dp else 12.dp)
+                .height(if (compact) 0.dp else 32.dp)
+        ) {
+            if (playerName.isNotEmpty()) {
+                Text(
+                    text = stringResource(R.string.player_greeting, playerName),
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = tokens.bgInk,
+                    textAlign = TextAlign.Center
+                )
             }
         }
     }

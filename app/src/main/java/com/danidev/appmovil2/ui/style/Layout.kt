@@ -5,6 +5,8 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 
 /** Ancho mínimo (dp) de la parte corta de la pantalla desde el que se considera una tablet. */
 private const val TABLET_MIN_SMALLEST_WIDTH_DP = 600
@@ -32,4 +34,19 @@ fun TabletScaling(content: @Composable () -> Unit) {
     } else {
         content()
     }
+}
+
+/** Ancho máximo del contenido en una tablet horizontal; las pantallas de la partida lo comparten. */
+private val WIDE_CONTENT_WIDTH = 1100.dp
+
+/**
+ * Ancho máximo del contenido de las pantallas de la partida (juego y estadísticas): amplio en una
+ * tablet horizontal y más estrecho en vertical y en teléfonos. Así el ancho no cambia al pasar de
+ * una pantalla a otra.
+ */
+@Composable
+fun gameContentMaxWidth(): Dp {
+    val configuration = LocalConfiguration.current
+    val wideLandscape = isTablet() && configuration.screenWidthDp > configuration.screenHeightDp
+    return if (wideLandscape) WIDE_CONTENT_WIDTH else MAX_CONTENT_WIDTH
 }

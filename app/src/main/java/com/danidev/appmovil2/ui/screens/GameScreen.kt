@@ -64,7 +64,7 @@ import com.danidev.appmovil2.ui.settings.SettingsSheet
 import com.danidev.appmovil2.ui.settings.rememberGameSettingsViewModel
 import com.danidev.appmovil2.ui.style.AppBackground
 import com.danidev.appmovil2.ui.style.LocalAppTokens
-import com.danidev.appmovil2.ui.style.MAX_CONTENT_WIDTH
+import com.danidev.appmovil2.ui.style.gameContentMaxWidth
 import com.danidev.appmovil2.ui.style.StyledButton
 import com.danidev.appmovil2.ui.style.StyledCard
 import com.danidev.appmovil2.ui.style.isTablet
@@ -220,7 +220,7 @@ fun GameScreen(
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .fillMaxHeight()
-                .widthIn(max = if (isWideLandscape) 1100.dp else MAX_CONTENT_WIDTH)
+                .widthIn(max = gameContentMaxWidth())
                 .fillMaxWidth()
                 .statusBarsPadding()
                 .navigationBarsPadding()

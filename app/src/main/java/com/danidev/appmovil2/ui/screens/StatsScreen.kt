@@ -37,7 +37,7 @@ import com.danidev.appmovil2.ui.dice.rememberDicePaletteViewModel
 import com.danidev.appmovil2.ui.dice.rememberDiceTypeViewModel
 import com.danidev.appmovil2.ui.style.AppBackground
 import com.danidev.appmovil2.ui.style.LocalAppTokens
-import com.danidev.appmovil2.ui.style.MAX_CONTENT_WIDTH
+import com.danidev.appmovil2.ui.style.gameContentMaxWidth
 import com.danidev.appmovil2.ui.style.StyledButton
 import com.danidev.appmovil2.ui.style.StyledCard
 import com.danidev.appmovil2.ui.style.StyledIconButton
@@ -60,7 +60,7 @@ fun StatsScreen(diceViewModel: DiceViewModel = viewModel(), onNavigateBack: () -
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .fillMaxHeight()
-                .widthIn(max = MAX_CONTENT_WIDTH)
+                .widthIn(max = gameContentMaxWidth())
                 .fillMaxWidth()
                 .statusBarsPadding()
                 .navigationBarsPadding()

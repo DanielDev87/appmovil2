@@ -1,6 +1,7 @@
 package com.danidev.appmovil2.ui.style
 
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
@@ -135,5 +136,29 @@ class BackgroundChoiceTest {
     @Test
     fun `toArgbInt convierte un color a su entero ARGB`() {
         assertEquals(0xFF112233.toInt(), Color(0xFF112233).toArgbInt())
+    }
+
+    @Test
+    fun `el tema oscuro oscurece el fondo elegido y pone el texto claro`() {
+        val argb = BackgroundPreset.SKY.color.toArgbInt()
+
+        val light = applyBackground(appTokens(AppStyle.BALANCED, isDark = false), BackgroundChoice(argb))
+        val dark = applyBackground(appTokens(AppStyle.BALANCED, isDark = true), BackgroundChoice(argb))
+
+        assertTrue(dark.bgTop.luminance() < light.bgTop.luminance())
+        assertTrue(dark.bgTop.luminance() < 0.1f)
+        assertTrue(dark.bgInk.red > 0.8f)
+        assertTrue(dark.ink.red > 0.8f)
+        assertTrue(light.ink.red < 0.5f)
+    }
+
+    @Test
+    fun `el color del fondo conserva su tono en tema oscuro`() {
+        val dark = applyBackground(
+            appTokens(AppStyle.BALANCED, isDark = true),
+            BackgroundChoice(BackgroundPreset.SKY.color.toArgbInt())
+        )
+
+        assertTrue(dark.bgTop.blue > dark.bgTop.red)
     }
 }

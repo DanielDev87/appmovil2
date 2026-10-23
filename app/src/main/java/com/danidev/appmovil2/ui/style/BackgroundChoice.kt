@@ -41,6 +41,9 @@ private val DarkMutedOnLightBackground = Color(0xFF6B3F5A)
 private val LightInkOnDarkBackground = Color(0xFFF6E8F2)
 private val LightMutedOnDarkBackground = Color(0xFFD9C3D3)
 
+/** Cuánto se oscurece el color elegido cuando la app está en tema oscuro. */
+private const val DARK_THEME_SHADE = 0.78f
+
 /** Por debajo de esta luminancia el fondo se considera oscuro y el texto pasa a ser claro. */
 private const val DARK_BACKGROUND_LUMINANCE = 0.4f
 
@@ -48,13 +51,17 @@ private const val DARK_BACKGROUND_LUMINANCE = 0.4f
  * Aplica el fondo elegido sobre los valores de diseño del estilo.
  *
  * Cambia el color (o degradado) del fondo y, según lo claro que sea, el color del texto
- * que va directamente sobre él. Las tarjetas se tiñen con el color del fondo en lugar de
+ * que va directamente sobre él. En tema oscuro el color se oscurece para que el cambio de
+ * tema se note. Las tarjetas se tiñen con el color del fondo en lugar de
  * quedar blancas, para que no parezcan parches pegados, y su texto se ajusta a ese tinte.
  * Con `colorArgb == null` devuelve [tokens] sin cambios.
  */
 fun applyBackground(tokens: AppTokens, choice: BackgroundChoice): AppTokens {
     val argb = choice.colorArgb ?: return tokens
-    val base = Color(argb)
+    // En tema oscuro el color elegido se oscurece conservando su tono, para que el
+    // interruptor de tema siga teniendo efecto con un fondo propio.
+    val chosen = Color(argb)
+    val base = if (tokens.isDark) lerp(chosen, Color.Black, DARK_THEME_SHADE) else chosen
     val isDarkBackground = base.luminance() < DARK_BACKGROUND_LUMINANCE
     val fadeTo = if (isDarkBackground) Color.Black else Color.White
 

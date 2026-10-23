@@ -51,6 +51,7 @@ import androidx.compose.ui.window.DialogProperties
 import com.danidev.appmovil2.GameOutcome
 import com.danidev.appmovil2.R
 import com.danidev.appmovil2.ui.dice.DiceUiState
+import com.danidev.appmovil2.ui.progress.GameRecord
 import com.danidev.appmovil2.ui.style.LocalAppTokens
 import com.danidev.appmovil2.ui.style.StyledButton
 import com.danidev.appmovil2.ui.style.StyledCard
@@ -79,6 +80,7 @@ private val STEP_DELAYS_MS = longArrayOf(150, 300, 250, 500)
 fun GameOverDialog(
     uiState: DiceUiState,
     playerName: String,
+    record: GameRecord?,
     onPlayAgain: () -> Unit,
     onNavigateToMenu: () -> Unit,
     onDismiss: () -> Unit
@@ -197,6 +199,13 @@ fun GameOverDialog(
                     }
 
                     AnimatedVisibility(
+                        visible = step >= STEP_BUTTONS && record != null,
+                        enter = fadeIn(tween(400)) + slideInVertically(tween(400)) { it / 2 }
+                    ) {
+                        if (record != null) Highlights(record)
+                    }
+
+                    AnimatedVisibility(
                         visible = step >= STEP_BUTTONS,
                         enter = fadeIn(tween(400)) + slideInVertically(tween(400)) { it / 2 }
                     ) {
@@ -227,6 +236,59 @@ fun GameOverDialog(
             if (won) Confetti() else Rain()
         }
     }
+}
+
+/**
+ * Novedades de la partida que acaba de terminar: la racha de victorias, los récords nuevos y los
+ * logros desbloqueados.
+ */
+@Composable
+private fun Highlights(record: GameRecord) {
+    val tokens = LocalAppTokens.current
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        if (record.progress.currentStreak >= 2) {
+            Highlight(stringResource(R.string.end_streak, record.progress.currentStreak))
+        }
+        if (record.newBestWin) Highlight("⚡ " + stringResource(R.string.end_new_best_win))
+        if (record.newBestScore) Highlight("⭐ " + stringResource(R.string.end_new_best_score))
+        record.newAchievements.forEach { achievement ->
+            StyledCard(color = tokens.soft, radius = 16.dp, modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)) {
+                    Text(
+                        text = stringResource(R.string.end_new_achievement).uppercase(),
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = tokens.accent
+                    )
+                    Text(
+                        text = achievement.emoji + " " + stringResource(achievement.titleRes),
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = tokens.ink
+                    )
+                    Text(
+                        text = stringResource(achievement.descriptionRes),
+                        fontSize = 12.sp,
+                        color = tokens.muted
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun Highlight(text: String) {
+    Text(
+        text = text,
+        fontSize = 15.sp,
+        fontWeight = FontWeight.ExtraBold,
+        color = LocalAppTokens.current.ink
+    )
 }
 
 /**

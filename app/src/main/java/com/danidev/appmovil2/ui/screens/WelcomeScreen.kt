@@ -23,11 +23,13 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -45,6 +47,8 @@ import com.danidev.appmovil2.R
 import com.danidev.appmovil2.ui.dice.DiceFace
 import com.danidev.appmovil2.ui.dice.DicePalette
 import com.danidev.appmovil2.ui.player.LocalPlayerName
+import com.danidev.appmovil2.ui.progress.ProgressDialog
+import com.danidev.appmovil2.ui.progress.rememberProgressViewModel
 import com.danidev.appmovil2.ui.player.StyledNameField
 import com.danidev.appmovil2.ui.style.AppBackground
 import com.danidev.appmovil2.ui.style.LocalAppTokens
@@ -67,6 +71,8 @@ fun WelcomeScreen(onStartClicked: () -> Unit, onNavigateToAbout: () -> Unit = {}
     val styleController = LocalStyleController.current
     var visible by remember { mutableStateOf(false) }
     var showPersonalize by remember { mutableStateOf(false) }
+    var showProgress by remember { mutableStateOf(false) }
+    val progress by rememberProgressViewModel().progress.collectAsState()
 
     LaunchedEffect(Unit) {
         visible = true
@@ -100,6 +106,11 @@ fun WelcomeScreen(onStartClicked: () -> Unit, onNavigateToAbout: () -> Unit = {}
                 // HU-03: selector de tema claro / oscuro.
                 ThemeSwitch()
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    StyledIconButton(
+                        icon = Icons.Filled.EmojiEvents,
+                        contentDescription = stringResource(R.string.progress_open),
+                        onClick = { showProgress = true }
+                    )
                     StyledIconButton(
                         icon = Icons.Filled.Palette,
                         contentDescription = stringResource(R.string.personalize_open),
@@ -222,6 +233,10 @@ fun WelcomeScreen(onStartClicked: () -> Unit, onNavigateToAbout: () -> Unit = {}
 
             if (isTablet) Spacer(Modifier.weight(1f)) else Spacer(Modifier.height(16.dp))
         }
+    }
+
+    if (showProgress) {
+        ProgressDialog(progress = progress, onDismiss = { showProgress = false })
     }
 
     if (showPersonalize) {

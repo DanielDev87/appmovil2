@@ -65,6 +65,8 @@ import com.danidev.appmovil2.ui.game.RollButton
 import com.danidev.appmovil2.ui.game.ScoreCards
 import com.danidev.appmovil2.ui.game.ShareResultButton
 import com.danidev.appmovil2.ui.player.LocalPlayerName
+import com.danidev.appmovil2.ui.progress.GameResult
+import com.danidev.appmovil2.ui.progress.rememberProgressViewModel
 import com.danidev.appmovil2.ui.settings.GameOptions
 import com.danidev.appmovil2.ui.settings.SettingsSheet
 import com.danidev.appmovil2.ui.settings.rememberGameSettingsViewModel
@@ -135,8 +137,24 @@ fun GameScreen(
     var gameOverDismissed by rememberSaveable { mutableStateOf(false) }
     // Se espera un momento tras el último tiro para que se vea el dado antes de la pantalla final.
     var showGameOver by remember { mutableStateOf(false) }
+    // Récords, racha y logros: se guarda cada partida terminada una sola vez.
+    val progressViewModel = rememberProgressViewModel()
+    val lastRecord by progressViewModel.lastRecord.collectAsState()
+    var recorded by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(uiState.outcome, isRolling) {
         if (uiState.outcome != GameOutcome.IN_PROGRESS && !isRolling) {
+            if (!recorded) {
+                recorded = true
+                progressViewModel.recordGame(
+                    GameResult(
+                        won = uiState.outcome == GameOutcome.WON,
+                        score = uiState.score,
+                        launches = uiState.launches,
+                        criticals = uiState.criticalCount,
+                        sides = diceType.sides
+                    )
+                )
+            }
             delay(GAME_OVER_DELAY_MS)
             showGameOver = true
         } else {
@@ -144,7 +162,11 @@ fun GameScreen(
         }
     }
     LaunchedEffect(uiState.outcome) {
-        if (uiState.outcome == GameOutcome.IN_PROGRESS) gameOverDismissed = false
+        if (uiState.outcome == GameOutcome.IN_PROGRESS) {
+            gameOverDismissed = false
+            recorded = false
+            progressViewModel.clearLastRecord()
+        }
     }
     // La meta (puntos y lanzamientos) se puede cambiar en Ajustes sin perder la partida en curso.
     LaunchedEffect(settings.targetScore, settings.maxLaunches) {
@@ -406,6 +428,7 @@ fun GameScreen(
         GameOverDialog(
             uiState = uiState,
             playerName = LocalPlayerName.current.displayName,
+            record = lastRecord,
             onPlayAgain = resetGame,
             onNavigateToMenu = onNavigateToMenu,
             onDismiss = { gameOverDismissed = true }

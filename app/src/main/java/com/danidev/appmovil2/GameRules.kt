@@ -59,3 +59,20 @@ fun determineRollIndicator(results: List<Int>, sides: Int = 6): RollIndicator = 
     results.all { it == 1 } -> RollIndicator.FUMBLE
     else -> RollIndicator.NONE
 }
+
+
+/**
+ * Niveles de dificultad listos para elegir: cada uno fija los puntos para ganar y los
+ * lanzamientos disponibles. Más puntos y menos lanzamientos es más difícil.
+ */
+enum class Difficulty(val targetScore: Int, val maxLaunches: Int) {
+    EASY(targetScore = 20, maxLaunches = 12),
+    NORMAL(targetScore = TARGET_SCORE, maxLaunches = MAX_LAUNCHES),
+    HARD(targetScore = 40, maxLaunches = 8);
+
+    companion object {
+        /** La dificultad que coincide con esta meta, o `null` si la meta es personalizada. */
+        fun matching(targetScore: Int, maxLaunches: Int): Difficulty? =
+            entries.firstOrNull { it.targetScore == targetScore && it.maxLaunches == maxLaunches }
+    }
+}

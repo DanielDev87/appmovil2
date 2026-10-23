@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.danidev.appmovil2.Difficulty
 import com.danidev.appmovil2.MAX_MAX_LAUNCHES
 import com.danidev.appmovil2.MAX_TARGET_SCORE
 import com.danidev.appmovil2.MIN_MAX_LAUNCHES
@@ -207,6 +208,22 @@ private fun GameTab(options: GameOptions) {
     )
 
     Label(stringResource(R.string.settings_goals))
+    // Dificultad: tres metas listas; si se ajustan a mano los números, ninguna queda marcada.
+    StyledSegmented(
+        options = listOf(
+            stringResource(R.string.difficulty_easy),
+            stringResource(R.string.difficulty_normal),
+            stringResource(R.string.difficulty_hard)
+        ),
+        selectedIndex = Difficulty.matching(options.settings.targetScore, options.settings.maxLaunches)
+            ?.ordinal ?: -1,
+        onSelect = { index ->
+            val difficulty = Difficulty.entries[index]
+            options.onTargetScoreChange(difficulty.targetScore)
+            options.onMaxLaunchesChange(difficulty.maxLaunches)
+        },
+        modifier = Modifier.fillMaxWidth()
+    )
     StyledStepper(
         label = stringResource(R.string.settings_target_score),
         value = options.settings.targetScore,

@@ -363,16 +363,18 @@ fun GameScreen(
                             modifier = Modifier.padding(16.dp)
                         )
                     }
-                    // Compartir aparece desde el primer tiro.
-                    if (uiState.launches > 0) {
-                        ShareResultButton(uiState = uiState)
-                    }
                 }
                 Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(top = 12.dp, bottom = 12.dp)
                 ) {
+                    // Compartir aparece desde el primer tiro, justo encima del botón principal.
+                    if (uiState.launches > 0) {
+                        ShareResultButton(uiState = uiState)
+                    }
                     mainButton()
                 }
             }

@@ -137,4 +137,14 @@
     <string name="end_play_again_playful">¡OTRA VEZ!</string>
     <string name="end_menu">Volver al menú</string>
     <string name="end_close">Ver la partida</string>
+    <!-- Rediseño: acerca de -->
+    <string name="about_back">Volver</string>
+    <string name="about_logo">Logo Up Dice</string>
+    <string name="about_app_name">Up Dice 🎲</string>
+    <string name="about_version">Versión 1.0</string>
+    <string name="about_what_title">¿Qué es Up Dice?</string>
+    <string name="about_what_body">Up Dice es una aplicación de dados digital construida con Jetpack Compose. Diseñada para partidas de rol, juegos de mesa y cualquier momento en que necesites la suerte de un dado.</string>
+    <string name="about_team_title">👥 Equipo de Desarrollo</string>
+    <string name="about_team_body">Estudiantes del curso de Programación Móvil 2</string>
+    <string name="about_footer">Proyecto Grupal — Desarrollo Móvil II · 2026</string>
 </resources>

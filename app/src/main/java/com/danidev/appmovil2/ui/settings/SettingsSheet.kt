@@ -197,30 +197,13 @@ private fun GameTab(options: GameOptions) {
         }
     }
 
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween,
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Label(stringResource(R.string.settings_dice_size))
-        val shown = DiceSize.effectiveFactor(options.sizeFactor, options.diceCount)
-        Text(
-            text = stringResource(R.string.dice_size_percent, (shown * 100).roundToInt()),
-            fontWeight = FontWeight.Bold,
-            color = tokens.ink
-        )
-    }
-    val sizeDescription = stringResource(R.string.dice_size_description)
-    Slider(
-        value = DiceSize.effectiveFactor(options.sizeFactor, options.diceCount),
-        onValueChange = options.onSizeChange,
-        valueRange = DiceSize.MIN_FACTOR..DiceSize.maxFactor(options.diceCount),
-        colors = SliderDefaults.colors(
-            thumbColor = tokens.accent,
-            activeTrackColor = tokens.accent,
-            inactiveTrackColor = tokens.soft
-        ),
-        modifier = Modifier.semantics { contentDescription = sizeDescription }
+    Label(stringResource(R.string.settings_dice_size))
+    DiceSizePicker(
+        factor = options.sizeFactor,
+        diceCount = options.diceCount,
+        palette = options.palette,
+        diceType = options.diceType,
+        onFactorChange = options.onSizeChange
     )
 
     Label(stringResource(R.string.settings_goals))
@@ -373,6 +356,55 @@ private fun PaletteOption(
                 text = stringResource(option.labelRes),
                 fontWeight = if (selected) FontWeight.ExtraBold else FontWeight.SemiBold,
                 color = tokens.ink
+            )
+        }
+    }
+}
+
+
+/** Tamaños que se pueden elegir y el factor que usa cada uno (1.0 es el tamaño original). */
+private enum class SizeChoice(val labelRes: Int, val factor: Float) {
+    SMALL(R.string.size_small, 0.7f),
+    NORMAL(R.string.size_normal, 1.0f),
+    LARGE(R.string.size_large, 1.3f)
+}
+
+/**
+ * Elige el tamaño del dado entre tres opciones y muestra una muestra del dado con ese tamaño, para
+ * ver el resultado sin salir de los ajustes. Con dos dados el tamaño grande se limita a lo que cabe
+ * en pantalla (ver [DiceSize.effectiveFactor]).
+ */
+@Composable
+private fun DiceSizePicker(
+    factor: Float,
+    diceCount: Int,
+    palette: DicePalette,
+    diceType: DiceType,
+    onFactorChange: (Float) -> Unit
+) {
+    val shown = DiceSize.effectiveFactor(factor, diceCount)
+    // La opción marcada es la más cercana al tamaño que realmente se está usando.
+    val selected = SizeChoice.entries.minBy { kotlin.math.abs(DiceSize.effectiveFactor(it.factor, diceCount) - shown) }
+
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        StyledSegmented(
+            options = SizeChoice.entries.map { stringResource(it.labelRes) },
+            selectedIndex = selected.ordinal,
+            onSelect = { onFactorChange(SizeChoice.entries[it].factor) },
+            modifier = Modifier.fillMaxWidth()
+        )
+        // Muestra: el dado con su tamaño elegido, a escala, para ver el resultado sin salir.
+        Box(contentAlignment = Alignment.Center, modifier = Modifier.size(104.dp)) {
+            DiceFace(
+                value = diceType.sides.coerceAtMost(6),
+                sides = diceType.sides,
+                palette = palette,
+                contentDescription = stringResource(R.string.dice_size_description),
+                modifier = Modifier.size((72f * shown).dp)
             )
         }
     }

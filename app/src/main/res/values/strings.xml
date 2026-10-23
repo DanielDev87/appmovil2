@@ -177,4 +177,7 @@
     <string name="reset_message">Se borran los puntos, los lanzamientos y el historial de esta partida.</string>
     <string name="reset_confirm">Reiniciar</string>
     <string name="reset_cancel">Cancelar</string>
+    <string name="size_small">Pequeño</string>
+    <string name="size_normal">Normal</string>
+    <string name="size_large">Grande</string>
 </resources>

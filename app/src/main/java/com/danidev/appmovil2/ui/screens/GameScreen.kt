@@ -4,6 +4,9 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Column
 import com.danidev.appmovil2.ui.dice.DiceUiState
 import androidx.compose.foundation.layout.height
@@ -74,6 +77,9 @@ import com.danidev.appmovil2.ui.style.isTablet
 import com.danidev.appmovil2.ui.theme.Appmovil2Theme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+
+/** Distancia mínima (en píxeles) que hay que deslizar el dado hacia arriba para lanzarlo. */
+private const val SWIPE_THROW_DISTANCE_PX = 120f
 
 /** Punto del lanzamiento (de 0 a 1) en el que el dado toca la mesa por primera vez. */
 private const val THROW_LANDING = 0.7f
@@ -219,6 +225,17 @@ fun GameScreen(
         }
     }
 
+    // Deslizar el dado hacia arriba también lo lanza, como si se tirara con la mano.
+    val currentTrigger by rememberUpdatedState(triggerRoll)
+    val swipeToThrow = Modifier.pointerInput(Unit) {
+        var dragged = 0f
+        detectVerticalDragGestures(
+            onDragStart = { dragged = 0f },
+            onVerticalDrag = { _, dy -> dragged += dy },
+            onDragEnd = { if (dragged < -SWIPE_THROW_DISTANCE_PX) currentTrigger() }
+        )
+    }
+
     // HU-19: detección de sacudida por acelerómetro para lanzar los dados.
     rememberShakeDetector(enabled = canRoll && settings.shakeEnabled, onShake = triggerRoll)
 
@@ -289,7 +306,7 @@ fun GameScreen(
                             .fillMaxHeight()
                     ) {
                         ScoreCards(uiState = uiState)
-                        stage(Modifier.weight(1f), 180.dp)
+                        stage(swipeToThrow.weight(1f), 180.dp)
                     }
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
@@ -351,7 +368,7 @@ fun GameScreen(
                         .fillMaxWidth()
                         .weight(1f)
                 ) {
-                    stage(Modifier, if (isTablet()) 300.dp else 200.dp)
+                    stage(swipeToThrow, if (isTablet()) 300.dp else 200.dp)
                     if (outcome != GameOutcome.IN_PROGRESS) {
                         GameStatus(uiState = uiState)
                     }

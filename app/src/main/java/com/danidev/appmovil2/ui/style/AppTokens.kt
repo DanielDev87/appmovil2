@@ -73,9 +73,9 @@ private val balancedLight = AppTokens(
     isDark = false,
     ink = Color(0xFF3E0F2C),
     muted = Color(0xFF7A4A66),
-    outline = Color.Transparent,
+    outline = Color(0x26D81B6A),
     shadow = Color(0xFF781E50),
-    surface = Color(0xFFFFFFFF),
+    surface = Color(0xFFFFF1F8),
     accent = Color(0xFFD81B6A),
     onAccent = Color(0xFFFFFFFF),
     soft = Color(0xFFF6DCEB),
@@ -87,7 +87,7 @@ private val balancedLight = AppTokens(
     dots = null,
     cardRadius = 20.dp,
     buttonRadius = 22.dp,
-    borderWidth = 0.dp,
+    borderWidth = 1.dp,
     shadowOffset = 0.dp
 )
 

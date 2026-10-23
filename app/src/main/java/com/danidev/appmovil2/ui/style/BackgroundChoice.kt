@@ -66,7 +66,7 @@ fun applyBackground(tokens: AppTokens, choice: BackgroundChoice): AppTokens {
     val fadeTo = if (isDarkBackground) Color.Black else Color.White
 
     // Tarjetas: un tinte del fondo, más claro en fondos claros y apenas aclarado en oscuros.
-    val surface = lerp(base, Color.White, if (isDarkBackground) 0.12f else 0.6f)
+    val surface = lerp(base, Color.White, if (isDarkBackground) 0.12f else 0.35f)
     val isDarkSurface = surface.luminance() < DARK_BACKGROUND_LUMINANCE
     val surfaceTone = if (isDarkSurface) Color.White else Color.Black
 

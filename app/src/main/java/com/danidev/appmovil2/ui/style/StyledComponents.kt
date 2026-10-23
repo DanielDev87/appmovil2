@@ -30,6 +30,9 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
+/** Ancho máximo del contenido en pantallas grandes, para que no se estire en tablets. */
+val MAX_CONTENT_WIDTH = 600.dp
+
 /**
  * Dibuja el fondo de una tarjeta según el estilo vigente.
  *

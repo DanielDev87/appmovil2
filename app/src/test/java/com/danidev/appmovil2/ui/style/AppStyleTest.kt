@@ -61,7 +61,6 @@ class AppStyleTest {
         val balanced = appTokens(AppStyle.BALANCED, isDark = false)
 
         assertFalse(balanced.isPlayful)
-        assertEquals(0f, balanced.borderWidth.value)
         assertEquals(0f, balanced.shadowOffset.value)
         assertNull(balanced.dots)
     }

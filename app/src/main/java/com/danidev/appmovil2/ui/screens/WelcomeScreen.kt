@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Palette
@@ -49,6 +50,7 @@ import com.danidev.appmovil2.ui.style.AppBackground
 import com.danidev.appmovil2.ui.style.LocalAppTokens
 import com.danidev.appmovil2.ui.style.LocalStyleController
 import com.danidev.appmovil2.ui.style.PersonalizeSheet
+import com.danidev.appmovil2.ui.style.MAX_CONTENT_WIDTH
 import com.danidev.appmovil2.ui.style.StyledButton
 import com.danidev.appmovil2.ui.style.StyledIconButton
 import com.danidev.appmovil2.ui.theme.ThemeSwitch
@@ -192,7 +194,12 @@ fun WelcomeScreen(onStartClicked: () -> Unit, onNavigateToAbout: () -> Unit = {}
                 enter = fadeIn(animationSpec = tween(800, delayMillis = 400)) +
                     slideInVertically(initialOffsetY = { 50 })
             ) {
-                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    modifier = Modifier
+                        .widthIn(max = MAX_CONTENT_WIDTH)
+                        .fillMaxWidth()
+                ) {
                     // HU-12: campo para escribir el nombre del jugador.
                     StyledNameField()
 

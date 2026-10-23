@@ -68,6 +68,9 @@ import com.danidev.appmovil2.ui.theme.Appmovil2Theme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+/** Pausa (ms) entre el último tiro y la pantalla de fin de partida. */
+private const val GAME_OVER_DELAY_MS = 800L
+
 /**
  * Pantalla de juego: muestra uno o dos dados (HU-06), el botón para lanzarlos,
  * el cálculo sumatorio y el historial de los últimos lanzamientos (HU-011).
@@ -112,6 +115,16 @@ fun GameScreen(
     // Pantalla de fin de partida: se puede cerrar para ver cómo quedó y vuelve a mostrarse
     // en la partida siguiente.
     var gameOverDismissed by rememberSaveable { mutableStateOf(false) }
+    // Se espera un momento tras el último tiro para que se vea el dado antes de la pantalla final.
+    var showGameOver by remember { mutableStateOf(false) }
+    LaunchedEffect(uiState.outcome, isRolling) {
+        if (uiState.outcome != GameOutcome.IN_PROGRESS && !isRolling) {
+            delay(GAME_OVER_DELAY_MS)
+            showGameOver = true
+        } else {
+            showGameOver = false
+        }
+    }
     LaunchedEffect(uiState.outcome) {
         if (uiState.outcome == GameOutcome.IN_PROGRESS) gameOverDismissed = false
     }
@@ -314,7 +327,7 @@ fun GameScreen(
         }
     }
 
-    if (outcome != GameOutcome.IN_PROGRESS && !isRolling && !gameOverDismissed) {
+    if (showGameOver && !gameOverDismissed) {
         GameOverDialog(
             uiState = uiState,
             playerName = LocalPlayerName.current.displayName,

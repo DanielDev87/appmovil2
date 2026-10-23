@@ -1,6 +1,19 @@
 package com.danidev.appmovil2.ui.settings
 
 import androidx.compose.foundation.clickable
+import com.danidev.appmovil2.ui.style.isTablet
+import androidx.compose.ui.window.DialogProperties
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.graphics.Color
+import androidx.compose.runtime.remember
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -67,12 +80,7 @@ fun SettingsSheet(
     val tokens = LocalAppTokens.current
     val theme = LocalThemeController.current
 
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        containerColor = tokens.surface,
-        contentColor = tokens.ink
-    ) {
+    val body: @Composable () -> Unit = {
         Column(
             verticalArrangement = Arrangement.spacedBy(16.dp),
             modifier = Modifier
@@ -169,6 +177,60 @@ fun SettingsSheet(
                     checked = settings.shakeEnabled,
                     onCheckedChange = onShakeChange
                 )
+            }
+        }
+    }
+
+    // En una tablet los ajustes salen como un panel lateral; en un teléfono, como una hoja
+    // que sube desde abajo.
+    if (isTablet()) {
+        SidePanel(onDismiss = onDismiss, content = body)
+    } else {
+        ModalBottomSheet(
+            onDismissRequest = onDismiss,
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            containerColor = tokens.surface,
+            contentColor = tokens.ink
+        ) {
+            body()
+        }
+    }
+}
+
+/** Panel pegado al borde derecho, con el resto de la pantalla atenuado; tocarlo fuera lo cierra. */
+@Composable
+private fun SidePanel(onDismiss: () -> Unit, content: @Composable () -> Unit) {
+    val tokens = LocalAppTokens.current
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.45f))
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = onDismiss
+                )
+        ) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .fillMaxHeight()
+                    .widthIn(max = 480.dp)
+                    .fillMaxWidth(0.85f)
+                    .background(tokens.surface, RoundedCornerShape(topStart = 28.dp, bottomStart = 28.dp))
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = {}
+                    )
+                    .statusBarsPadding()
+                    .padding(top = 16.dp)
+            ) {
+                content()
             }
         }
     }

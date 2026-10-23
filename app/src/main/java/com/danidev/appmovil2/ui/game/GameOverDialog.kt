@@ -1,6 +1,20 @@
 package com.danidev.appmovil2.ui.game
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.animateIntAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInVertically
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -8,11 +22,23 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
@@ -25,15 +51,27 @@ import com.danidev.appmovil2.GameOutcome
 import com.danidev.appmovil2.R
 import com.danidev.appmovil2.TARGET_SCORE
 import com.danidev.appmovil2.ui.dice.DiceUiState
-import com.danidev.appmovil2.ui.style.AppBackground
 import com.danidev.appmovil2.ui.style.LocalAppTokens
 import com.danidev.appmovil2.ui.style.StyledButton
 import com.danidev.appmovil2.ui.style.StyledCard
+import kotlin.math.PI
+import kotlin.math.sin
+import kotlin.random.Random
+
+/** Pausas (ms) entre los pasos de la entrada: cada elemento aparece uno tras otro. */
+private const val STEP_TROPHY = 1
+private const val STEP_TITLE = 2
+private const val STEP_STATS = 3
+private const val STEP_BUTTONS = 4
+private val STEP_DELAYS_MS = longArrayOf(150, 300, 250, 500)
 
 /**
  * Pantalla de fin de partida: victoria (se llegó a la meta de puntos) o fin por falta
- * de lanzamientos. Muestra los números de la partida y permite jugar de nuevo, compartir
- * el resultado, volver al menú o cerrarla para ver cómo quedó la partida.
+ * de lanzamientos.
+ *
+ * No reemplaza la partida de golpe: oscurece la pantalla poco a poco y una tarjeta
+ * aparece con una animación escalonada (trofeo, título, mensaje, números que suben
+ * hasta su valor y, por último, los botones). Si se ganó, cae confeti.
  *
  * @param playerName Nombre del jugador (HU-12); vacío si no lo escribió.
  */
@@ -48,81 +86,262 @@ fun GameOverDialog(
     val tokens = LocalAppTokens.current
     val won = uiState.outcome == GameOutcome.WON
 
+    var step by remember { mutableIntStateOf(0) }
+    LaunchedEffect(Unit) {
+        STEP_DELAYS_MS.forEach { pause ->
+            kotlinx.coroutines.delay(pause)
+            step++
+        }
+    }
+
+    val scrim by animateFloatAsState(targetValue = 0.6f, animationSpec = tween(600), label = "scrim")
+    val cardScale by animateFloatAsState(
+        targetValue = if (step >= 1) 1f else 0.85f,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow),
+        label = "cardScale"
+    )
+    val cardAlpha by animateFloatAsState(
+        targetValue = if (step >= 1) 1f else 0f,
+        animationSpec = tween(350),
+        label = "cardAlpha"
+    )
+
     Dialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)
     ) {
-        AppBackground {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = scrim))
+        ) {
+            StyledCard(
+                radius = 32.dp,
                 modifier = Modifier
-                    .fillMaxSize()
                     .statusBarsPadding()
                     .navigationBarsPadding()
-                    .padding(horizontal = 24.dp, vertical = 16.dp)
+                    .padding(24.dp)
+                    .widthIn(max = 460.dp)
+                    .fillMaxWidth()
+                    .scale(cardScale)
+                    .alpha(cardAlpha)
             ) {
-                Text(text = if (won) "🏆" else "🎲", fontSize = 72.sp)
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(14.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp, vertical = 28.dp)
+                ) {
+                    Trophy(won = won, visible = step >= STEP_TROPHY)
 
-                Text(
-                    text = stringResource(
-                        when {
-                            won && tokens.isPlayful -> R.string.end_win_title_playful
-                            won -> R.string.end_win_title
-                            else -> R.string.end_lose_title
+                    AnimatedVisibility(
+                        visible = step >= STEP_TITLE,
+                        enter = fadeIn(tween(400)) + slideInVertically(tween(400)) { it / 2 }
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                text = stringResource(
+                                    when {
+                                        won && tokens.isPlayful -> R.string.end_win_title_playful
+                                        won -> R.string.end_win_title
+                                        else -> R.string.end_lose_title
+                                    }
+                                ),
+                                fontSize = 30.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = tokens.ink,
+                                textAlign = TextAlign.Center
+                            )
+                            Text(
+                                text = endMessage(won, playerName, uiState),
+                                fontSize = 15.sp,
+                                color = tokens.muted,
+                                textAlign = TextAlign.Center
+                            )
                         }
-                    ),
-                    fontSize = 34.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = tokens.bgInk,
-                    textAlign = TextAlign.Center
+                    }
+
+                    AnimatedVisibility(
+                        visible = step >= STEP_STATS,
+                        enter = fadeIn(tween(400)) + slideInVertically(tween(400)) { it / 2 }
+                    ) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            EndStat(
+                                value = uiState.score,
+                                label = stringResource(R.string.end_points),
+                                color = if (tokens.isPlayful) tokens.highlight else tokens.soft,
+                                modifier = Modifier.weight(1f)
+                            )
+                            EndStat(
+                                value = uiState.launches,
+                                label = stringResource(R.string.end_launches),
+                                color = if (tokens.isPlayful) tokens.mint else tokens.soft,
+                                modifier = Modifier.weight(1f)
+                            )
+                            EndStat(
+                                value = uiState.criticalCount,
+                                label = stringResource(R.string.end_criticals),
+                                color = if (tokens.isPlayful) tokens.sky else tokens.soft,
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                    }
+
+                    AnimatedVisibility(
+                        visible = step >= STEP_BUTTONS,
+                        enter = fadeIn(tween(400)) + slideInVertically(tween(400)) { it / 2 }
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            StyledButton(onClick = onPlayAgain, height = 56.dp) {
+                                Text(
+                                    text = stringResource(
+                                        if (tokens.isPlayful) R.string.end_play_again_playful else R.string.end_play_again
+                                    ),
+                                    fontSize = 19.sp,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = tokens.onAccent
+                                )
+                            }
+                            ShareResultButton(uiState = uiState, modifier = Modifier)
+                            Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
+                                TextAction(stringResource(R.string.end_menu), onNavigateToMenu)
+                                TextAction(stringResource(R.string.end_close), onDismiss)
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (won) {
+                Confetti()
+            }
+        }
+    }
+}
+
+/** Trofeo (o dado, si se perdió) que entra rebotando y, en victoria, se balancea. */
+@Composable
+private fun Trophy(won: Boolean, visible: Boolean) {
+    val bounce by animateFloatAsState(
+        targetValue = if (visible) 1f else 0f,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioHighBouncy, stiffness = Spring.StiffnessLow),
+        label = "trophyBounce"
+    )
+    val wobble = remember { Animatable(0f) }
+    LaunchedEffect(visible, won) {
+        if (visible && won) {
+            repeat(2) {
+                wobble.animateTo(8f, tween(180))
+                wobble.animateTo(-8f, tween(180))
+            }
+            wobble.animateTo(0f, tween(180))
+        }
+    }
+    Text(
+        text = if (won) "🏆" else "🎲",
+        fontSize = 64.sp,
+        modifier = Modifier
+            .scale(bounce)
+            .rotate(wobble.value)
+    )
+}
+
+/** Cuadro con un número que sube desde 0 hasta su valor y una etiqueta debajo. */
+@Composable
+private fun EndStat(value: Int, label: String, color: Color, modifier: Modifier) {
+    val tokens = LocalAppTokens.current
+    val shown by animateIntAsState(
+        targetValue = value,
+        animationSpec = tween(durationMillis = 900),
+        label = "statCount"
+    )
+    val onColor = if (tokens.isPlayful) tokens.onAccent else tokens.ink
+    StyledCard(color = color, radius = 18.dp, modifier = modifier) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 12.dp)
+        ) {
+            Text(
+                text = shown.toString(),
+                fontSize = 28.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color = onColor
+            )
+            Text(
+                text = if (tokens.isPlayful) label.uppercase() else label,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold,
+                color = if (tokens.isPlayful) tokens.onAccent else tokens.muted
+            )
+        }
+    }
+}
+
+/** Una pieza de confeti: dónde empieza, cómo cae y cómo gira. */
+private class ConfettiPiece(
+    val x: Float,
+    val speed: Float,
+    val size: Float,
+    val sway: Float,
+    val phase: Float,
+    val spin: Float,
+    val color: Color
+)
+
+/**
+ * Confeti que cae una sola vez por toda la pantalla, con los colores del estilo vigente.
+ * Solo dibuja; no recibe toques.
+ */
+@Composable
+private fun Confetti() {
+    val tokens = LocalAppTokens.current
+    val palette = listOf(tokens.accent, tokens.highlight, tokens.mint, tokens.sky, Color.White)
+    val pieces = remember(palette) {
+        val random = Random(7)
+        List(70) {
+            ConfettiPiece(
+                x = random.nextFloat(),
+                speed = 0.7f + random.nextFloat() * 0.6f,
+                size = 7f + random.nextFloat() * 8f,
+                sway = 0.02f + random.nextFloat() * 0.04f,
+                phase = random.nextFloat() * 2f * PI.toFloat(),
+                spin = 180f + random.nextFloat() * 540f,
+                color = palette[random.nextInt(palette.size)]
+            )
+        }
+    }
+    val progress = remember { Animatable(0f) }
+    LaunchedEffect(Unit) {
+        progress.animateTo(1f, tween(durationMillis = 3600, easing = LinearEasing))
+    }
+
+    Canvas(modifier = Modifier.fillMaxSize()) {
+        val t = progress.value
+        if (t >= 1f) return@Canvas
+        pieces.forEach { piece ->
+            val y = (-0.08f + t * piece.speed * 1.25f) * size.height
+            if (y < -piece.size || y > size.height + piece.size) return@forEach
+            val x = (piece.x + piece.sway * sin(t * 9f + piece.phase)) * size.width
+            val side = piece.size.dp.toPx()
+            rotate(degrees = piece.spin * t, pivot = Offset(x, y)) {
+                drawRect(
+                    color = piece.color,
+                    topLeft = Offset(x - side / 2, y - side / 4),
+                    size = Size(side, side / 2)
                 )
-
-                Text(
-                    text = endMessage(won, playerName, uiState),
-                    fontSize = 16.sp,
-                    color = tokens.bgMuted,
-                    textAlign = TextAlign.Center
-                )
-
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
-                    EndStat(
-                        value = uiState.score,
-                        label = stringResource(R.string.end_points),
-                        color = if (tokens.isPlayful) tokens.highlight else tokens.surface,
-                        modifier = Modifier.weight(1f)
-                    )
-                    EndStat(
-                        value = uiState.launches,
-                        label = stringResource(R.string.end_launches),
-                        color = if (tokens.isPlayful) tokens.mint else tokens.surface,
-                        modifier = Modifier.weight(1f)
-                    )
-                    EndStat(
-                        value = uiState.criticalCount,
-                        label = stringResource(R.string.end_criticals),
-                        color = if (tokens.isPlayful) tokens.sky else tokens.surface,
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-
-                StyledButton(onClick = onPlayAgain, height = 60.dp, modifier = Modifier.padding(top = 8.dp)) {
-                    Text(
-                        text = stringResource(
-                            if (tokens.isPlayful) R.string.end_play_again_playful else R.string.end_play_again
-                        ),
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = tokens.onAccent
-                    )
-                }
-
-                ShareResultButton(uiState = uiState)
-
-                Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
-                    TextAction(stringResource(R.string.end_menu), onNavigateToMenu)
-                    TextAction(stringResource(R.string.end_close), onDismiss)
-                }
             }
         }
     }
@@ -139,38 +358,12 @@ private fun endMessage(won: Boolean, playerName: String, uiState: DiceUiState): 
 }
 
 @Composable
-private fun EndStat(value: Int, label: String, color: androidx.compose.ui.graphics.Color, modifier: Modifier) {
-    val tokens = LocalAppTokens.current
-    StyledCard(color = color, modifier = modifier) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 14.dp)
-        ) {
-            Text(
-                text = value.toString(),
-                fontSize = 30.sp,
-                fontWeight = FontWeight.ExtraBold,
-                color = if (tokens.isPlayful) tokens.onAccent else tokens.ink
-            )
-            Text(
-                text = if (tokens.isPlayful) label.uppercase() else label,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Bold,
-                color = if (tokens.isPlayful) tokens.onAccent else tokens.muted
-            )
-        }
-    }
-}
-
-@Composable
 private fun TextAction(text: String, onClick: () -> Unit) {
     Text(
         text = text,
         fontSize = 15.sp,
         fontWeight = FontWeight.ExtraBold,
-        color = LocalAppTokens.current.bgInk,
+        color = LocalAppTokens.current.ink,
         modifier = Modifier
             .clickable(role = Role.Button, onClick = onClick)
             .padding(vertical = 8.dp)

@@ -151,5 +151,22 @@
     <string name="bg_hue_help">Desliza para elegir el color</string>
     <string name="bg_brightness_label">Claridad</string>
     <string name="bg_brightness_help">Desliza para hacerlo más claro u oscuro</string>
-    <string name="top_faces_title">Más frecuentes</string>
+    <!-- Rediseño: ajustes en dos pantallas, metas, compartir y estadísticas -->
+    <string name="settings_tab_game">Partida</string>
+    <string name="settings_tab_personalize">Personalizar</string>
+    <string name="settings_dice">Dados</string>
+    <string name="settings_faces">Caras del dado</string>
+    <string name="settings_goals">Meta de la partida</string>
+    <string name="settings_target_score">Puntos para ganar</string>
+    <string name="settings_max_launches">Lanzamientos</string>
+    <string name="mode_chip_description">Cambiar dados y caras</string>
+    <string name="mode_chip_dice_one">1 dado</string>
+    <string name="mode_chip_dice_two">2 dados</string>
+    <string name="share_dialog_title">Compartir resultado</string>
+    <string name="share_dialog_send">Compartir con…</string>
+    <string name="share_dialog_close">Cerrar</string>
+    <string name="end_lose_title_playful">¡UY!</string>
+    <string name="stats_average">Promedio</string>
+    <string name="stats_best">Mejor tiro</string>
+    <string name="stats_history_title">Tus tiros</string>
 </resources>

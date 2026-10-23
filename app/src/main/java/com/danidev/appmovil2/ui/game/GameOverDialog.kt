@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.widthIn
@@ -49,7 +50,6 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.danidev.appmovil2.GameOutcome
 import com.danidev.appmovil2.R
-import com.danidev.appmovil2.TARGET_SCORE
 import com.danidev.appmovil2.ui.dice.DiceUiState
 import com.danidev.appmovil2.ui.style.LocalAppTokens
 import com.danidev.appmovil2.ui.style.StyledButton
@@ -149,6 +149,7 @@ fun GameOverDialog(
                                     when {
                                         won && tokens.isPlayful -> R.string.end_win_title_playful
                                         won -> R.string.end_win_title
+                                        tokens.isPlayful -> R.string.end_lose_title_playful
                                         else -> R.string.end_lose_title
                                     }
                                 ),
@@ -223,14 +224,15 @@ fun GameOverDialog(
                 }
             }
 
-            if (won) {
-                Confetti()
-            }
+            if (won) Confetti() else Rain()
         }
     }
 }
 
-/** Trofeo (o dado, si se perdió) que entra rebotando y, en victoria, se balancea. */
+/**
+ * Trofeo que entra rebotando y se balancea si se ganó; si se perdió, un dado que cae desde
+ * arriba, rebota y queda ladeado.
+ */
 @Composable
 private fun Trophy(won: Boolean, visible: Boolean) {
     val bounce by animateFloatAsState(
@@ -238,22 +240,32 @@ private fun Trophy(won: Boolean, visible: Boolean) {
         animationSpec = spring(dampingRatio = Spring.DampingRatioHighBouncy, stiffness = Spring.StiffnessLow),
         label = "trophyBounce"
     )
+    val fallOffset by animateFloatAsState(
+        targetValue = if (visible) 0f else -140f,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow),
+        label = "dieFall"
+    )
     val wobble = remember { Animatable(0f) }
     LaunchedEffect(visible, won) {
-        if (visible && won) {
+        if (!visible) return@LaunchedEffect
+        if (won) {
             repeat(2) {
                 wobble.animateTo(8f, tween(180))
                 wobble.animateTo(-8f, tween(180))
             }
             wobble.animateTo(0f, tween(180))
+        } else {
+            wobble.animateTo(-18f, tween(400))
         }
     }
     Text(
         text = if (won) "🏆" else "🎲",
         fontSize = 64.sp,
-        modifier = Modifier
-            .scale(bounce)
-            .rotate(wobble.value)
+        modifier = if (won) {
+            Modifier.scale(bounce).rotate(wobble.value)
+        } else {
+            Modifier.offset(y = fallOffset.dp).alpha(if (visible) 1f else 0f).rotate(wobble.value)
+        }
     )
 }
 
@@ -347,14 +359,58 @@ private fun Confetti() {
     }
 }
 
+/** Gota de la lluvia de la pantalla de derrota. */
+private class RainDrop(val x: Float, val speed: Float, val length: Float, val phase: Float)
+
+/**
+ * Lluvia suave que cae una sola vez por la pantalla cuando se pierde: gotas finas y lentas, lo
+ * contrario del confeti. Solo dibuja; no recibe toques.
+ */
+@Composable
+private fun Rain() {
+    val tokens = LocalAppTokens.current
+    val color = tokens.sky.copy(alpha = 0.55f)
+    val drops = remember {
+        val random = Random(11)
+        List(45) {
+            RainDrop(
+                x = random.nextFloat(),
+                speed = 0.8f + random.nextFloat() * 0.5f,
+                length = 14f + random.nextFloat() * 14f,
+                phase = random.nextFloat()
+            )
+        }
+    }
+    val progress = remember { Animatable(0f) }
+    LaunchedEffect(Unit) {
+        progress.animateTo(1f, tween(durationMillis = 3800, easing = LinearEasing))
+    }
+
+    Canvas(modifier = Modifier.fillMaxSize()) {
+        val t = progress.value
+        if (t >= 1f) return@Canvas
+        drops.forEach { drop ->
+            val y = ((t * drop.speed * 1.4f + drop.phase * 0.3f) % 1.3f - 0.15f) * size.height
+            val x = drop.x * size.width
+            val len = drop.length.dp.toPx()
+            drawLine(
+                color = color,
+                start = Offset(x, y),
+                end = Offset(x - len * 0.15f, y + len),
+                strokeWidth = 2.5.dp.toPx()
+            )
+        }
+    }
+}
+
 @Composable
 private fun endMessage(won: Boolean, playerName: String, uiState: DiceUiState): String = when {
     won && playerName.isNotEmpty() ->
         stringResource(R.string.end_win_message_named, playerName, uiState.score, uiState.launches)
     won -> stringResource(R.string.end_win_message, uiState.score, uiState.launches)
     playerName.isNotEmpty() ->
-        stringResource(R.string.end_lose_message_named, playerName, uiState.score, TARGET_SCORE)
-    else -> stringResource(R.string.end_lose_message, uiState.score, TARGET_SCORE)
+        stringResource(R.string.end_lose_message_named, playerName, uiState.score, uiState.targetScore)
+    else -> stringResource(R.string.end_lose_message, uiState.score, uiState.targetScore)
 }
 
 @Composable

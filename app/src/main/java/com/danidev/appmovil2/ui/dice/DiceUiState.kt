@@ -2,6 +2,8 @@ package com.danidev.appmovil2.ui.dice
 
 import com.danidev.appmovil2.GameOutcome
 import com.danidev.appmovil2.RollIndicator
+import com.danidev.appmovil2.MAX_LAUNCHES
+import com.danidev.appmovil2.TARGET_SCORE
 import com.danidev.appmovil2.determineGameOutcome
 
 /**
@@ -23,6 +25,8 @@ import com.danidev.appmovil2.determineGameOutcome
  * @property rollCount Tiros consecutivos del contador (HU-08); se reinicia a mano.
  * @property rollIndicator Crítico o pifia del último tiro de un solo dado (HU-09).
  * @property criticalCount Cuántos tiros críticos van en la partida en curso.
+ * @property targetScore Puntos que hay que alcanzar para ganar.
+ * @property maxLaunches Lanzamientos disponibles en la partida.
  */
 data class DiceUiState(
     val diceCount: Int = 1,
@@ -34,11 +38,13 @@ data class DiceUiState(
     val launches: Int = 0,
     val rollCount: Int = 0,
     val rollIndicator: RollIndicator = RollIndicator.NONE,
-    val criticalCount: Int = 0
+    val criticalCount: Int = 0,
+    val targetScore: Int = TARGET_SCORE,
+    val maxLaunches: Int = MAX_LAUNCHES
 ) {
     /** Resultado de la partida según los puntos y lanzamientos acumulados. */
     val outcome: GameOutcome
-        get() = determineGameOutcome(score, launches)
+        get() = determineGameOutcome(score, launches, targetScore, maxLaunches)
 
     //Suma acumulada de los valores de los dados no bloqueados.
     val currentDiceValue: Int

@@ -49,7 +49,7 @@ class ShakeDetector(
 
     companion object {
         // Umbral de fuerza G para considerar que el usuario sacudió el teléfono intencionalmente.
-        const val SHAKE_THRESHOLD = 2.3f
+        const val SHAKE_THRESHOLD = 1.8f
 
         // Cooldown para evitar múltiples tiros accidentales con la misma sacudida.
         const val SHAKE_COOLDOWN_MS = 900L
@@ -95,7 +95,7 @@ fun rememberShakeDetector(
                 sensorManager.registerListener(
                     detector,
                     accelerometer,
-                    SensorManager.SENSOR_DELAY_UI
+                    SensorManager.SENSOR_DELAY_GAME
                 )
                 isRegistered = true
             }

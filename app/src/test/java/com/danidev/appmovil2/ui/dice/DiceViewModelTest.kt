@@ -227,13 +227,46 @@ class DiceViewModelTest {
     }
 
     @Test
-    fun `con dos dados no hay indicador y startRoll lo limpia`() {
+    fun `con dos dados es critico si alguno sale maximo y pifia si ambos salen 1`() {
         viewModel.registerResult(listOf(6), listOf(6))
         viewModel.startRoll()
         assertEquals(RollIndicator.NONE, viewModel.uiState.value.rollIndicator)
 
-        viewModel.registerResult(listOf(6, 6), listOf(6, 6))
+        viewModel.registerResult(listOf(6, 3), listOf(6, 3))
+        assertEquals(RollIndicator.CRITICAL, viewModel.uiState.value.rollIndicator)
+
+        viewModel.registerResult(listOf(1, 1), listOf(1, 1))
+        assertEquals(RollIndicator.FUMBLE, viewModel.uiState.value.rollIndicator)
+
+        viewModel.registerResult(listOf(1, 4), listOf(1, 4))
         assertEquals(RollIndicator.NONE, viewModel.uiState.value.rollIndicator)
+    }
+
+    @Test
+    fun `la partida usa la meta y los lanzamientos que se configuran`() {
+        viewModel.setGoals(targetScore = 12, maxLaunches = 3)
+        viewModel.registerResult(listOf(6), listOf(6))
+        assertEquals(GameOutcome.IN_PROGRESS, viewModel.uiState.value.outcome)
+
+        viewModel.registerResult(listOf(6), listOf(6))
+        assertEquals(GameOutcome.WON, viewModel.uiState.value.outcome)
+    }
+
+    @Test
+    fun `cambiar el tipo de dado conserva puntos y lanzamientos`() {
+        viewModel.registerResult(listOf(4), listOf(4))
+        viewModel.registerResult(listOf(5), listOf(5))
+        viewModel.toggleLock(0)
+
+        viewModel.onDiceTypeChanged()
+
+        val state = viewModel.uiState.value
+        assertEquals(9, state.score)
+        assertEquals(2, state.launches)
+        assertEquals(2, state.history.size)
+        assertTrue(state.faceCounts.isEmpty())
+        assertTrue(state.lockedIndices.isEmpty())
+        assertEquals(listOf(1), state.currentDiceValues)
     }
 
     @Test

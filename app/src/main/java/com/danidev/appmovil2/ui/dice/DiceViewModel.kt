@@ -40,6 +40,30 @@ class DiceViewModel : ViewModel() {
         _uiState.update { it.copy(rollCount = it.rollCount + 1, rollIndicator = RollIndicator.NONE) }
     }
 
+    /**
+     * Cambia la meta de la partida: puntos para ganar y lanzamientos disponibles. La partida
+     * en curso se conserva; solo cambia cuándo termina.
+     */
+    fun setGoals(targetScore: Int, maxLaunches: Int) {
+        _uiState.update { it.copy(targetScore = targetScore, maxLaunches = maxLaunches) }
+    }
+
+    /**
+     * Avisa que el jugador cambió el tipo de dado en plena partida. Los puntos, los lanzamientos
+     * y el historial se conservan; se limpian los dados en pantalla, los bloqueos y el conteo
+     * por cara, porque ese conteo solo tiene sentido para un mismo tipo de dado.
+     */
+    fun onDiceTypeChanged() {
+        _uiState.update {
+            it.copy(
+                currentDiceValues = List(it.diceCount) { 1 },
+                lockedIndices = emptySet(),
+                faceCounts = emptyMap(),
+                rollIndicator = RollIndicator.NONE
+            )
+        }
+    }
+
     /** Reinicia el contador de tiros consecutivos (HU-08). */
     fun resetRollCount() {
         _uiState.update { it.copy(rollCount = 0) }
@@ -126,12 +150,8 @@ class DiceViewModel : ViewModel() {
         val recordValues = activeValues.ifEmpty { values }
         val newRecord = RollRecord(id = nextRollId++, values = recordValues, sides = sides)
         _uiState.update { currentState ->
-            // HU-09: solo se evalúa el tiro cuando hay un único dado en juego.
-            val indicator = if (values.size == 1) {
-                determineRollIndicator(values[0], sides)
-            } else {
-                RollIndicator.NONE
-            }
+            // HU-09: crítico si algún dado que cuenta sale en la cara más alta; pifia si todos en 1.
+            val indicator = determineRollIndicator(recordValues, sides)
             currentState.copy(
                 currentDiceValues = values,
                 history = (listOf(newRecord) + currentState.history)

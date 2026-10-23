@@ -74,28 +74,43 @@ fun PersonalizeSheet(
                 color = tokens.ink
             )
 
-            StyledNameField()
-
-            SectionLabel(stringResource(R.string.personalize_style))
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                StyleOption(
-                    option = AppStyle.BALANCED,
-                    label = stringResource(R.string.style_balanced),
-                    selected = style == AppStyle.BALANCED,
-                    onClick = { onStyleChange(AppStyle.BALANCED) },
-                    modifier = Modifier.weight(1f)
-                )
-                StyleOption(
-                    option = AppStyle.PLAYFUL,
-                    label = stringResource(R.string.style_playful),
-                    selected = style == AppStyle.PLAYFUL,
-                    onClick = { onStyleChange(AppStyle.PLAYFUL) },
-                    modifier = Modifier.weight(1f)
-                )
-            }
-
-            BackgroundSection()
+            PersonalizeContent(style = style, onStyleChange = onStyleChange)
         }
+    }
+}
+
+/**
+ * Contenido de "Personalizar": nombre del jugador (HU-12), estilo visual y fondo. Se usa en la
+ * hoja que abre la bienvenida y en la segunda pantalla de los ajustes de la partida.
+ */
+@Composable
+fun PersonalizeContent(
+    style: AppStyle,
+    onStyleChange: (AppStyle) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(20.dp), modifier = modifier) {
+        StyledNameField()
+
+        SectionLabel(stringResource(R.string.personalize_style))
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            StyleOption(
+                option = AppStyle.BALANCED,
+                label = stringResource(R.string.style_balanced),
+                selected = style == AppStyle.BALANCED,
+                onClick = { onStyleChange(AppStyle.BALANCED) },
+                modifier = Modifier.weight(1f)
+            )
+            StyleOption(
+                option = AppStyle.PLAYFUL,
+                label = stringResource(R.string.style_playful),
+                selected = style == AppStyle.PLAYFUL,
+                onClick = { onStyleChange(AppStyle.PLAYFUL) },
+                modifier = Modifier.weight(1f)
+            )
+        }
+
+        BackgroundSection()
     }
 }
 

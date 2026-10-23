@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -103,5 +104,65 @@ fun StyledSwitchRow(
                 uncheckedBorderColor = tokens.muted
             )
         )
+    }
+}
+
+/**
+ * Fila con una etiqueta y, a la derecha, un valor que se cambia con los botones − y +.
+ *
+ * @param step Cuánto cambia el valor con cada toque.
+ */
+@Composable
+fun StyledStepper(
+    label: String,
+    value: Int,
+    onValueChange: (Int) -> Unit,
+    min: Int,
+    max: Int,
+    step: Int,
+    modifier: Modifier = Modifier
+) {
+    val tokens = LocalAppTokens.current
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
+        modifier = modifier
+            .fillMaxWidth()
+            .height(52.dp)
+    ) {
+        Text(text = label, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = tokens.ink)
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            StepperButton("−", enabled = value > min) { onValueChange((value - step).coerceAtLeast(min)) }
+            Text(
+                text = value.toString(),
+                fontSize = 20.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color = tokens.ink,
+                modifier = Modifier.width(52.dp),
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            )
+            StepperButton("+", enabled = value < max) { onValueChange((value + step).coerceAtMost(max)) }
+        }
+    }
+}
+
+@Composable
+private fun StepperButton(symbol: String, enabled: Boolean, onClick: () -> Unit) {
+    val tokens = LocalAppTokens.current
+    StyledCard(
+        color = if (enabled) tokens.accent else tokens.soft,
+        radius = 14.dp,
+        modifier = Modifier
+            .size(40.dp)
+            .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
+    ) {
+        Box(contentAlignment = Alignment.Center, modifier = Modifier.size(40.dp)) {
+            Text(
+                text = symbol,
+                fontSize = 22.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color = if (enabled) tokens.onAccent else tokens.muted
+            )
+        }
     }
 }

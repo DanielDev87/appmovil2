@@ -31,7 +31,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.danidev.appmovil2.R
 import com.danidev.appmovil2.ui.dice.DiceViewModel
 import com.danidev.appmovil2.ui.dice.LocalDicePalette
-import com.danidev.appmovil2.ui.dice.RollHistory
+import com.danidev.appmovil2.ui.dice.RollHistoryGrid
 import com.danidev.appmovil2.ui.dice.RollStatistics
 import com.danidev.appmovil2.ui.dice.rememberDicePaletteViewModel
 import com.danidev.appmovil2.ui.dice.rememberDiceTypeViewModel
@@ -98,17 +98,28 @@ fun StatsScreen(diceViewModel: DiceViewModel = viewModel(), onNavigateBack: () -
                     .verticalScroll(rememberScrollState())
                     .padding(vertical = 8.dp)
             ) {
+                // Resumen: cuántos tiros van, el promedio y el mejor tiro de la partida.
+                val totalRolls = uiState.faceCounts.values.sum()
+                val average = if (totalRolls == 0) 0.0 else
+                    uiState.faceCounts.entries.sumOf { it.key * it.value }.toDouble() / totalRolls
+                val best = uiState.faceCounts.filterValues { it > 0 }.keys.maxOrNull() ?: 0
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     SummaryCard(
-                        label = stringResource(R.string.stats_rolls_label, diceType.label),
+                        label = stringResource(R.string.stat_launches),
                         value = uiState.launches.toString(),
                         color = if (tokens.isPlayful) tokens.highlight else tokens.surface,
                         modifier = Modifier.weight(1f)
                     )
                     SummaryCard(
-                        label = stringResource(R.string.stats_streak_label),
-                        value = "×${uiState.rollCount}",
+                        label = stringResource(R.string.stats_average),
+                        value = String.format(java.util.Locale.getDefault(), "%.1f", average),
                         color = if (tokens.isPlayful) tokens.mint else tokens.surface,
+                        modifier = Modifier.weight(1f)
+                    )
+                    SummaryCard(
+                        label = stringResource(R.string.stats_best),
+                        value = best.toString(),
+                        color = if (tokens.isPlayful) tokens.sky else tokens.surface,
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -116,7 +127,7 @@ fun StatsScreen(diceViewModel: DiceViewModel = viewModel(), onNavigateBack: () -
                 RollStatistics(counts = uiState.faceCounts, faces = diceType.sides)
 
                 CompositionLocalProvider(LocalDicePalette provides palette) {
-                    RollHistory(history = uiState.history)
+                    RollHistoryGrid(history = uiState.history)
                 }
             }
 

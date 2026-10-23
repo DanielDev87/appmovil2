@@ -1,27 +1,22 @@
 package com.danidev.appmovil2.ui.settings
 
-import androidx.compose.foundation.clickable
-import com.danidev.appmovil2.ui.style.isTablet
-import androidx.compose.ui.window.DialogProperties
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.graphics.Color
-import androidx.compose.runtime.remember
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
@@ -30,8 +25,14 @@ import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -39,48 +40,63 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import com.danidev.appmovil2.MAX_MAX_LAUNCHES
+import com.danidev.appmovil2.MAX_TARGET_SCORE
+import com.danidev.appmovil2.MIN_MAX_LAUNCHES
+import com.danidev.appmovil2.MIN_TARGET_SCORE
 import com.danidev.appmovil2.R
 import com.danidev.appmovil2.haptics.DiceHaptics
 import com.danidev.appmovil2.ui.dice.DiceFace
 import com.danidev.appmovil2.ui.dice.DicePalette
 import com.danidev.appmovil2.ui.dice.DiceSize
-import com.danidev.appmovil2.ui.player.StyledNameField
+import com.danidev.appmovil2.ui.dice.DiceType
 import com.danidev.appmovil2.ui.style.LocalAppTokens
+import com.danidev.appmovil2.ui.style.LocalStyleController
+import com.danidev.appmovil2.ui.style.PersonalizeContent
 import com.danidev.appmovil2.ui.style.StyledCard
 import com.danidev.appmovil2.ui.style.StyledSegmented
+import com.danidev.appmovil2.ui.style.StyledStepper
 import com.danidev.appmovil2.ui.style.StyledSwitchRow
+import com.danidev.appmovil2.ui.style.isTablet
 import com.danidev.appmovil2.ui.theme.LocalThemeController
 import com.danidev.appmovil2.ui.theme.ThemeMode
 import kotlin.math.roundToInt
 
+/** Qué ajustes de la partida se pueden cambiar desde [SettingsSheet]. */
+class GameOptions(
+    val palette: DicePalette,
+    val onPaletteChange: (DicePalette) -> Unit,
+    val sizeFactor: Float,
+    val onSizeChange: (Float) -> Unit,
+    val diceCount: Int,
+    val onDiceCountChange: (Int) -> Unit,
+    val diceType: DiceType,
+    val onDiceTypeChange: (DiceType) -> Unit,
+    val haptics: DiceHaptics,
+    val settings: GameSettings,
+    val onSoundMutedChange: (Boolean) -> Unit,
+    val onShakeChange: (Boolean) -> Unit,
+    val onTargetScoreChange: (Int) -> Unit,
+    val onMaxLaunchesChange: (Int) -> Unit,
+    /** `true` mientras los dados giran: no se pueden cambiar los dados en ese momento. */
+    val isRolling: Boolean
+)
+
 /**
- * Hoja de ajustes de la partida: tema, color y tamaño del dado, nombre, sonido,
- * vibración y agitar para tirar.
+ * Ajustes dentro de la partida, en dos pantallas: "Partida" (dados, meta, sonido, vibración y
+ * agitar) y "Personalizar" (tema, nombre, estilo y fondo, igual que en la bienvenida).
  *
- * @param palette Color del dado en uso (HU-04).
- * @param sizeFactor Tamaño elegido para el dado (HU-05).
- * @param diceCount Cantidad de dados en juego; limita el tamaño máximo.
- * @param haptics Vibración (HU-16).
- * @param settings Sonido (HU-15) y agitar para tirar (HU-19).
+ * En una tablet sale como panel lateral; en un teléfono, como una hoja desde abajo.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsSheet(
-    palette: DicePalette,
-    onPaletteChange: (DicePalette) -> Unit,
-    sizeFactor: Float,
-    diceCount: Int,
-    onSizeChange: (Float) -> Unit,
-    haptics: DiceHaptics,
-    settings: GameSettings,
-    onSoundMutedChange: (Boolean) -> Unit,
-    onShakeChange: (Boolean) -> Unit,
-    onDismiss: () -> Unit
-) {
+fun SettingsSheet(options: GameOptions, onDismiss: () -> Unit) {
     val tokens = LocalAppTokens.current
-    val theme = LocalThemeController.current
 
     val body: @Composable () -> Unit = {
+        var tab by rememberSaveable { mutableIntStateOf(0) }
         Column(
             verticalArrangement = Arrangement.spacedBy(16.dp),
             modifier = Modifier
@@ -96,88 +112,16 @@ fun SettingsSheet(
                 fontWeight = FontWeight.ExtraBold,
                 color = tokens.ink
             )
-
-            Label(stringResource(R.string.settings_theme))
             StyledSegmented(
                 options = listOf(
-                    stringResource(R.string.theme_light),
-                    stringResource(R.string.theme_dark),
-                    stringResource(R.string.theme_system)
+                    stringResource(R.string.settings_tab_game),
+                    stringResource(R.string.settings_tab_personalize)
                 ),
-                selectedIndex = when (theme.mode) {
-                    ThemeMode.LIGHT -> 0
-                    ThemeMode.DARK -> 1
-                    ThemeMode.SYSTEM -> 2
-                },
-                onSelect = { index ->
-                    theme.onModeChange(
-                        when (index) {
-                            0 -> ThemeMode.LIGHT
-                            1 -> ThemeMode.DARK
-                            else -> ThemeMode.SYSTEM
-                        }
-                    )
-                },
+                selectedIndex = tab,
+                onSelect = { tab = it },
                 modifier = Modifier.fillMaxWidth()
             )
-
-            Label(stringResource(R.string.settings_dice_color))
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                DicePalette.entries.forEach { option ->
-                    PaletteOption(
-                        option = option,
-                        selected = option == palette,
-                        onClick = { onPaletteChange(option) },
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-            }
-
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Label(stringResource(R.string.settings_dice_size))
-                val shown = DiceSize.effectiveFactor(sizeFactor, diceCount)
-                Text(
-                    text = stringResource(R.string.dice_size_percent, (shown * 100).roundToInt()),
-                    fontWeight = FontWeight.Bold,
-                    color = tokens.ink
-                )
-            }
-            val sizeDescription = stringResource(R.string.dice_size_description)
-            Slider(
-                value = DiceSize.effectiveFactor(sizeFactor, diceCount),
-                onValueChange = onSizeChange,
-                valueRange = DiceSize.MIN_FACTOR..DiceSize.maxFactor(diceCount),
-                colors = SliderDefaults.colors(
-                    thumbColor = tokens.accent,
-                    activeTrackColor = tokens.accent,
-                    inactiveTrackColor = tokens.soft
-                ),
-                modifier = Modifier.semantics { contentDescription = sizeDescription }
-            )
-
-            StyledNameField()
-
-            Column {
-                StyledSwitchRow(
-                    label = stringResource(R.string.settings_sound),
-                    checked = !settings.soundMuted,
-                    onCheckedChange = { onSoundMutedChange(!it) }
-                )
-                StyledSwitchRow(
-                    label = stringResource(R.string.settings_vibration),
-                    checked = haptics.isEnabled,
-                    onCheckedChange = haptics::setVibrationEnabled
-                )
-                StyledSwitchRow(
-                    label = stringResource(R.string.settings_shake),
-                    checked = settings.shakeEnabled,
-                    onCheckedChange = onShakeChange
-                )
-            }
+            if (tab == 0) GameTab(options) else PersonalizeTab()
         }
     }
 
@@ -195,6 +139,158 @@ fun SettingsSheet(
             body()
         }
     }
+}
+
+/** Primera pantalla: lo que cambia la partida. */
+@Composable
+private fun GameTab(options: GameOptions) {
+    val tokens = LocalAppTokens.current
+
+    Label(stringResource(R.string.settings_dice))
+    StyledSegmented(
+        options = listOf(stringResource(R.string.one_die), stringResource(R.string.two_dice)),
+        selectedIndex = if (options.diceCount == 2) 1 else 0,
+        onSelect = { options.onDiceCountChange(it + 1) },
+        enabled = !options.isRolling,
+        modifier = Modifier.fillMaxWidth()
+    )
+
+    Label(stringResource(R.string.settings_faces))
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+        DiceType.entries.forEach { type ->
+            val selected = type == options.diceType
+            StyledCard(
+                color = if (selected) tokens.accent else tokens.surface,
+                radius = 14.dp,
+                modifier = Modifier
+                    .weight(1f)
+                    .clickable(enabled = !options.isRolling, role = Role.RadioButton) {
+                        options.onDiceTypeChange(type)
+                    }
+            ) {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 12.dp)
+                ) {
+                    Text(
+                        text = type.label,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = if (selected) tokens.onAccent else tokens.ink
+                    )
+                }
+            }
+        }
+    }
+
+    Label(stringResource(R.string.settings_dice_color))
+    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        DicePalette.entries.forEach { option ->
+            PaletteOption(
+                option = option,
+                selected = option == options.palette,
+                onClick = { options.onPaletteChange(option) },
+                modifier = Modifier.weight(1f)
+            )
+        }
+    }
+
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Label(stringResource(R.string.settings_dice_size))
+        val shown = DiceSize.effectiveFactor(options.sizeFactor, options.diceCount)
+        Text(
+            text = stringResource(R.string.dice_size_percent, (shown * 100).roundToInt()),
+            fontWeight = FontWeight.Bold,
+            color = tokens.ink
+        )
+    }
+    val sizeDescription = stringResource(R.string.dice_size_description)
+    Slider(
+        value = DiceSize.effectiveFactor(options.sizeFactor, options.diceCount),
+        onValueChange = options.onSizeChange,
+        valueRange = DiceSize.MIN_FACTOR..DiceSize.maxFactor(options.diceCount),
+        colors = SliderDefaults.colors(
+            thumbColor = tokens.accent,
+            activeTrackColor = tokens.accent,
+            inactiveTrackColor = tokens.soft
+        ),
+        modifier = Modifier.semantics { contentDescription = sizeDescription }
+    )
+
+    Label(stringResource(R.string.settings_goals))
+    StyledStepper(
+        label = stringResource(R.string.settings_target_score),
+        value = options.settings.targetScore,
+        onValueChange = options.onTargetScoreChange,
+        min = MIN_TARGET_SCORE,
+        max = MAX_TARGET_SCORE,
+        step = 5
+    )
+    StyledStepper(
+        label = stringResource(R.string.settings_max_launches),
+        value = options.settings.maxLaunches,
+        onValueChange = options.onMaxLaunchesChange,
+        min = MIN_MAX_LAUNCHES,
+        max = MAX_MAX_LAUNCHES,
+        step = 1
+    )
+
+    Column {
+        StyledSwitchRow(
+            label = stringResource(R.string.settings_sound),
+            checked = !options.settings.soundMuted,
+            onCheckedChange = { options.onSoundMutedChange(!it) }
+        )
+        StyledSwitchRow(
+            label = stringResource(R.string.settings_vibration),
+            checked = options.haptics.isEnabled,
+            onCheckedChange = options.haptics::setVibrationEnabled
+        )
+        StyledSwitchRow(
+            label = stringResource(R.string.settings_shake),
+            checked = options.settings.shakeEnabled,
+            onCheckedChange = options.onShakeChange
+        )
+    }
+}
+
+/** Segunda pantalla: lo mismo que "Personalizar" en la bienvenida, más el tema. */
+@Composable
+private fun PersonalizeTab() {
+    val theme = LocalThemeController.current
+    val styleController = LocalStyleController.current
+
+    Label(stringResource(R.string.settings_theme))
+    StyledSegmented(
+        options = listOf(
+            stringResource(R.string.theme_light),
+            stringResource(R.string.theme_dark),
+            stringResource(R.string.theme_system)
+        ),
+        selectedIndex = when (theme.mode) {
+            ThemeMode.LIGHT -> 0
+            ThemeMode.DARK -> 1
+            ThemeMode.SYSTEM -> 2
+        },
+        onSelect = { index ->
+            theme.onModeChange(
+                when (index) {
+                    0 -> ThemeMode.LIGHT
+                    1 -> ThemeMode.DARK
+                    else -> ThemeMode.SYSTEM
+                }
+            )
+        },
+        modifier = Modifier.fillMaxWidth()
+    )
+
+    PersonalizeContent(style = styleController.style, onStyleChange = styleController.onStyleChange)
 }
 
 /** Panel pegado al borde derecho, con el resto de la pantalla atenuado; tocarlo fuera lo cierra. */

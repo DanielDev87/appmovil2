@@ -1,5 +1,9 @@
 package com.danidev.appmovil2.ui.settings
 
+import com.danidev.appmovil2.MAX_LAUNCHES
+import com.danidev.appmovil2.MAX_TARGET_SCORE
+import com.danidev.appmovil2.MIN_MAX_LAUNCHES
+import com.danidev.appmovil2.TARGET_SCORE
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -57,5 +61,28 @@ class GameSettingsViewModelTest {
             GameSettings(soundMuted = true, shakeEnabled = false),
             GameSettingsViewModel(store).settings.value
         )
+    }
+
+    @Test
+    fun `la meta y los lanzamientos empiezan en los valores de siempre`() {
+        val settings = GameSettingsViewModel(FakeGameSettingsStore()).settings.value
+
+        assertEquals(TARGET_SCORE, settings.targetScore)
+        assertEquals(MAX_LAUNCHES, settings.maxLaunches)
+    }
+
+    @Test
+    fun `cambiar la meta se guarda y respeta los limites`() {
+        val store = FakeGameSettingsStore()
+        val viewModel = GameSettingsViewModel(store)
+
+        viewModel.setTargetScore(50)
+        viewModel.setMaxLaunches(1)
+
+        assertEquals(50, store.saved.targetScore)
+        assertEquals(MIN_MAX_LAUNCHES, viewModel.settings.value.maxLaunches)
+
+        viewModel.setTargetScore(10_000)
+        assertEquals(MAX_TARGET_SCORE, viewModel.settings.value.targetScore)
     }
 }

@@ -40,13 +40,12 @@ import com.danidev.appmovil2.RollIndicator
 import com.danidev.appmovil2.audio.rememberDiceSoundManager
 import com.danidev.appmovil2.haptics.rememberDiceHaptics
 import com.danidev.appmovil2.sensor.rememberShakeDetector
-import com.danidev.appmovil2.ui.dice.DiceTypeSelector
 import com.danidev.appmovil2.ui.dice.DiceViewModel
 import com.danidev.appmovil2.ui.dice.rememberDicePaletteViewModel
 import com.danidev.appmovil2.ui.dice.rememberDiceSizeViewModel
 import com.danidev.appmovil2.ui.dice.rememberDiceTypeViewModel
 import com.danidev.appmovil2.ui.game.DiceBoard
-import com.danidev.appmovil2.ui.game.DiceCountSelector
+import com.danidev.appmovil2.ui.game.GameModeChip
 import com.danidev.appmovil2.ui.game.GameOverDialog
 import com.danidev.appmovil2.ui.game.GameStatus
 import com.danidev.appmovil2.ui.game.GameTopBar
@@ -55,15 +54,14 @@ import com.danidev.appmovil2.ui.game.RecentRolls
 import com.danidev.appmovil2.ui.game.RollButton
 import com.danidev.appmovil2.ui.game.ScoreCards
 import com.danidev.appmovil2.ui.game.ShareResultButton
-import com.danidev.appmovil2.ui.game.TopFaces
 import com.danidev.appmovil2.ui.player.LocalPlayerName
+import com.danidev.appmovil2.ui.settings.GameOptions
 import com.danidev.appmovil2.ui.settings.SettingsSheet
 import com.danidev.appmovil2.ui.settings.rememberGameSettingsViewModel
 import com.danidev.appmovil2.ui.style.AppBackground
 import com.danidev.appmovil2.ui.style.LocalAppTokens
 import com.danidev.appmovil2.ui.style.MAX_CONTENT_WIDTH
 import com.danidev.appmovil2.ui.style.StyledButton
-import com.danidev.appmovil2.ui.style.isTablet
 import com.danidev.appmovil2.ui.theme.Appmovil2Theme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -128,6 +126,10 @@ fun GameScreen(
     LaunchedEffect(uiState.outcome) {
         if (uiState.outcome == GameOutcome.IN_PROGRESS) gameOverDismissed = false
     }
+    // La meta (puntos y lanzamientos) se puede cambiar en Ajustes sin perder la partida en curso.
+    LaunchedEffect(settings.targetScore, settings.maxLaunches) {
+        diceViewModel.setGoals(settings.targetScore, settings.maxLaunches)
+    }
     LaunchedEffect(settings.soundMuted) {
         soundManager.setMuted(settings.soundMuted)
     }
@@ -137,12 +139,12 @@ fun GameScreen(
 
     val coroutineScope = rememberCoroutineScope()
 
-    // Reinicia la partida; se usa al pulsar "Jugar de nuevo" y al cambiar el tipo de dado
-    // (HU-07), porque los puntos de un dado no son comparables con los de otro.
+    // Reinicia la partida al pulsar "Jugar de nuevo".
     val resetGame: () -> Unit = {
         soundManager.stopRollSound()
         diceViewModel.clearHistory()
         diceViewModel.clearLocks()
+        diceViewModel.resetRollCount()
         currentDiceValues = List(uiState.diceCount) { 1 }
     }
 
@@ -249,29 +251,13 @@ fun GameScreen(
             ) {
                 ScoreCards(uiState = uiState)
 
-                // HU-06 y HU-07: modo de 1 o 2 dados y número de caras. Cambiar las caras
-                // empieza una partida nueva.
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    DiceCountSelector(
-                        diceCount = uiState.diceCount,
-                        enabled = !isRolling,
-                        onSelect = diceViewModel::setDiceCount,
-                        modifier = Modifier.width(200.dp)
-                    )
-                    DiceTypeSelector(
-                        selected = diceType,
-                        enabled = !isRolling,
-                        onSelect = { type ->
-                            if (type != diceType) {
-                                typeViewModel.select(type)
-                                resetGame()
-                            }
-                        }
-                    )
-                }
+                // HU-06 y HU-07: los dados y sus caras se cambian desde los ajustes; aquí solo
+                // se muestra un resumen.
+                GameModeChip(
+                    diceCount = uiState.diceCount,
+                    diceType = diceType,
+                    onClick = { showSettings = true }
+                )
 
                 DiceStage(
                     indicator = uiState.rollIndicator,
@@ -292,11 +278,7 @@ fun GameScreen(
                     )
                 }
 
-                GameStatus(
-                    uiState = uiState,
-                    shakeEnabled = settings.shakeEnabled,
-                    onResetRollCount = diceViewModel::resetRollCount
-                )
+                GameStatus(uiState = uiState)
 
                 RollButton(enabled = canRoll, onClick = triggerRoll)
 
@@ -318,11 +300,6 @@ fun GameScreen(
                     history = uiState.history,
                     onOpenStats = onNavigateToStats
                 )
-
-                // En una tablet sobra espacio: se adelantan las caras que más han salido.
-                if (isTablet()) {
-                    TopFaces(counts = uiState.faceCounts)
-                }
             }
         }
     }
@@ -339,15 +316,30 @@ fun GameScreen(
 
     if (showSettings) {
         SettingsSheet(
-            palette = palette,
-            onPaletteChange = paletteViewModel::selectPalette,
-            sizeFactor = sizeFactor,
-            diceCount = uiState.diceCount,
-            onSizeChange = sizeViewModel::setFactor,
-            haptics = haptics,
-            settings = settings,
-            onSoundMutedChange = settingsViewModel::setSoundMuted,
-            onShakeChange = settingsViewModel::setShakeEnabled,
+            options = GameOptions(
+                palette = palette,
+                onPaletteChange = paletteViewModel::selectPalette,
+                sizeFactor = sizeFactor,
+                onSizeChange = sizeViewModel::setFactor,
+                diceCount = uiState.diceCount,
+                onDiceCountChange = diceViewModel::setDiceCount,
+                diceType = diceType,
+                onDiceTypeChange = { type ->
+                    if (type != diceType) {
+                        typeViewModel.select(type)
+                        // Los puntos y lanzamientos siguen; solo se limpian los dados en pantalla.
+                        diceViewModel.onDiceTypeChanged()
+                        currentDiceValues = List(uiState.diceCount) { 1 }
+                    }
+                },
+                haptics = haptics,
+                settings = settings,
+                onSoundMutedChange = settingsViewModel::setSoundMuted,
+                onShakeChange = settingsViewModel::setShakeEnabled,
+                onTargetScoreChange = settingsViewModel::setTargetScore,
+                onMaxLaunchesChange = settingsViewModel::setMaxLaunches,
+                isRolling = isRolling
+            ),
             onDismiss = { showSettings = false }
         )
     }

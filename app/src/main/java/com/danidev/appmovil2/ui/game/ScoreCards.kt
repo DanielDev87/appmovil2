@@ -18,9 +18,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.danidev.appmovil2.MAX_LAUNCHES
 import com.danidev.appmovil2.R
-import com.danidev.appmovil2.TARGET_SCORE
 import com.danidev.appmovil2.ui.dice.DiceUiState
 import com.danidev.appmovil2.ui.style.LocalAppTokens
 import com.danidev.appmovil2.ui.style.StyledCard
@@ -36,7 +34,7 @@ fun ScoreCards(uiState: DiceUiState, modifier: Modifier = Modifier) {
         ScoreCard(
             label = stringResource(R.string.stat_points),
             value = uiState.score,
-            max = TARGET_SCORE,
+            max = uiState.targetScore,
             color = if (tokens.isPlayful) tokens.highlight else tokens.surface,
             tilt = -1f,
             modifier = Modifier.weight(1f)
@@ -44,7 +42,7 @@ fun ScoreCards(uiState: DiceUiState, modifier: Modifier = Modifier) {
         ScoreCard(
             label = stringResource(R.string.stat_launches),
             value = uiState.launches,
-            max = MAX_LAUNCHES,
+            max = uiState.maxLaunches,
             color = if (tokens.isPlayful) tokens.mint else tokens.surface,
             tilt = 1f,
             modifier = Modifier.weight(1f)

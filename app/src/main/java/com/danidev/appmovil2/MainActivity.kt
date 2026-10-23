@@ -722,7 +722,7 @@ fun MoverDados(diceViewModel: DiceViewModel = viewModel(), onNavigateToMenu: () 
             Spacer(modifier = Modifier.height(24.dp))
 
             // HU-13: cuántas veces ha salido cada cara en la partida.
-            RollStatistics(counts = uiState.faceCounts)
+            RollStatistics(counts = uiState.faceCounts, faces = diceType.sides)
 
             Spacer(modifier = Modifier.height(48.dp))
         }

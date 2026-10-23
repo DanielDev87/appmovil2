@@ -148,11 +148,13 @@ private fun RollHistoryItem(
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
         ) {
             record.values.forEach { valItem ->
-                Image(
-                    painter = painterResource(diceImageRes(valItem)),
+                // HU-04: el historial usa la misma paleta que el dado principal.
+                // HU-07: según el tipo de dado, se dibuja con puntos o en número estilizado.
+                DiceFace(
+                    value = valItem,
+                    sides = record.sides,
+                    palette = LocalDicePalette.current,
                     contentDescription = valItem.toString(),
-                    // HU-04: el historial usa la misma paleta que el dado principal.
-                    colorFilter = LocalDicePalette.current.colorFilter,
                     modifier = Modifier.size(36.dp)
                 )
             }

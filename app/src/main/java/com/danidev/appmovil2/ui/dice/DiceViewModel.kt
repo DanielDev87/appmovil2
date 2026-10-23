@@ -68,20 +68,22 @@ class DiceViewModel : ViewModel() {
     }
 
     /**
-     * Genera valores aleatorios entre 1 y 6 para los dados no bloqueados
+     * Genera valores aleatorios entre 1 y [sides] para los dados no bloqueados
      * y registra el resultado final.
+     *
+     * @param sides Número de caras del dado (HU-07); por defecto, 6.
      */
-    fun rollDice() {
+    fun rollDice(sides: Int = 6) {
         val currentState = _uiState.value
         val values = List(currentState.diceCount) { index ->
             if (index in currentState.lockedIndices) {
                 currentState.currentDiceValues.getOrElse(index) { 1 }
             } else {
-                (1..6).random()
+                (1..sides).random()
             }
         }
         val activeValues = values.filterIndexed { index, _ -> index !in currentState.lockedIndices }
-        registerResult(values, activeValues)
+        registerResult(values, activeValues, sides)
     }
 
     /**
@@ -101,10 +103,11 @@ class DiceViewModel : ViewModel() {
      *
      * @param values Lista completa de valores obtenidos en los dados.
      * @param activeValues Lista de valores de los dados no bloqueados que cuentan en este tiro.
+     * @param sides Número de caras de los dados del lanzamiento (HU-07); por defecto, 6.
      */
-    fun registerResult(values: List<Int>, activeValues: List<Int> = values) {
+    fun registerResult(values: List<Int>, activeValues: List<Int> = values, sides: Int = 6) {
         val recordValues = activeValues.ifEmpty { values }
-        val newRecord = RollRecord(id = nextRollId++, values = recordValues)
+        val newRecord = RollRecord(id = nextRollId++, values = recordValues, sides = sides)
         _uiState.update { currentState ->
             currentState.copy(
                 currentDiceValues = values,

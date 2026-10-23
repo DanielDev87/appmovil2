@@ -46,7 +46,10 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import androidx.navigation.compose.rememberNavController
+import com.danidev.appmovil2.ui.dice.DiceFace
 import com.danidev.appmovil2.ui.dice.DicePalettePicker
+import com.danidev.appmovil2.ui.dice.DiceTypeSelector
+import com.danidev.appmovil2.ui.dice.rememberDiceTypeViewModel
 import com.danidev.appmovil2.ui.dice.DiceViewModel
 import com.danidev.appmovil2.ui.dice.LocalDicePalette
 import com.danidev.appmovil2.ui.dice.RollHistory
@@ -147,7 +150,7 @@ class MainActivity : ComponentActivity() {
 /**
  * HU-09: Indicador de tiro afortunado.
  *
- * Un 6 se considera CRÍTICO.
+ * La cara más alta del dado (un 6 en el dado tradicional) se considera CRÍTICO.
  * Un 1 se considera PIFIA.
  * Cualquier otro resultado no muestra indicador.
  */
@@ -157,8 +160,8 @@ enum class RollIndicator {
     NONE
 }
 
-fun determineRollIndicator(result: Int): RollIndicator = when (result) {
-    6 -> RollIndicator.CRITICAL
+fun determineRollIndicator(result: Int, sides: Int = 6): RollIndicator = when (result) {
+    sides -> RollIndicator.CRITICAL
     1 -> RollIndicator.FUMBLE
     else -> RollIndicator.NONE
 }
@@ -183,6 +186,10 @@ fun MoverDados(diceViewModel: DiceViewModel = viewModel(), onNavigateToMenu: () 
     val paletteViewModel = rememberDicePaletteViewModel()
     val palette by paletteViewModel.palette.collectAsState()
 
+    // Tipo de dado (HU-07: D4, D6, D8, D12, D20), guardado entre sesiones.
+    val typeViewModel = rememberDiceTypeViewModel()
+    val diceType by typeViewModel.type.collectAsState()
+
     var currentDiceValues by remember { mutableStateOf(uiState.currentDiceValues) }
     var score by remember { mutableIntStateOf(0) }
     var launches by remember { mutableIntStateOf(0) }
@@ -204,6 +211,18 @@ fun MoverDados(diceViewModel: DiceViewModel = viewModel(), onNavigateToMenu: () 
 
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
+
+    // Reinicia la partida; se usa al pulsar "Jugar de nuevo" y al cambiar el tipo de dado
+    // (HU-07), porque los puntos de un dado no son comparables con los de otro.
+    val resetGame: () -> Unit = {
+        soundManager.stopRollSound()
+        diceViewModel.clearHistory()
+        diceViewModel.clearLocks()
+        currentDiceValues = List(uiState.diceCount) { 1 }
+        score = 0
+        launches = 0
+        rollIndicator = RollIndicator.NONE
+    }
 
     LaunchedEffect(uiState.diceCount, uiState.currentDiceValues) {
         if (!isRolling) {
@@ -346,6 +365,19 @@ fun MoverDados(diceViewModel: DiceViewModel = viewModel(), onNavigateToMenu: () 
                 }
             }
 
+            // HU-07: selector desplegable del número de caras. Al cambiarlo empieza una partida nueva.
+            DiceTypeSelector(
+                selected = diceType,
+                enabled = !isRolling,
+                onSelect = { type ->
+                    if (type != diceType) {
+                        typeViewModel.select(type)
+                        resetGame()
+                    }
+                },
+                modifier = Modifier.padding(bottom = 4.dp)
+            )
+
             // HU-06: Renderizado de múltiples dados simultáneos
             Row(
                 horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally),
@@ -383,14 +415,16 @@ fun MoverDados(diceViewModel: DiceViewModel = viewModel(), onNavigateToMenu: () 
                         }
                     ) {
                         Box(contentAlignment = Alignment.TopEnd) {
-                            Image(
-                                painter = painterResource(diceImageRes(dieVal)),
+                            // HU-07: con D6 se dibuja con puntos; con otros dados, en número estilizado.
+                            DiceFace(
+                                value = dieVal,
+                                sides = diceType.sides,
+                                palette = palette,
                                 contentDescription = if (isLocked) {
                                     stringResource(R.string.dice_locked_description, dieVal)
                                 } else {
                                     dieVal.toString()
                                 },
-                                colorFilter = palette.colorFilter,
                                 modifier = Modifier
                                     .size(diceSize)
                                     .padding(dicePadding)
@@ -521,7 +555,7 @@ fun MoverDados(diceViewModel: DiceViewModel = viewModel(), onNavigateToMenu: () 
                                 if (index in uiState.lockedIndices) {
                                     initialValues.getOrElse(index) { 1 }
                                 } else {
-                                    (1..6).random()
+                                    diceType.roll()
                                 }
                             }
                             delay(75)
@@ -531,7 +565,7 @@ fun MoverDados(diceViewModel: DiceViewModel = viewModel(), onNavigateToMenu: () 
                             if (index in uiState.lockedIndices) {
                                 initialValues.getOrElse(index) { 1 }
                             } else {
-                                (1..6).random()
+                                diceType.roll()
                             }
                         }
                         currentDiceValues = finalValues
@@ -540,7 +574,7 @@ fun MoverDados(diceViewModel: DiceViewModel = viewModel(), onNavigateToMenu: () 
                         soundManager.playLandSound()
 
                         val unlockedValues = finalValues.filterIndexed { index, _ -> index !in uiState.lockedIndices }
-                        diceViewModel.registerResult(finalValues, unlockedValues)
+                        diceViewModel.registerResult(finalValues, unlockedValues, diceType.sides)
 
                         score += unlockedValues.sum()
                         launches++
@@ -548,7 +582,7 @@ fun MoverDados(diceViewModel: DiceViewModel = viewModel(), onNavigateToMenu: () 
                         // HU-09: indicador basado en el resultado del dado.
                         // Se conserva la lógica original de un solo resultado.
                         if (finalValues.size == 1) {
-                            rollIndicator = determineRollIndicator(finalValues[0])
+                            rollIndicator = determineRollIndicator(finalValues[0], diceType.sides)
                         }
 
                         isRolling = false
@@ -584,14 +618,7 @@ fun MoverDados(diceViewModel: DiceViewModel = viewModel(), onNavigateToMenu: () 
 
             if (outcome != GameOutcome.IN_PROGRESS) {
                 OutlinedButton(
-                    onClick = {
-                        soundManager.stopRollSound()
-                        diceViewModel.clearHistory()
-                        diceViewModel.clearLocks()
-                        currentDiceValues = List(uiState.diceCount) { 1 }
-                        score = 0
-                        launches = 0
-                    },
+                    onClick = resetGame,
                     modifier = Modifier.padding(top = 8.dp)
                 ) {
                     Text(stringResource(R.string.play_again))

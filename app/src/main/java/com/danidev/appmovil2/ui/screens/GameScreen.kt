@@ -5,6 +5,9 @@ import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import com.danidev.appmovil2.ui.dice.DiceUiState
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.Row
@@ -319,9 +322,7 @@ fun GameScreen(
                         if (outcome != GameOutcome.IN_PROGRESS) {
                             GameStatus(uiState = uiState)
                         }
-                        if (uiState.launches > 0) {
-                            ShareResultButton(uiState = uiState)
-                        }
+                        ShareSlot(uiState = uiState)
                         mainButton()
                     }
                 }
@@ -371,10 +372,9 @@ fun GameScreen(
                         .fillMaxWidth()
                         .padding(top = 12.dp, bottom = 12.dp)
                 ) {
-                    // Compartir aparece desde el primer tiro, justo encima del botón principal.
-                    if (uiState.launches > 0) {
-                        ShareResultButton(uiState = uiState)
-                    }
+                    // Compartir aparece desde el primer tiro, justo encima del botón principal. Su
+                    // lugar se reserva desde el inicio para que nada cambie de tamaño al tirar.
+                    ShareSlot(uiState = uiState)
                     mainButton()
                 }
             }
@@ -437,5 +437,18 @@ fun GameScreen(
 fun GameScreenPreview() {
     Appmovil2Theme {
         GameScreen()
+    }
+}
+
+/** Alto del botón de compartir; el espacio se reserva aunque todavía no se muestre. */
+private val SHARE_SLOT_HEIGHT = 44.dp
+
+/** Botón de compartir desde el primer tiro; antes, un espacio vacío del mismo alto. */
+@Composable
+private fun ShareSlot(uiState: DiceUiState) {
+    if (uiState.launches > 0) {
+        ShareResultButton(uiState = uiState)
+    } else {
+        Spacer(modifier = Modifier.height(SHARE_SLOT_HEIGHT))
     }
 }

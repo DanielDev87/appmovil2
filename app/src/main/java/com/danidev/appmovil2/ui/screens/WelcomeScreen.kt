@@ -50,13 +50,12 @@ import com.danidev.appmovil2.ui.style.StyledSegmented
 import com.danidev.appmovil2.ui.settings.rememberGameSettingsViewModel
 import com.danidev.appmovil2.ui.settings.GameSettings
 import com.danidev.appmovil2.ui.player.StyledTextField
-import com.danidev.appmovil2.MIN_PLAYERS
-import com.danidev.appmovil2.MAX_PLAYERS
 import com.danidev.appmovil2.ui.dice.DiceFace
 import com.danidev.appmovil2.ui.dice.DicePalette
 import com.danidev.appmovil2.ui.player.LocalPlayerName
 import com.danidev.appmovil2.ui.progress.ProgressDialog
 import com.danidev.appmovil2.ui.progress.rememberProgressViewModel
+import com.danidev.appmovil2.ui.player.PlayerCountCards
 import com.danidev.appmovil2.ui.player.StyledNameField
 import com.danidev.appmovil2.ui.style.AppBackground
 import com.danidev.appmovil2.ui.style.LocalAppTokens
@@ -290,24 +289,10 @@ private fun PlayersSection(
 ) {
     val tokens = LocalAppTokens.current
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(
-                text = stringResource(R.string.settings_players),
-                fontSize = 14.sp,
-                fontWeight = FontWeight.ExtraBold,
-                color = tokens.bgInk
-            )
-            StyledSegmented(
-                options = (MIN_PLAYERS..MAX_PLAYERS).map { it.toString() },
-                selectedIndex = settings.playerCount - MIN_PLAYERS,
-                onSelect = { onPlayerCountChange(it + MIN_PLAYERS) },
-                modifier = Modifier.weight(1f)
-            )
-        }
+        PlayerCountCards(
+            selected = settings.playerCount,
+            onSelect = onPlayerCountChange
+        )
 
         // Nombre del jugador 1, y los de los jugadores 2 a 4 en filas de dos.
         StyledNameField()

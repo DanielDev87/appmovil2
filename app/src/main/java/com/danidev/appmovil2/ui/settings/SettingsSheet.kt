@@ -44,8 +44,6 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.danidev.appmovil2.Difficulty
 import com.danidev.appmovil2.MAX_MAX_LAUNCHES
-import com.danidev.appmovil2.MAX_PLAYERS
-import com.danidev.appmovil2.MIN_PLAYERS
 import com.danidev.appmovil2.MAX_TARGET_SCORE
 import com.danidev.appmovil2.MIN_MAX_LAUNCHES
 import com.danidev.appmovil2.MIN_TARGET_SCORE
@@ -55,6 +53,7 @@ import com.danidev.appmovil2.ui.dice.DiceFace
 import com.danidev.appmovil2.ui.dice.DicePalette
 import com.danidev.appmovil2.ui.dice.DiceSize
 import com.danidev.appmovil2.ui.dice.DiceType
+import com.danidev.appmovil2.ui.player.PlayerCountCards
 import com.danidev.appmovil2.ui.player.StyledTextField
 import com.danidev.appmovil2.ui.style.LocalAppTokens
 import com.danidev.appmovil2.ui.style.LocalStyleController
@@ -153,12 +152,10 @@ private fun GameTab(options: GameOptions) {
     val tokens = LocalAppTokens.current
 
     Label(stringResource(R.string.settings_players))
-    StyledSegmented(
-        options = (MIN_PLAYERS..MAX_PLAYERS).map { it.toString() },
-        selectedIndex = options.settings.playerCount - MIN_PLAYERS,
-        onSelect = { options.onPlayerCountChange(it + MIN_PLAYERS) },
-        enabled = !options.isRolling,
-        modifier = Modifier.fillMaxWidth()
+    PlayerCountCards(
+        selected = options.settings.playerCount,
+        onSelect = options.onPlayerCountChange,
+        enabled = !options.isRolling
     )
     // Jugadores 2 a 4: un campo para el nombre de cada uno; el 1 usa el de la bienvenida.
     for (index in 1 until options.settings.playerCount) {

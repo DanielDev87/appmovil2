@@ -79,7 +79,7 @@ enum class Difficulty(val targetScore: Int, val maxLaunches: Int) {
 
 /** Cantidad mínima y máxima de jugadores en una partida. */
 const val MIN_PLAYERS = 1
-const val MAX_PLAYERS = 4
+const val MAX_PLAYERS = 3
 
 /**
  * Resultado de una partida con varios jugadores que se turnan: gana quien llega primero a

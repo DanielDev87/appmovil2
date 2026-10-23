@@ -91,11 +91,11 @@ class GameSettingsViewModelTest {
         val settings = GameSettingsViewModel(FakeGameSettingsStore()).settings.value
 
         assertEquals(1, settings.playerCount)
-        assertEquals(listOf("", "", ""), settings.playerNames)
+        assertEquals(listOf("", ""), settings.playerNames)
     }
 
     @Test
-    fun `la cantidad de jugadores se guarda y se limita entre 1 y 4`() {
+    fun `la cantidad de jugadores se guarda y se limita entre 1 y 3`() {
         val store = FakeGameSettingsStore()
         val viewModel = GameSettingsViewModel(store)
 
@@ -103,7 +103,7 @@ class GameSettingsViewModelTest {
         assertEquals(3, store.saved.playerCount)
 
         viewModel.setPlayerCount(10)
-        assertEquals(4, viewModel.settings.value.playerCount)
+        assertEquals(3, viewModel.settings.value.playerCount)
         viewModel.setPlayerCount(-2)
         assertEquals(1, viewModel.settings.value.playerCount)
     }
@@ -114,9 +114,9 @@ class GameSettingsViewModelTest {
         val viewModel = GameSettingsViewModel(store)
 
         viewModel.setPlayerName(1, "Ana")
-        viewModel.setPlayerName(3, "Luis")
+        viewModel.setPlayerName(2, "Luis")
 
-        assertEquals(listOf("Ana", "", "Luis"), store.saved.playerNames)
+        assertEquals(listOf("Ana", "Luis"), store.saved.playerNames)
     }
 
     @Test
@@ -135,8 +135,8 @@ class GameSettingsViewModelTest {
         val viewModel = GameSettingsViewModel(FakeGameSettingsStore())
 
         viewModel.setPlayerName(0, "Yo")
-        viewModel.setPlayerName(4, "Otro")
+        viewModel.setPlayerName(3, "Otro")
 
-        assertEquals(listOf("", "", ""), viewModel.settings.value.playerNames)
+        assertEquals(listOf("", ""), viewModel.settings.value.playerNames)
     }
 }

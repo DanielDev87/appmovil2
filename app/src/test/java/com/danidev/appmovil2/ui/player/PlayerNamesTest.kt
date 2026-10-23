@@ -31,6 +31,6 @@ class PlayerNamesTest {
 
     @Test
     fun `con un solo jugador solo hay un nombre`() {
-        assertEquals(listOf("Jugador 1"), resolvePlayerNames(1, "", listOf("Ana", "", ""), fallback))
+        assertEquals(listOf("Jugador 1"), resolvePlayerNames(1, "", listOf("Ana", ""), fallback))
     }
 }

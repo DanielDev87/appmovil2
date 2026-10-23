@@ -242,4 +242,9 @@
     <string name="end_multi_points">%1$d pts</string>
     <string name="share_message_multi">🎲 En Up Dice ganó %1$s con %2$d puntos. ¿Quién me supera?</string>
     <string name="share_message_multi_tie">🎲 En Up Dice empatamos con %1$d puntos. ¿Quién desempata?</string>
+    <plurals name="players_card_label">
+        <item quantity="one">jugador</item>
+        <item quantity="other">jugadores</item>
+    </plurals>
+    <string name="players_card_description">%1$d jugadores</string>
 </resources>

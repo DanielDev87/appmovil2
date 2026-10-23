@@ -38,9 +38,9 @@ class MultiplayerTest {
     }
 
     @Test
-    fun `la cantidad de jugadores se limita entre 1 y 4`() {
+    fun `la cantidad de jugadores se limita entre 1 y 3`() {
         viewModel.setPlayerCount(9)
-        assertEquals(4, state.players.size)
+        assertEquals(3, state.players.size)
 
         viewModel.setPlayerCount(0)
         assertEquals(1, state.players.size)

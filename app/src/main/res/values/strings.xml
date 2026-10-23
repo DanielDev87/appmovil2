@@ -58,4 +58,8 @@
         <item quantity="one">El %1$d ha salido %2$d vez</item>
         <item quantity="other">El %1$d ha salido %2$d veces</item>
     </plurals>
+    <!-- HU-05: Tamaño del dado -->
+    <string name="dice_size_label">Tamaño</string>
+    <string name="dice_size_description">Cambiar el tamaño del dado</string>
+    <string name="dice_size_percent">%1$d %%</string>
 </resources>

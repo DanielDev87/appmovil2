@@ -50,6 +50,9 @@ import com.danidev.appmovil2.ui.dice.DiceFace
 import com.danidev.appmovil2.ui.dice.DicePalettePicker
 import com.danidev.appmovil2.ui.dice.DiceTypeSelector
 import com.danidev.appmovil2.ui.dice.rememberDiceTypeViewModel
+import com.danidev.appmovil2.ui.dice.DiceSize
+import com.danidev.appmovil2.ui.dice.DiceSizeSlider
+import com.danidev.appmovil2.ui.dice.rememberDiceSizeViewModel
 import com.danidev.appmovil2.ui.dice.DiceViewModel
 import com.danidev.appmovil2.ui.dice.LocalDicePalette
 import com.danidev.appmovil2.ui.dice.RollHistory
@@ -190,6 +193,9 @@ fun MoverDados(diceViewModel: DiceViewModel = viewModel(), onNavigateToMenu: () 
     // Tipo de dado (HU-07: D4, D6, D8, D12, D20), guardado entre sesiones.
     val typeViewModel = rememberDiceTypeViewModel()
     val diceType by typeViewModel.type.collectAsState()
+    // Tamaño del dado (HU-05), elegido con un slider y guardado entre sesiones.
+    val sizeViewModel = rememberDiceSizeViewModel()
+    val sizeFactor by sizeViewModel.factor.collectAsState()
 
     var currentDiceValues by remember { mutableStateOf(uiState.currentDiceValues) }
     var score by remember { mutableIntStateOf(0) }
@@ -385,8 +391,11 @@ fun MoverDados(diceViewModel: DiceViewModel = viewModel(), onNavigateToMenu: () 
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.padding(16.dp)
             ) {
-                val diceSize = if (currentDiceValues.size > 1) 130.dp else 200.dp
-                val dicePadding = if (currentDiceValues.size > 1) 16.dp else 32.dp
+                // HU-05: el slider cambia el Modifier.size() del dado; con 2 dados se limita
+                // para que sigan cabiendo en el ancho de la pantalla.
+                val diceSizeDp = DiceSize.sizeDp(currentDiceValues.size, sizeFactor)
+                val diceSize = diceSizeDp.dp
+                val dicePadding = DiceSize.paddingDp(diceSizeDp).dp
 
                 currentDiceValues.forEachIndexed { index, dieVal ->
                     val isLocked = index in uiState.lockedIndices
@@ -497,6 +506,14 @@ fun MoverDados(diceViewModel: DiceViewModel = viewModel(), onNavigateToMenu: () 
             DicePalettePicker(
                 selected = palette,
                 onSelect = paletteViewModel::selectPalette
+            )
+
+            // HU-05: slider para cambiar el tamaño del dado.
+            DiceSizeSlider(
+                factor = sizeFactor,
+                diceCount = uiState.diceCount,
+                onFactorChange = sizeViewModel::setFactor,
+                modifier = Modifier.padding(top = 8.dp)
             )
 
             Spacer(modifier = Modifier.height(24.dp))

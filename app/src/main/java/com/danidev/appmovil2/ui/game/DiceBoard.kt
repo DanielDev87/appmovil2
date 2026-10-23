@@ -114,11 +114,12 @@ fun DiceBoard(
                 modifier = Modifier
                     .drawBehind {
                         // Sombra en el suelo: se achica y se aclara cuando el dado está en el aire.
+                        // Queda siempre dentro de la caja, para que el marco del dado bloqueado la rodee.
                         val shadowWidth = size.width * (0.62f - 0.26f * height)
-                        val shadowHeight = size.height * (0.10f - 0.04f * height)
+                        val shadowHeight = size.height * (0.09f - 0.04f * height)
                         drawOval(
                             color = Color.Black.copy(alpha = 0.30f - 0.18f * height),
-                            topLeft = Offset((size.width - shadowWidth) / 2f, size.height * 0.92f),
+                            topLeft = Offset((size.width - shadowWidth) / 2f, size.height * 0.86f),
                             size = Size(shadowWidth, shadowHeight)
                         )
                     }

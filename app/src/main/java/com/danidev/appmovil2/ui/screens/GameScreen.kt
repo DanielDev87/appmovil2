@@ -326,14 +326,13 @@ fun GameScreen(
                     }
                 }
             } else {
-                // Vertical: arriba los marcadores; el dado ocupa el espacio que sobra; abajo, pegados
-                // al pulgar, los últimos tiros y el botón principal.
+                // Vertical: arriba los marcadores y los datos; en el centro el dado con los últimos
+                // tiros pegados debajo; el botón principal queda fijo abajo, al alcance del pulgar.
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(14.dp),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .weight(1f)
                         .padding(top = 8.dp)
                 ) {
                     ScoreCards(uiState = uiState)
@@ -343,18 +342,18 @@ fun GameScreen(
                         rollCount = uiState.rollCount,
                         onClick = { showSettings = true }
                     )
-                    stage(Modifier.weight(1f), if (isTablet()) 300.dp else 200.dp)
-                    if (outcome != GameOutcome.IN_PROGRESS) {
-                        GameStatus(uiState = uiState)
-                    }
                 }
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp, Alignment.CenterVertically),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 12.dp, bottom = 12.dp)
+                        .weight(1f)
                 ) {
+                    stage(Modifier, if (isTablet()) 300.dp else 200.dp)
+                    if (outcome != GameOutcome.IN_PROGRESS) {
+                        GameStatus(uiState = uiState)
+                    }
                     // Igual que en horizontal: los últimos tiros van en una tarjeta.
                     StyledCard(modifier = Modifier.fillMaxWidth()) {
                         RecentRolls(
@@ -368,6 +367,12 @@ fun GameScreen(
                     if (uiState.launches > 0) {
                         ShareResultButton(uiState = uiState)
                     }
+                }
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 12.dp, bottom = 12.dp)
+                ) {
                     mainButton()
                 }
             }

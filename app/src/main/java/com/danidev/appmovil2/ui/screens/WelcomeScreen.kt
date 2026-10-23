@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -26,11 +27,15 @@ import androidx.compose.ui.res.stringResource
 import com.danidev.appmovil2.R
 import com.danidev.appmovil2.ui.player.LocalPlayerName
 import com.danidev.appmovil2.ui.player.PlayerNameField
+import com.danidev.appmovil2.ui.style.LocalStyleController
+import com.danidev.appmovil2.ui.style.PersonalizeSheet
 import com.danidev.appmovil2.ui.theme.ThemeSwitch
 
 @Composable
 fun WelcomeScreen(onStartClicked: () -> Unit, onNavigateToAbout: () -> Unit = {}) {
     var visible by remember { mutableStateOf(false) }
+    var showPersonalize by remember { mutableStateOf(false) }
+    val styleController = LocalStyleController.current
 
     LaunchedEffect(Unit) {
         visible = true
@@ -65,6 +70,19 @@ fun WelcomeScreen(onStartClicked: () -> Unit, onNavigateToAbout: () -> Unit = {}
                 .align(Alignment.TopStart)
                 .padding(top = 48.dp, start = 16.dp)
         )
+        IconButton(
+            onClick = { showPersonalize = true },
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(top = 48.dp, end = 56.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Filled.Palette,
+                contentDescription = stringResource(R.string.personalize_open),
+                tint = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier.size(28.dp)
+            )
+        }
         IconButton(
             onClick = onNavigateToAbout,
             modifier = Modifier
@@ -165,5 +183,13 @@ fun WelcomeScreen(onStartClicked: () -> Unit, onNavigateToAbout: () -> Unit = {}
                 }
             }
         }
+    }
+
+    if (showPersonalize) {
+        PersonalizeSheet(
+            style = styleController.style,
+            onStyleChange = styleController.onStyleChange,
+            onDismiss = { showPersonalize = false }
+        )
     }
 }

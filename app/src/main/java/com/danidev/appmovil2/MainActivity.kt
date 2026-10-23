@@ -25,6 +25,12 @@ import com.danidev.appmovil2.ui.player.LocalPlayerName
 import com.danidev.appmovil2.ui.player.PlayerNameController
 import com.danidev.appmovil2.ui.player.PlayerNameViewModel
 import com.danidev.appmovil2.ui.player.SharedPreferencesPlayerNameStore
+import com.danidev.appmovil2.ui.style.LocalAppTokens
+import com.danidev.appmovil2.ui.style.LocalStyleController
+import com.danidev.appmovil2.ui.style.SharedPreferencesStyleStore
+import com.danidev.appmovil2.ui.style.StyleController
+import com.danidev.appmovil2.ui.style.StyleViewModel
+import com.danidev.appmovil2.ui.style.appTokens
 import com.danidev.appmovil2.ui.theme.Appmovil2Theme
 import com.danidev.appmovil2.ui.theme.LocalThemeController
 import com.danidev.appmovil2.ui.theme.SharedPreferencesThemeStore
@@ -45,6 +51,13 @@ class MainActivity : ComponentActivity() {
     private val playerNameViewModel: PlayerNameViewModel by viewModels {
         viewModelFactory {
             initializer { PlayerNameViewModel(SharedPreferencesPlayerNameStore(applicationContext)) }
+        }
+    }
+
+    // Estilo visual (Equilibrado / Juguetón), guardado entre sesiones.
+    private val styleViewModel: StyleViewModel by viewModels {
+        viewModelFactory {
+            initializer { StyleViewModel(SharedPreferencesStyleStore(applicationContext)) }
         }
     }
 
@@ -78,6 +91,7 @@ class MainActivity : ComponentActivity() {
             }
 
             val playerName by playerNameViewModel.name.collectAsState()
+            val appStyle by styleViewModel.style.collectAsState()
 
             CompositionLocalProvider(
                 LocalThemeController provides ThemeController(
@@ -87,7 +101,12 @@ class MainActivity : ComponentActivity() {
                 LocalPlayerName provides PlayerNameController(
                     name = playerName,
                     onNameChange = playerNameViewModel::setName
-                )
+                ),
+                LocalStyleController provides StyleController(
+                    style = appStyle,
+                    onStyleChange = styleViewModel::select
+                ),
+                LocalAppTokens provides appTokens(appStyle, darkTheme)
             ) {
                 Appmovil2Theme(darkTheme = darkTheme) {
                     Surface(

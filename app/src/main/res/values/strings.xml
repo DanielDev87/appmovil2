@@ -65,4 +65,10 @@
     <!-- HU-16: Feedback háptico -->
     <string name="haptics_enabled">Vibración activada</string>
     <string name="haptics_disabled">Vibración desactivada</string>
+    <!-- Rediseño: personalizar y estilo -->
+    <string name="personalize_title">Personalizar</string>
+    <string name="personalize_open">Personalizar</string>
+    <string name="personalize_style">Estilo de la app</string>
+    <string name="style_balanced">Equilibrado</string>
+    <string name="style_playful">Juguetón</string>
 </resources>

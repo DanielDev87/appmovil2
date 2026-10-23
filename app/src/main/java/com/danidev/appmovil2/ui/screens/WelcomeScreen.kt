@@ -56,7 +56,7 @@ import com.danidev.appmovil2.ui.style.StyledButton
 import com.danidev.appmovil2.ui.style.StyledIconButton
 import com.danidev.appmovil2.ui.theme.ThemeSwitch
 
-/** Ancho de pantalla (dp) desde el que se considera una tablet en horizontal. */
+/** Ancho de pantalla (dp) desde el que se considera una tablet; además debe estar en horizontal. */
 private const val WIDE_SCREEN_DP = 720
 
 /** Factor con el que crecen los textos y los dados en pantallas anchas. */
@@ -70,7 +70,10 @@ private const val WIDE_SCALE = 1.25f
 fun WelcomeScreen(onStartClicked: () -> Unit, onNavigateToAbout: () -> Unit = {}) {
     val tokens = LocalAppTokens.current
     // En pantallas anchas (tablet en horizontal) los textos y los dados crecen un poco.
-    val scale = if (LocalConfiguration.current.screenWidthDp >= WIDE_SCREEN_DP) WIDE_SCALE else 1f
+    val configuration = LocalConfiguration.current
+    val isWide = configuration.screenWidthDp >= WIDE_SCREEN_DP &&
+        configuration.screenWidthDp > configuration.screenHeightDp
+    val scale = if (isWide) WIDE_SCALE else 1f
     val styleController = LocalStyleController.current
     var visible by remember { mutableStateOf(false) }
     var showPersonalize by remember { mutableStateOf(false) }

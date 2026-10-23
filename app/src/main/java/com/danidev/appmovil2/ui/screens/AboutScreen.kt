@@ -90,7 +90,7 @@ fun AboutScreen(onNavigateBack: () -> Unit) {
             // En horizontal (tablet) el logo va a la izquierda y las tarjetas a la derecha;
             // en vertical todo va en una columna centrada de ancho limitado.
             BoxWithConstraints(modifier = Modifier.weight(1f).fillMaxWidth()) {
-                val wide = maxWidth >= WIDE_LAYOUT_MIN_WIDTH
+                val wide = maxWidth >= WIDE_LAYOUT_MIN_WIDTH && maxWidth > maxHeight
                 if (wide) {
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(40.dp),
@@ -125,7 +125,7 @@ fun AboutScreen(onNavigateBack: () -> Unit) {
     }
 }
 
-/** Ancho a partir del cual "Acerca de" se reparte en dos columnas. */
+/** Ancho a partir del cual "Acerca de" se reparte en dos columnas, si además está en horizontal. */
 private val WIDE_LAYOUT_MIN_WIDTH = 720.dp
 
 /** Factor con el que crece el texto y el logo en el diseño de dos columnas. */

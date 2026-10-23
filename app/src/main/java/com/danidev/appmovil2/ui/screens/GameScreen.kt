@@ -29,6 +29,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -62,6 +63,7 @@ import com.danidev.appmovil2.ui.style.AppBackground
 import com.danidev.appmovil2.ui.style.LocalAppTokens
 import com.danidev.appmovil2.ui.style.MAX_CONTENT_WIDTH
 import com.danidev.appmovil2.ui.style.StyledButton
+import com.danidev.appmovil2.ui.style.isTablet
 import com.danidev.appmovil2.ui.theme.Appmovil2Theme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -166,6 +168,8 @@ fun GameScreen(
     )
 
     val tokens = LocalAppTokens.current
+    val configuration = LocalConfiguration.current
+    val isWideLandscape = isTablet() && configuration.screenWidthDp > configuration.screenHeightDp
 
     val hasUnlockedDice = uiState.lockedIndices.size < uiState.diceCount
     val canRoll = !isRolling && outcome == GameOutcome.IN_PROGRESS && hasUnlockedDice
@@ -227,7 +231,7 @@ fun GameScreen(
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .fillMaxHeight()
-                .widthIn(max = MAX_CONTENT_WIDTH)
+                .widthIn(max = if (isWideLandscape) 1100.dp else MAX_CONTENT_WIDTH)
                 .fillMaxWidth()
                 .statusBarsPadding()
                 .navigationBarsPadding()
@@ -240,17 +244,8 @@ fun GameScreen(
                 onOpenSettings = { showSettings = true }
             )
 
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(14.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
-                    .verticalScroll(rememberScrollState())
-                    .padding(vertical = 8.dp)
-            ) {
-                ScoreCards(uiState = uiState)
-
+            // Piezas de la partida; se acomodan distinto en vertical y en una tablet horizontal.
+            val modeChip: @Composable () -> Unit = {
                 // HU-06 y HU-07: los dados y sus caras se cambian desde los ajustes; aquí solo
                 // se muestra un resumen.
                 GameModeChip(
@@ -258,7 +253,8 @@ fun GameScreen(
                     diceType = diceType,
                     onClick = { showSettings = true }
                 )
-
+            }
+            val stage: @Composable () -> Unit = {
                 DiceStage(
                     indicator = uiState.rollIndicator,
                     sum = currentDiceValues
@@ -277,7 +273,8 @@ fun GameScreen(
                         onToggleLock = diceViewModel::toggleLock
                     )
                 }
-
+            }
+            val actions: @Composable () -> Unit = {
                 GameStatus(uiState = uiState)
 
                 RollButton(enabled = canRoll, onClick = triggerRoll)
@@ -300,6 +297,52 @@ fun GameScreen(
                     history = uiState.history,
                     onOpenStats = onNavigateToStats
                 )
+            }
+
+            if (isWideLandscape) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(20.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                        .padding(vertical = 8.dp)
+                ) {
+                    Column(
+                        verticalArrangement = Arrangement.Center,
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight()
+                    ) {
+                        stage()
+                    }
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(14.dp),
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight()
+                            .verticalScroll(rememberScrollState())
+                    ) {
+                        ScoreCards(uiState = uiState)
+                        modeChip()
+                        actions()
+                    }
+                }
+            } else {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(14.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                        .verticalScroll(rememberScrollState())
+                        .padding(vertical = 8.dp)
+                ) {
+                    ScoreCards(uiState = uiState)
+                    modeChip()
+                    stage()
+                    actions()
+                }
             }
         }
     }

@@ -51,22 +51,28 @@ data class GameResult(
     val sides: Int
 )
 
-/** Logros que se pueden desbloquear. */
+/**
+ * Logros que se pueden desbloquear.
+ *
+ * @property goal Meta numérica del logro y cómo medir el avance, para mostrar "3 de 5"; `null` si el
+ * logro no se mide con un contador (por ejemplo, ganar con un D20).
+ */
 enum class Achievement(
     val emoji: String,
     @StringRes val titleRes: Int,
     @StringRes val descriptionRes: Int,
+    val goal: AchievementGoal? = null,
     private val condition: (PlayerProgress, GameResult) -> Boolean
 ) {
-    FIRST_WIN("🏆", R.string.ach_first_win, R.string.ach_first_win_desc, { p, _ -> p.wins >= 1 }),
-    WINS_5("🥇", R.string.ach_wins_5, R.string.ach_wins_5_desc, { p, _ -> p.wins >= 5 }),
-    WINS_10("👑", R.string.ach_wins_10, R.string.ach_wins_10_desc, { p, _ -> p.wins >= 10 }),
-    STREAK_3("🔥", R.string.ach_streak_3, R.string.ach_streak_3_desc, { p, _ -> p.bestStreak >= 3 }),
-    FIRST_CRITICAL("🎯", R.string.ach_first_critical, R.string.ach_first_critical_desc, { p, _ -> p.totalCriticals >= 1 }),
-    CRITICALS_10("⭐", R.string.ach_criticals_10, R.string.ach_criticals_10_desc, { p, _ -> p.totalCriticals >= 10 }),
-    QUICK_WIN("⚡", R.string.ach_quick_win, R.string.ach_quick_win_desc, { _, r -> r.won && r.launches <= QUICK_WIN_LAUNCHES }),
-    D20_WIN("🐉", R.string.ach_d20_win, R.string.ach_d20_win_desc, { _, r -> r.won && r.sides == 20 }),
-    PLAYED_10("🎲", R.string.ach_played_10, R.string.ach_played_10_desc, { p, _ -> p.gamesPlayed >= 10 });
+    FIRST_WIN("🏆", R.string.ach_first_win, R.string.ach_first_win_desc, AchievementGoal(1) { it.wins }, { p, _ -> p.wins >= 1 }),
+    WINS_5("🥇", R.string.ach_wins_5, R.string.ach_wins_5_desc, AchievementGoal(5) { it.wins }, { p, _ -> p.wins >= 5 }),
+    WINS_10("👑", R.string.ach_wins_10, R.string.ach_wins_10_desc, AchievementGoal(10) { it.wins }, { p, _ -> p.wins >= 10 }),
+    STREAK_3("🔥", R.string.ach_streak_3, R.string.ach_streak_3_desc, AchievementGoal(3) { it.bestStreak }, { p, _ -> p.bestStreak >= 3 }),
+    FIRST_CRITICAL("🎯", R.string.ach_first_critical, R.string.ach_first_critical_desc, AchievementGoal(1) { it.totalCriticals }, { p, _ -> p.totalCriticals >= 1 }),
+    CRITICALS_10("⭐", R.string.ach_criticals_10, R.string.ach_criticals_10_desc, AchievementGoal(10) { it.totalCriticals }, { p, _ -> p.totalCriticals >= 10 }),
+    QUICK_WIN("⚡", R.string.ach_quick_win, R.string.ach_quick_win_desc, null, { _, r -> r.won && r.launches <= QUICK_WIN_LAUNCHES }),
+    D20_WIN("🐉", R.string.ach_d20_win, R.string.ach_d20_win_desc, null, { _, r -> r.won && r.sides == 20 }),
+    PLAYED_10("🎲", R.string.ach_played_10, R.string.ach_played_10_desc, AchievementGoal(10) { it.gamesPlayed }, { p, _ -> p.gamesPlayed >= 10 });
 
     /** Identificador estable con el que se guarda el logro. */
     val id: String get() = name
@@ -77,6 +83,20 @@ enum class Achievement(
         /** Lanzamientos o menos con los que una victoria cuenta como rápida. */
         const val QUICK_WIN_LAUNCHES = 3
     }
+}
+
+/**
+ * Meta de un logro con contador.
+ *
+ * @property target Valor que hay que alcanzar.
+ * @property current Cuánto lleva el jugador, a partir de su progreso.
+ */
+class AchievementGoal(val target: Int, val current: (PlayerProgress) -> Int)
+
+/** Avance de [progress] hacia la meta de este logro, entre 0 y 1; 0 si el logro no tiene contador. */
+fun Achievement.fractionOf(progress: PlayerProgress): Float {
+    val g = goal ?: return 0f
+    return (g.current(progress).toFloat() / g.target).coerceIn(0f, 1f)
 }
 
 /**

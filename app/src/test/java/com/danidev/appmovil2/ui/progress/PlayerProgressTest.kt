@@ -166,4 +166,32 @@ class PlayerProgressTest {
         viewModel.clearLastRecord()
         assertNull(viewModel.lastRecord.value)
     }
+
+    @Test
+    fun `el avance hacia un logro con contador va de 0 a 1 y no pasa de 1`() {
+        val none = PlayerProgress()
+        assertEquals(0f, Achievement.WINS_5.fractionOf(none), 0.001f)
+
+        val three = PlayerProgress(wins = 3)
+        assertEquals(0.6f, Achievement.WINS_5.fractionOf(three), 0.001f)
+
+        val many = PlayerProgress(wins = 40)
+        assertEquals(1f, Achievement.WINS_5.fractionOf(many), 0.001f)
+    }
+
+    @Test
+    fun `los logros sin contador no muestran avance`() {
+        assertNull(Achievement.D20_WIN.goal)
+        assertEquals(0f, Achievement.QUICK_WIN.fractionOf(PlayerProgress(wins = 9)), 0.001f)
+    }
+
+    @Test
+    fun `cada logro con meta usa el dato que describe`() {
+        val progress = PlayerProgress(gamesPlayed = 4, wins = 2, bestStreak = 2, totalCriticals = 7)
+
+        assertEquals(2, Achievement.FIRST_WIN.goal!!.current(progress))
+        assertEquals(2, Achievement.STREAK_3.goal!!.current(progress))
+        assertEquals(7, Achievement.CRITICALS_10.goal!!.current(progress))
+        assertEquals(4, Achievement.PLAYED_10.goal!!.current(progress))
+    }
 }

@@ -250,4 +250,6 @@
     <string name="friends_title">Jugar con amigos</string>
     <string name="friends_subtitle">Opcional: se turnan en el mismo teléfono</string>
     <string name="welcome_settings">Ajustes</string>
+    <string name="progress_list_title">Logros</string>
+    <string name="progress_of">%1$d de %2$d</string>
 </resources>

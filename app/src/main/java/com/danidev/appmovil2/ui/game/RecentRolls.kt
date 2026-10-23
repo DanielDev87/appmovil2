@@ -32,9 +32,12 @@ import com.danidev.appmovil2.ui.style.StyledCard
 fun RecentRolls(
     history: List<RollRecord>,
     onOpenStats: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onCard: Boolean = false
 ) {
     val tokens = LocalAppTokens.current
+    // Sobre una tarjeta el texto usa los colores de la tarjeta; sobre el fondo, los del fondo.
+    val labelColor = if (onCard) tokens.muted else tokens.bgMuted
     Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = modifier.fillMaxWidth()) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -46,7 +49,7 @@ fun RecentRolls(
                 text = if (tokens.isPlayful) title.uppercase() else title,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.ExtraBold,
-                color = tokens.bgMuted
+                color = labelColor
             )
             val link = stringResource(R.string.stats_link)
             if (tokens.isPlayful) {
@@ -80,7 +83,7 @@ fun RecentRolls(
             Text(
                 text = stringResource(R.string.roll_history_empty),
                 fontSize = 14.sp,
-                color = tokens.bgMuted
+                color = labelColor
             )
         } else {
             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {

@@ -24,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.danidev.appmovil2.R
@@ -47,10 +48,10 @@ fun DiceStage(
     indicator: RollIndicator,
     sum: Int,
     modifier: Modifier = Modifier,
+    minHeight: Dp = if (isTablet()) 300.dp else 230.dp,
     content: @Composable () -> Unit
 ) {
     val tokens = LocalAppTokens.current
-    val minHeight = if (isTablet()) 300.dp else 230.dp
     StyledCard(
         radius = 32.dp,
         modifier = modifier

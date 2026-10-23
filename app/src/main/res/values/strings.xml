@@ -169,4 +169,7 @@
     <string name="stats_average">Promedio</string>
     <string name="stats_best">Mejor tiro</string>
     <string name="stats_history_title">Tus tiros</string>
+    <string name="info_dice">Dados</string>
+    <string name="info_faces">Caras</string>
+    <string name="info_streak">Tiros seguidos</string>
 </resources>

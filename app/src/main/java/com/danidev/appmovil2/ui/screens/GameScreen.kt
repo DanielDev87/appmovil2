@@ -33,6 +33,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.danidev.appmovil2.GameOutcome
@@ -46,6 +47,7 @@ import com.danidev.appmovil2.ui.dice.rememberDicePaletteViewModel
 import com.danidev.appmovil2.ui.dice.rememberDiceSizeViewModel
 import com.danidev.appmovil2.ui.dice.rememberDiceTypeViewModel
 import com.danidev.appmovil2.ui.game.DiceBoard
+import com.danidev.appmovil2.ui.game.GameInfoPanel
 import com.danidev.appmovil2.ui.game.GameModeChip
 import com.danidev.appmovil2.ui.game.GameOverDialog
 import com.danidev.appmovil2.ui.game.GameStatus
@@ -63,6 +65,7 @@ import com.danidev.appmovil2.ui.style.AppBackground
 import com.danidev.appmovil2.ui.style.LocalAppTokens
 import com.danidev.appmovil2.ui.style.MAX_CONTENT_WIDTH
 import com.danidev.appmovil2.ui.style.StyledButton
+import com.danidev.appmovil2.ui.style.StyledCard
 import com.danidev.appmovil2.ui.style.isTablet
 import com.danidev.appmovil2.ui.theme.Appmovil2Theme
 import kotlinx.coroutines.delay
@@ -254,12 +257,14 @@ fun GameScreen(
                     onClick = { showSettings = true }
                 )
             }
-            val stage: @Composable () -> Unit = {
+            val stage: @Composable (Modifier, Dp) -> Unit = { stageModifier, stageMinHeight ->
                 DiceStage(
                     indicator = uiState.rollIndicator,
                     sum = currentDiceValues
                         .filterIndexed { index, _ -> index !in uiState.lockedIndices }
-                        .sum()
+                        .sum(),
+                    modifier = stageModifier,
+                    minHeight = stageMinHeight
                 ) {
                     DiceBoard(
                         values = currentDiceValues,
@@ -300,6 +305,8 @@ fun GameScreen(
             }
 
             if (isWideLandscape) {
+                // Tablet horizontal: a la izquierda los marcadores y el dado; a la derecha los datos
+                // de la partida y los últimos tiros, con el botón de tirar fijo abajo.
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(20.dp),
                     modifier = Modifier
@@ -308,12 +315,13 @@ fun GameScreen(
                         .padding(vertical = 8.dp)
                 ) {
                     Column(
-                        verticalArrangement = Arrangement.Center,
+                        verticalArrangement = Arrangement.spacedBy(14.dp),
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxHeight()
                     ) {
-                        stage()
+                        ScoreCards(uiState = uiState)
+                        stage(Modifier.weight(1f), 180.dp)
                     }
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
@@ -321,11 +329,42 @@ fun GameScreen(
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxHeight()
-                            .verticalScroll(rememberScrollState())
                     ) {
-                        ScoreCards(uiState = uiState)
-                        modeChip()
-                        actions()
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(14.dp),
+                            modifier = Modifier
+                                .weight(1f)
+                                .verticalScroll(rememberScrollState())
+                        ) {
+                            GameInfoPanel(
+                                diceCount = uiState.diceCount,
+                                diceType = diceType,
+                                rollCount = uiState.rollCount,
+                                onClick = { showSettings = true }
+                            )
+                            StyledCard(modifier = Modifier.fillMaxWidth()) {
+                                RecentRolls(
+                                    history = uiState.history,
+                                    onOpenStats = onNavigateToStats,
+                                    onCard = true,
+                                    modifier = Modifier.padding(16.dp)
+                                )
+                            }
+                        }
+                        if (outcome != GameOutcome.IN_PROGRESS) {
+                            GameStatus(uiState = uiState)
+                            StyledButton(onClick = resetGame, height = 52.dp) {
+                                Text(
+                                    text = stringResource(R.string.play_again),
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = tokens.onAccent
+                                )
+                            }
+                        }
+                        if (uiState.launches > 0) {
+                            ShareResultButton(uiState = uiState)
+                        }
+                        RollButton(enabled = canRoll, onClick = triggerRoll)
                     }
                 }
             } else {
@@ -340,7 +379,7 @@ fun GameScreen(
                 ) {
                     ScoreCards(uiState = uiState)
                     modeChip()
-                    stage()
+                    stage(Modifier, if (isTablet()) 300.dp else 230.dp)
                     actions()
                 }
             }

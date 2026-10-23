@@ -1,7 +1,7 @@
 package com.danidev.appmovil2.ui.screens
 
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -72,6 +72,9 @@ import com.danidev.appmovil2.ui.theme.Appmovil2Theme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+/** Punto del lanzamiento (de 0 a 1) en el que el dado toca la mesa por primera vez. */
+private const val THROW_LANDING = 0.7f
+
 /** Pausa (ms) entre el último tiro y la pantalla de fin de partida. */
 private const val GAME_OVER_DELAY_MS = 800L
 
@@ -108,7 +111,8 @@ fun GameScreen(
     var currentDiceValues by remember { mutableStateOf(uiState.currentDiceValues) }
     val outcome = uiState.outcome
     var isRolling by remember { mutableStateOf(false) }
-    var rollAnimationKey by remember { mutableIntStateOf(0) }
+    // Avance del lanzamiento: 0 al lanzar y 1 con los dados quietos.
+    val throwAnimation = remember { Animatable(1f) }
 
     // HU-15: gestor de sonido vinculado al ciclo de vida.
     val soundManager = rememberDiceSoundManager()
@@ -160,17 +164,6 @@ fun GameScreen(
         }
     }
 
-    val rotation by animateFloatAsState(
-        targetValue = rollAnimationKey * 720f,
-        animationSpec = tween(durationMillis = 650, easing = FastOutSlowInEasing),
-        label = "diceRotation"
-    )
-    val scale by animateFloatAsState(
-        targetValue = if (isRolling) 0.85f else 1f,
-        animationSpec = tween(durationMillis = 150),
-        label = "diceScale"
-    )
-
     val tokens = LocalAppTokens.current
     val configuration = LocalConfiguration.current
     val isWideLandscape = isTablet() && configuration.screenWidthDp > configuration.screenHeightDp
@@ -187,32 +180,24 @@ fun GameScreen(
                 // HU-15: sonido de lanzamiento (inicio del tiro).
                 soundManager.playRollSound()
 
-                rollAnimationKey++
-
+                // El resultado se decide al lanzar, así los números de las caras no cambian
+                // mientras el dado gira y se detiene mostrando exactamente ese valor.
                 val lockedIndices = uiState.lockedIndices
-                val initialValues = currentDiceValues
-                repeat(7) {
-                    currentDiceValues = List(uiState.diceCount) { index ->
-                        if (index in lockedIndices) {
-                            initialValues.getOrElse(index) { 1 }
-                        } else {
-                            diceType.roll()
-                        }
-                    }
-                    delay(75)
-                }
-
                 val finalValues = List(uiState.diceCount) { index ->
                     if (index in lockedIndices) {
-                        initialValues.getOrElse(index) { 1 }
+                        currentDiceValues.getOrElse(index) { 1 }
                     } else {
                         diceType.roll()
                     }
                 }
                 currentDiceValues = finalValues
 
-                // HU-15: sonido de impacto (fin del tiro).
+                // El dado sube girando, cae (suena el impacto) y rebota hasta quedarse quieto.
+                throwAnimation.snapTo(0f)
+                throwAnimation.animateTo(THROW_LANDING, tween(durationMillis = 750, easing = LinearEasing))
+                // HU-15: sonido de impacto de los dados.
                 soundManager.playLandSound()
+                throwAnimation.animateTo(1f, tween(durationMillis = 350, easing = LinearEasing))
 
                 val unlockedValues = finalValues.filterIndexed { index, _ -> index !in lockedIndices }
                 diceViewModel.registerResult(finalValues, unlockedValues, diceType.sides)
@@ -273,8 +258,7 @@ fun GameScreen(
                         diceType = diceType,
                         palette = palette,
                         sizeFactor = sizeFactor,
-                        rotation = rotation,
-                        scale = scale,
+                        throwProgress = throwAnimation.value,
                         canToggleLock = !isRolling && outcome == GameOutcome.IN_PROGRESS,
                         onToggleLock = diceViewModel::toggleLock
                     )

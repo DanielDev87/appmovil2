@@ -38,6 +38,8 @@ data class Point2(val x: Float, val y: Float)
  * elegir el tamaño del número.
  * @property isMain `true` en la cara que muestra el resultado del tiro: la de arriba en el
  * cubo, y la que más de frente se ve en los demás dados.
+ * @property id Posición de la cara en el sólido completo; sirve para que cada cara conserve su
+ * número mientras el dado gira.
  */
 data class ProjectedFace(
     val points: List<Point2>,
@@ -45,7 +47,8 @@ data class ProjectedFace(
     val area: Float,
     val center: Point2,
     val inradius: Float,
-    val isMain: Boolean = false
+    val isMain: Boolean = false,
+    val id: Int = -1
 )
 
 /** Poliedros regulares de los dados y su proyección en pantalla. */
@@ -101,30 +104,68 @@ object Polyhedra {
      * Número que lleva cada cara visible de [faces] (en el mismo orden): la cara principal
      * muestra [value] y las demás, otros números del dado, distintos entre sí.
      *
-     * En el dado de 6 caras respeta la regla de los dados reales: las caras opuestas suman 7,
-     * así que ninguna de las otras dos caras visibles vale [value] ni `7 - value`, y tampoco
-     * suman 7 entre ellas.
+     * Cada cara del sólido conserva siempre el mismo número, así que no cambia mientras el dado
+     * gira. En el dado de 6 caras las caras opuestas suman 7, como en los dados reales.
      */
     fun faceValues(sides: Int, value: Int, faces: List<ProjectedFace>): List<Int> {
-        val actual = if (sides in SUPPORTED_SIDES) sides else 20
-        val others = faces.indices.filterNot { faces[it].isMain }
-        val result = IntArray(faces.size)
-        result[faces.indexOfFirst { it.isMain }] = value
+        val labels = faceLabels(sides, value)
+        return faces.map { labels[it.id] }
+    }
 
+    /**
+     * Número de cada cara del sólido completo (por [ProjectedFace.id]) cuando la cara que queda
+     * de frente en reposo muestra [value].
+     */
+    fun faceLabels(sides: Int, value: Int): IntArray {
+        val actual = if (sides in SUPPORTED_SIDES) sides else 20
+        val (vertices, faces) = solid(actual)
+        val mainId = project(actual).first { it.isMain }.id
+        val labels = IntArray(faces.size)
         if (actual == 6) {
-            // Quedan dos parejas de caras opuestas; se toma un número de cada pareja.
-            val restantes = (1..6).filter { it != value && it != 7 - value }
-            val a = restantes.first()
-            val b = restantes.first { it != a && it != 7 - a }
-            // La cara de la izquierda lleva `a` y la de la derecha, `b`.
-            val ordenadas = others.sortedBy { faces[it].center.x }
-            result[ordenadas.first()] = a
-            result[ordenadas.last()] = b
+            // Caras opuestas suman 7: se reparten las dos parejas que quedan junto a la principal.
+            val normals = faces.map { f -> centroid(f.map { vertices[it] }).normalized() }
+            fun opposite(i: Int) = faces.indices.first { j -> j != i && (normals[i] dot normals[j]) < -0.99 }
+            val mainOpposite = opposite(mainId)
+            labels[mainId] = value
+            labels[mainOpposite] = 7 - value
+            val rest = (1..6).filter { it != value && it != 7 - value }
+            val a = rest.first()
+            val b = rest.first { it != a && it != 7 - a }
+            val others = faces.indices.filter { it != mainId && it != mainOpposite }
+            val first = others.first()
+            val second = others.first { it != first && it != opposite(first) }
+            labels[first] = a
+            labels[opposite(first)] = 7 - a
+            labels[second] = b
+            labels[opposite(second)] = 7 - b
         } else {
-            val paso = when (actual) { 4 -> 1; 8 -> 3; 12 -> 5; else -> 7 }
-            others.forEachIndexed { k, i -> result[i] = ((value - 1 + paso * (k + 1)) % actual) + 1 }
+            val n = faces.size
+            for (id in 0 until n) labels[id] = ((id - mainId + value - 1) % n + n) % n + 1
         }
-        return result.toList()
+        return labels
+    }
+
+    /**
+     * Caras visibles del dado de [sides] caras mientras gira: es la vista en reposo con un giro
+     * adicional de [yawDeg] (hacia los lados), [pitchDeg] (adelante o atrás) y [rollDeg]
+     * (sobre el eje que sale de la pantalla). Con los tres en 0 es igual a [project].
+     *
+     * Usa siempre el mismo tamaño y el mismo centro que la vista en reposo, para que el dado no
+     * cambie de tamaño al girar ni al detenerse.
+     */
+    fun tumble(sides: Int, yawDeg: Double, pitchDeg: Double, rollDeg: Double): List<ProjectedFace> {
+        val key = if (sides in SUPPORTED_SIDES) sides else 20
+        val frame = frameFor(key)
+        var extra = rotX(Math.toRadians(pitchDeg))
+        extra = mul(rotY(Math.toRadians(yawDeg)), extra)
+        extra = mul(rotZ(Math.toRadians(rollDeg)), extra)
+        val projected = build(frame, extra)
+        val main = if (key == 6) {
+            projected.indices.minBy { projected[it].center.y }
+        } else {
+            projected.indices.maxBy { projected[it].area }
+        }
+        return projected.mapIndexed { i, face -> face.copy(isMain = i == main) }
     }
 
     /** Cantidad de caras del sólido completo (visibles y ocultas). */
@@ -285,35 +326,57 @@ object Polyhedra {
 
     // endregion
 
-    private fun compute(sides: Int): List<ProjectedFace> {
-        val view = VIEWS.getValue(sides)
-        val (vertices, faces) = solid(sides)
+    /** Vista en reposo de un sólido: sus vértices ya girados y cómo se encaja en la caja. */
+    private class Frame(
+        val rotated: List<Vec3>,
+        val faces: List<List<Int>>,
+        val cx: Double,
+        val cy: Double,
+        val scale: Double
+    )
 
-        val front = if (view.vertex != null) vertices[view.vertex] else centroid(faces[0].map { vertices[it] })
-        var rotation = alignToZ(front)
-        rotation = mul(rotZ(Math.toRadians(view.zDeg)), rotation)
-        rotation = mul(rotY(Math.toRadians(view.yDeg)), rotation)
-        rotation = mul(rotX(Math.toRadians(view.xDeg)), rotation)
-        val rotated = vertices.map { apply(rotation, it) }
+    private val frames = HashMap<Int, Frame>()
+
+    private fun frameFor(sides: Int): Frame = synchronized(frames) {
+        frames.getOrPut(sides) {
+            val view = VIEWS.getValue(sides)
+            val (vertices, faces) = solid(sides)
+
+            val front = if (view.vertex != null) vertices[view.vertex] else centroid(faces[0].map { vertices[it] })
+            var rotation = alignToZ(front)
+            rotation = mul(rotZ(Math.toRadians(view.zDeg)), rotation)
+            rotation = mul(rotY(Math.toRadians(view.yDeg)), rotation)
+            rotation = mul(rotX(Math.toRadians(view.xDeg)), rotation)
+            val rotated = vertices.map { apply(rotation, it) }
+
+            val visible = faces.filter { f -> centroid(f.map { rotated[it] }).normalized().z > 1e-6 }
+            val xs = visible.flatMap { f -> f.map { rotated[it].x } }
+            val ys = visible.flatMap { f -> f.map { rotated[it].y } }
+            Frame(
+                rotated = rotated,
+                faces = faces,
+                cx = (xs.min() + xs.max()) / 2,
+                cy = (ys.min() + ys.max()) / 2,
+                scale = (1 - 2 * MARGIN) / max(xs.max() - xs.min(), ys.max() - ys.min())
+            )
+        }
+    }
+
+    /** Proyecta las caras visibles del [frame], con un giro [extra] opcional sobre el centro del dado. */
+    private fun build(frame: Frame, extra: Mat? = null): List<ProjectedFace> {
+        val points = if (extra == null) frame.rotated else frame.rotated.map { apply(extra, it) }
 
         // Solo se ven las caras cuya normal apunta hacia la cámara.
-        val visible = faces.filter { f ->
-            val normal = centroid(f.map { rotated[it] }).normalized()
-            normal.z > 1e-6
+        val visible = frame.faces.withIndex().filter { (_, f) ->
+            centroid(f.map { points[it] }).normalized().z > 1e-6
         }
 
-        val xs = visible.flatMap { f -> f.map { rotated[it].x } }
-        val ys = visible.flatMap { f -> f.map { rotated[it].y } }
-        val cx = (xs.min() + xs.max()) / 2
-        val cy = (ys.min() + ys.max()) / 2
-        val scale = (1 - 2 * MARGIN) / max(xs.max() - xs.min(), ys.max() - ys.min())
-
-        val projected = visible.map { f ->
-            val normal = centroid(f.map { rotated[it] }).normalized()
+        return visible.map { (id, f) ->
+            val normal = centroid(f.map { points[it] }).normalized()
             val pts = f.map { i ->
                 Point2(
-                    x = (0.5 + (rotated[i].x - cx) * scale).toFloat(),
-                    y = (0.5 - (rotated[i].y - cy) * scale).toFloat()
+                    x = (0.5 + (points[i].x - frame.cx) * frame.scale).toFloat(),
+                    y = (0.5 - (points[i].y - frame.cy) * frame.scale).toFloat()
                 )
             }
             var twiceArea = 0f
@@ -330,9 +393,14 @@ object Polyhedra {
                 brightness = max(0.0, normal dot LIGHT).toFloat(),
                 area = area,
                 center = Point2(pts.map { it.x }.average().toFloat(), pts.map { it.y }.average().toFloat()),
-                inradius = if (perimeter > 0f) 2f * area / perimeter else 0f
+                inradius = if (perimeter > 0f) 2f * area / perimeter else 0f,
+                id = id
             )
         }
+    }
+
+    private fun compute(sides: Int): List<ProjectedFace> {
+        val projected = build(frameFor(sides))
 
         // El cubo muestra el resultado en la cara de arriba; el resto, en la más grande.
         val mainIndex = if (sides == 6) {

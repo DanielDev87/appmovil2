@@ -34,7 +34,7 @@ import com.danidev.appmovil2.ui.style.StyledCard
 import com.danidev.appmovil2.ui.style.isTablet
 
 /**
- * Escenario donde se ven los dados: una tarjeta con el aviso de crítico o pifia (HU-09) arriba
+ * Escenario donde se ven los dados, sin fondo propio: con el aviso de crítico o pifia (HU-09) arriba
  * y la suma de los dados no bloqueados (HU-06) abajo.
  *
  * El aviso entra con un rebote y late mientras dura, para que se note sin tapar los dados.
@@ -52,8 +52,9 @@ fun DiceStage(
     content: @Composable () -> Unit
 ) {
     val tokens = LocalAppTokens.current
-    StyledCard(
-        radius = 32.dp,
+    // Sin tarjeta de fondo: los dados se apoyan directamente sobre la pantalla y proyectan su
+    // propia sombra, así se ve más natural cuando salen despedidos al lanzar.
+    Box(
         modifier = modifier
             .fillMaxWidth()
             .heightIn(min = minHeight)

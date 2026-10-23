@@ -46,6 +46,7 @@ import kotlin.math.sqrt
  * @param palette Paleta de color elegida (HU-04); da el color de acento.
  * @param contentDescription Texto para lectores de pantalla.
  * @param modifier Tamaño y transformaciones.
+ * @param tumble Giro en el aire durante el lanzamiento; `null` cuando el dado está quieto.
  */
 @Composable
 fun DiceFace(
@@ -53,7 +54,8 @@ fun DiceFace(
     sides: Int,
     palette: DicePalette,
     contentDescription: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    tumble: DieTumble? = null
 ) {
     ObsidianDie(
         value = value,
@@ -61,9 +63,16 @@ fun DiceFace(
         palette = palette,
         isDark = LocalThemeController.current.isDark,
         contentDescription = contentDescription,
-        modifier = modifier
+        modifier = modifier,
+        tumble = tumble
     )
 }
+
+/**
+ * Giro del dado en el aire durante un lanzamiento, en grados sobre cada eje. Con los tres en 0
+ * el dado se ve en reposo.
+ */
+data class DieTumble(val yaw: Float, val pitch: Float, val roll: Float)
 
 /**
  * Colores de un dado obsidiana.
@@ -101,9 +110,14 @@ private fun ObsidianDie(
     palette: DicePalette,
     isDark: Boolean,
     contentDescription: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    tumble: DieTumble? = null
 ) {
-    val faces = Polyhedra.project(sides)
+    val faces = if (tumble == null) {
+        Polyhedra.project(sides)
+    } else {
+        Polyhedra.tumble(sides, tumble.yaw.toDouble(), tumble.pitch.toDouble(), tumble.roll.toDouble())
+    }
     val numbers = Polyhedra.faceValues(sides, value, faces)
     val tones = palette.obsidian()
     val textMeasurer = rememberTextMeasurer()

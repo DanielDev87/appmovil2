@@ -352,14 +352,11 @@ fun GameScreen(
                                 onClick = { showSettings = true }
                             )
                             RecordsStrip(progress = progress)
-                            StyledCard(modifier = Modifier.fillMaxWidth()) {
-                                RecentRolls(
-                                    history = uiState.history,
-                                    onOpenStats = onNavigateToStats,
-                                    onCard = true,
-                                    modifier = Modifier.padding(16.dp)
-                                )
-                            }
+                            RecentRolls(
+                                history = uiState.history,
+                                onOpenStats = onNavigateToStats,
+                                modifier = Modifier.padding(horizontal = 4.dp)
+                            )
                         }
                         if (outcome != GameOutcome.IN_PROGRESS) {
                             GameStatus(uiState = uiState)
@@ -401,15 +398,12 @@ fun GameScreen(
                     if (outcome != GameOutcome.IN_PROGRESS) {
                         GameStatus(uiState = uiState)
                     }
-                    // Igual que en horizontal: los últimos tiros van en una tarjeta.
-                    StyledCard(modifier = Modifier.fillMaxWidth()) {
-                        RecentRolls(
-                            history = uiState.history,
-                            onOpenStats = onNavigateToStats,
-                            onCard = true,
-                            modifier = Modifier.padding(16.dp)
-                        )
-                    }
+                    // Los últimos tiros van sin tarjeta, directamente sobre el fondo.
+                    RecentRolls(
+                        history = uiState.history,
+                        onOpenStats = onNavigateToStats,
+                        modifier = Modifier.padding(horizontal = 4.dp)
+                    )
                     Spacer(modifier = Modifier.weight(1.7f))
                 }
                 Column(

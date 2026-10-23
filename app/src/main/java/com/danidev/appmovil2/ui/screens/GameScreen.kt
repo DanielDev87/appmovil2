@@ -363,12 +363,15 @@ fun GameScreen(
                 }
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(14.dp, Alignment.CenterVertically),
+                    verticalArrangement = Arrangement.spacedBy(14.dp),
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f)
                 ) {
-                    stage(swipeToThrow, if (isTablet()) 300.dp else 200.dp)
+                    // El escenario se ajusta al tamaño del dado; el bloque queda cerca de los
+                    // marcadores: sobra mucho menos espacio arriba que abajo.
+                    Spacer(modifier = Modifier.weight(0.3f))
+                    stage(swipeToThrow, 0.dp)
                     if (outcome != GameOutcome.IN_PROGRESS) {
                         GameStatus(uiState = uiState)
                     }
@@ -381,6 +384,7 @@ fun GameScreen(
                             modifier = Modifier.padding(16.dp)
                         )
                     }
+                    Spacer(modifier = Modifier.weight(1.7f))
                 }
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,

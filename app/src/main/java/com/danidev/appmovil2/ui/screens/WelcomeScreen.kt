@@ -36,6 +36,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -55,6 +56,12 @@ import com.danidev.appmovil2.ui.style.StyledButton
 import com.danidev.appmovil2.ui.style.StyledIconButton
 import com.danidev.appmovil2.ui.theme.ThemeSwitch
 
+/** Ancho de pantalla (dp) desde el que se considera una tablet en horizontal. */
+private const val WIDE_SCREEN_DP = 720
+
+/** Factor con el que crecen los textos y los dados en pantallas anchas. */
+private const val WIDE_SCALE = 1.25f
+
 /**
  * Pantalla de bienvenida: título, saludo con el nombre del jugador (HU-12), campo
  * para escribirlo y el botón para empezar. Desde aquí se abre "Personalizar".
@@ -62,6 +69,8 @@ import com.danidev.appmovil2.ui.theme.ThemeSwitch
 @Composable
 fun WelcomeScreen(onStartClicked: () -> Unit, onNavigateToAbout: () -> Unit = {}) {
     val tokens = LocalAppTokens.current
+    // En pantallas anchas (tablet en horizontal) los textos y los dados crecen un poco.
+    val scale = if (LocalConfiguration.current.screenWidthDp >= WIDE_SCREEN_DP) WIDE_SCALE else 1f
     val styleController = LocalStyleController.current
     var visible by remember { mutableStateOf(false) }
     var showPersonalize by remember { mutableStateOf(false) }
@@ -129,7 +138,7 @@ fun WelcomeScreen(onStartClicked: () -> Unit, onNavigateToAbout: () -> Unit = {}
                             palette = DicePalette.ROSA,
                             contentDescription = "",
                             modifier = Modifier
-                                .size(118.dp)
+                                .size((118 * scale).dp)
                                 .rotate(-8f)
                         )
                         DiceFace(
@@ -138,7 +147,7 @@ fun WelcomeScreen(onStartClicked: () -> Unit, onNavigateToAbout: () -> Unit = {}
                             palette = DicePalette.LILA,
                             contentDescription = "",
                             modifier = Modifier
-                                .size(118.dp)
+                                .size((118 * scale).dp)
                                 .rotate(10f)
                         )
                     }
@@ -148,7 +157,7 @@ fun WelcomeScreen(onStartClicked: () -> Unit, onNavigateToAbout: () -> Unit = {}
                     val title = "Up Dice"
                     Text(
                         text = if (tokens.isPlayful) title.uppercase() else title,
-                        fontSize = 44.sp,
+                        fontSize = (44 * scale).sp,
                         fontWeight = FontWeight.ExtraBold,
                         letterSpacing = if (tokens.isPlayful) 2.sp else 0.sp,
                         color = tokens.bgInk,
@@ -159,7 +168,7 @@ fun WelcomeScreen(onStartClicked: () -> Unit, onNavigateToAbout: () -> Unit = {}
 
                     Text(
                         text = stringResource(R.string.welcome_tagline),
-                        fontSize = 16.sp,
+                        fontSize = (16 * scale).sp,
                         color = tokens.bgMuted,
                         textAlign = TextAlign.Center,
                         modifier = Modifier.padding(horizontal = 8.dp)
@@ -172,12 +181,12 @@ fun WelcomeScreen(onStartClicked: () -> Unit, onNavigateToAbout: () -> Unit = {}
                         contentAlignment = Alignment.Center,
                         modifier = Modifier
                             .padding(top = 12.dp)
-                            .height(32.dp)
+                            .height((32 * scale).dp)
                     ) {
                         if (playerName.isNotEmpty()) {
                             Text(
                                 text = stringResource(R.string.player_greeting, playerName),
-                                fontSize = 22.sp,
+                                fontSize = (22 * scale).sp,
                                 fontWeight = FontWeight.Bold,
                                 color = tokens.bgInk,
                                 textAlign = TextAlign.Center
@@ -197,18 +206,18 @@ fun WelcomeScreen(onStartClicked: () -> Unit, onNavigateToAbout: () -> Unit = {}
                 Column(
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                     modifier = Modifier
-                        .widthIn(max = MAX_CONTENT_WIDTH)
+                        .widthIn(max = MAX_CONTENT_WIDTH * scale)
                         .fillMaxWidth()
                 ) {
                     // HU-12: campo para escribir el nombre del jugador.
-                    StyledNameField()
+                    StyledNameField(scale = scale)
 
-                    StyledButton(onClick = onStartClicked) {
+                    StyledButton(onClick = onStartClicked, height = (64 * scale).dp) {
                         Text(
                             text = stringResource(
                                 if (tokens.isPlayful) R.string.welcome_play_playful else R.string.welcome_play
                             ),
-                            fontSize = 22.sp,
+                            fontSize = (22 * scale).sp,
                             fontWeight = FontWeight.ExtraBold,
                             color = tokens.onAccent
                         )

@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -15,6 +16,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.Icon
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
@@ -26,6 +28,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -38,6 +41,9 @@ import com.danidev.appmovil2.R
 
 /** Saturación fija de los colores que se crean con los controles de "Otro color". */
 private const val CUSTOM_SATURATION = 0.35f
+
+/** Claridad mínima del color propio; por debajo se confundiría con el negro. */
+private const val BRIGHTNESS_MIN = 0.15f
 
 /**
  * Sección "Fondo" de Personalizar: colores listos para elegir, un color propio con dos
@@ -90,33 +96,59 @@ fun BackgroundSection(modifier: Modifier = Modifier) {
             }
         }
 
-        Text(
-            text = stringResource(R.string.bg_other_color),
-            fontSize = 13.sp,
-            fontWeight = FontWeight.SemiBold,
-            color = tokens.ink
-        )
+        // Color propio: el tono se elige en la barra de colores y la claridad en la de abajo.
+        val custom = Color.hsv(hue, CUSTOM_SATURATION, brightness)
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(CircleShape)
+                    .background(custom)
+                    .border(1.dp, tokens.muted.copy(alpha = 0.4f), CircleShape)
+            )
+            Text(
+                text = stringResource(R.string.bg_other_color),
+                fontSize = 14.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color = tokens.ink
+            )
+        }
+
+        SliderLabel(stringResource(R.string.bg_hue_label), stringResource(R.string.bg_hue_help))
         val hueDescription = stringResource(R.string.bg_hue)
-        Slider(
+        GradientSlider(
             value = hue,
             onValueChange = {
                 hue = it
                 controller.onSelectColor(Color.hsv(hue, CUSTOM_SATURATION, brightness))
             },
             valueRange = 0f..360f,
-            colors = sliderColors(),
-            modifier = Modifier.semantics { contentDescription = hueDescription }
+            track = Brush.horizontalGradient(
+                (0..12).map { Color.hsv(it * 30f, CUSTOM_SATURATION, 1f) }
+            ),
+            description = hueDescription
         )
+
+        SliderLabel(stringResource(R.string.bg_brightness_label), stringResource(R.string.bg_brightness_help))
         val brightnessDescription = stringResource(R.string.bg_brightness)
-        Slider(
+        GradientSlider(
             value = brightness,
             onValueChange = {
                 brightness = it
                 controller.onSelectColor(Color.hsv(hue, CUSTOM_SATURATION, brightness))
             },
-            valueRange = 0.15f..1f,
-            colors = sliderColors(),
-            modifier = Modifier.semantics { contentDescription = brightnessDescription }
+            valueRange = BRIGHTNESS_MIN..1f,
+            track = Brush.horizontalGradient(
+                listOf(
+                    Color.hsv(hue, CUSTOM_SATURATION, BRIGHTNESS_MIN),
+                    Color.hsv(hue, CUSTOM_SATURATION, 1f)
+                )
+            ),
+            description = brightnessDescription
         )
 
         StyledSwitchRow(
@@ -143,12 +175,43 @@ fun BackgroundSection(modifier: Modifier = Modifier) {
     }
 }
 
+/** Título de una barra con una línea que explica para qué sirve. */
 @Composable
-private fun sliderColors() = LocalAppTokens.current.let { tokens ->
-    SliderDefaults.colors(
-        thumbColor = tokens.accent,
-        activeTrackColor = tokens.accent,
-        inactiveTrackColor = tokens.soft
+private fun SliderLabel(title: String, help: String) {
+    val tokens = LocalAppTokens.current
+    Column {
+        Text(text = title, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = tokens.ink)
+        Text(text = help, fontSize = 12.sp, color = tokens.muted)
+    }
+}
+
+/** Barra cuyo recorrido muestra los colores que se pueden elegir con ella. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun GradientSlider(
+    value: Float,
+    onValueChange: (Float) -> Unit,
+    valueRange: ClosedFloatingPointRange<Float>,
+    track: Brush,
+    description: String
+) {
+    val tokens = LocalAppTokens.current
+    Slider(
+        value = value,
+        onValueChange = onValueChange,
+        valueRange = valueRange,
+        colors = SliderDefaults.colors(thumbColor = tokens.accent),
+        track = {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(14.dp)
+                    .clip(CircleShape)
+                    .background(track)
+                    .border(1.dp, tokens.muted.copy(alpha = 0.4f), CircleShape)
+            )
+        },
+        modifier = Modifier.semantics { contentDescription = description }
     )
 }
 

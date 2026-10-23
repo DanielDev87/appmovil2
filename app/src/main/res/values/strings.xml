@@ -147,4 +147,8 @@
     <string name="about_team_title">👥 Equipo de Desarrollo</string>
     <string name="about_team_body">Estudiantes del curso de Programación Móvil 2</string>
     <string name="about_footer">Proyecto Grupal — Desarrollo Móvil II · 2026</string>
+    <string name="bg_hue_label">Tono</string>
+    <string name="bg_hue_help">Desliza para elegir el color</string>
+    <string name="bg_brightness_label">Claridad</string>
+    <string name="bg_brightness_help">Desliza para hacerlo más claro u oscuro</string>
 </resources>

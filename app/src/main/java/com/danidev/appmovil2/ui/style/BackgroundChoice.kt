@@ -42,7 +42,7 @@ private val LightInkOnDarkBackground = Color(0xFFF6E8F2)
 private val LightMutedOnDarkBackground = Color(0xFFD9C3D3)
 
 /** Cuánto se oscurece el color elegido cuando la app está en tema oscuro. */
-private const val DARK_THEME_SHADE = 0.78f
+private const val DARK_THEME_SHADE = 0.5f
 
 /** Por debajo de esta luminancia el fondo se considera oscuro y el texto pasa a ser claro. */
 private const val DARK_BACKGROUND_LUMINANCE = 0.4f
@@ -70,7 +70,11 @@ fun applyBackground(tokens: AppTokens, choice: BackgroundChoice): AppTokens {
     val isDarkSurface = surface.luminance() < DARK_BACKGROUND_LUMINANCE
     val surfaceTone = if (isDarkSurface) Color.White else Color.Black
 
+    val accent = accentFor(chosen, tokens)
+
     return tokens.copy(
+        accent = accent,
+        onAccent = if (accent.luminance() < ACCENT_DARK_LUMINANCE) Color.White else DarkInkOnLightBackground,
         bgTop = base,
         bgBottom = if (choice.gradient) lerp(base, fadeTo, 0.55f) else base,
         dots = tokens.dots?.let { lerp(base, if (isDarkBackground) Color.White else Color.Black, 0.1f) },
@@ -84,6 +88,36 @@ fun applyBackground(tokens: AppTokens, choice: BackgroundChoice): AppTokens {
         outline = if (tokens.isPlayful) tokens.outline else lerp(surface, surfaceTone, 0.18f),
         borderWidth = if (tokens.isPlayful) tokens.borderWidth else 1.dp
     )
+}
+
+/** Por debajo de esta luminancia el acento es oscuro y su texto va en blanco. */
+private const val ACCENT_DARK_LUMINANCE = 0.4f
+
+/**
+ * Color de acento (botón principal, progreso, interruptores) con el mismo tono que el fondo
+ * elegido: más intenso y oscuro en tema claro, más suave y claro en tema oscuro.
+ */
+private fun accentFor(chosen: Color, tokens: AppTokens): Color {
+    val hue = chosen.hue()
+    return when {
+        tokens.isPlayful -> Color.hsv(hue, 0.65f, 1f)
+        tokens.isDark -> Color.hsv(hue, 0.45f, 1f)
+        else -> Color.hsv(hue, 0.85f, 0.68f)
+    }
+}
+
+/** Tono (0 a 360) del color; 0 para los grises, que no tienen tono. */
+internal fun Color.hue(): Float {
+    val max = maxOf(red, green, blue)
+    val delta = max - minOf(red, green, blue)
+    if (delta == 0f) return 0f
+    val sector = when (max) {
+        red -> ((green - blue) / delta) % 6f
+        green -> (blue - red) / delta + 2f
+        else -> (red - green) / delta + 4f
+    }
+    val degrees = sector * 60f
+    return if (degrees < 0f) degrees + 360f else degrees
 }
 
 /** Almacén del fondo elegido; interfaz para poder probar el ViewModel sin Android. */

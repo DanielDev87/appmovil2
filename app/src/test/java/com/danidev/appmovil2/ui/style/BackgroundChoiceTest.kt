@@ -146,7 +146,8 @@ class BackgroundChoiceTest {
         val dark = applyBackground(appTokens(AppStyle.BALANCED, isDark = true), BackgroundChoice(argb))
 
         assertTrue(dark.bgTop.luminance() < light.bgTop.luminance())
-        assertTrue(dark.bgTop.luminance() < 0.1f)
+        assertTrue(dark.bgTop.luminance() < 0.25f)
+        assertTrue(dark.bgTop.luminance() > 0.02f)
         assertTrue(dark.bgInk.red > 0.8f)
         assertTrue(dark.ink.red > 0.8f)
         assertTrue(light.ink.red < 0.5f)
@@ -160,5 +161,40 @@ class BackgroundChoiceTest {
         )
 
         assertTrue(dark.bgTop.blue > dark.bgTop.red)
+    }
+
+    @Test
+    fun `el acento toma el tono del fondo elegido`() {
+        val sky = applyBackground(base, BackgroundChoice(BackgroundPreset.SKY.color.toArgbInt()))
+        val peach = applyBackground(base, BackgroundChoice(BackgroundPreset.PEACH.color.toArgbInt()))
+
+        assertTrue(sky.accent.blue > sky.accent.red)
+        assertTrue(peach.accent.red > peach.accent.blue)
+        assertNotEquals(base.accent, sky.accent)
+    }
+
+    @Test
+    fun `el texto del boton principal se lee sobre el acento en cada estilo y tema`() {
+        val argb = BackgroundPreset.MINT.color.toArgbInt()
+        for (style in AppStyle.entries) {
+            for (dark in listOf(false, true)) {
+                val result = applyBackground(appTokens(style, dark), BackgroundChoice(argb))
+                val contrast = kotlin.math.abs(result.accent.luminance() - result.onAccent.luminance())
+                assertTrue("$style dark=$dark", contrast > 0.35f)
+            }
+        }
+    }
+
+    @Test
+    fun `sin fondo propio el acento es el del estilo`() {
+        assertEquals(base.accent, applyBackground(base, BackgroundChoice()).accent)
+    }
+
+    @Test
+    fun `el tono de un color se calcula en grados`() {
+        assertEquals(0f, Color.Red.hue(), 0.5f)
+        assertEquals(120f, Color.Green.hue(), 0.5f)
+        assertEquals(240f, Color.Blue.hue(), 0.5f)
+        assertEquals(0f, Color.Gray.hue(), 0.5f)
     }
 }

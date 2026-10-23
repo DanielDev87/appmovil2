@@ -355,11 +355,17 @@ fun GameScreen(
                         .fillMaxWidth()
                         .padding(top = 12.dp, bottom = 12.dp)
                 ) {
-                    RecentRolls(
-                        history = uiState.history,
-                        onOpenStats = onNavigateToStats
-                    )
-                    if (uiState.launches > 0 && outcome != GameOutcome.IN_PROGRESS) {
+                    // Igual que en horizontal: los últimos tiros van en una tarjeta.
+                    StyledCard(modifier = Modifier.fillMaxWidth()) {
+                        RecentRolls(
+                            history = uiState.history,
+                            onOpenStats = onNavigateToStats,
+                            onCard = true,
+                            modifier = Modifier.padding(16.dp)
+                        )
+                    }
+                    // Compartir aparece desde el primer tiro.
+                    if (uiState.launches > 0) {
                         ShareResultButton(uiState = uiState)
                     }
                     mainButton()

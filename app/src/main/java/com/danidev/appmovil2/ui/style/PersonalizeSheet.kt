@@ -33,7 +33,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.danidev.appmovil2.R
-import com.danidev.appmovil2.ui.player.PlayerNameField
+import com.danidev.appmovil2.ui.player.StyledNameField
 
 /**
  * Hoja "Personalizar": nombre del jugador (HU-12) y estilo visual de la app.
@@ -72,7 +72,7 @@ fun PersonalizeSheet(
                 color = tokens.ink
             )
 
-            PlayerNameField()
+            StyledNameField()
 
             SectionLabel(stringResource(R.string.personalize_style))
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {

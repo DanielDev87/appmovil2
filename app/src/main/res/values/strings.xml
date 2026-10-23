@@ -71,4 +71,9 @@
     <string name="personalize_style">Estilo de la app</string>
     <string name="style_balanced">Equilibrado</string>
     <string name="style_playful">Juguetón</string>
+    <!-- Rediseño: bienvenida -->
+    <string name="welcome_tagline">Con cada lanzamiento, una nueva emoción</string>
+    <string name="welcome_play">Jugar ahora</string>
+    <string name="welcome_play_playful">¡A jugar!</string>
+    <string name="about_open">Acerca de</string>
 </resources>

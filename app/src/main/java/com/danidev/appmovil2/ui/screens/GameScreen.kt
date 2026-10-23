@@ -381,6 +381,7 @@ fun GameScreen(
                             RecentRolls(
                                 history = uiState.history,
                                 onOpenStats = onNavigateToStats,
+                                palette = palette,
                                 modifier = Modifier.padding(horizontal = 4.dp)
                             )
                         }
@@ -428,6 +429,7 @@ fun GameScreen(
                     RecentRolls(
                         history = uiState.history,
                         onOpenStats = onNavigateToStats,
+                        palette = palette,
                         modifier = Modifier.padding(horizontal = 4.dp)
                     )
                     Spacer(modifier = Modifier.weight(1.7f))

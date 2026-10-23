@@ -20,18 +20,25 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.danidev.appmovil2.R
+import com.danidev.appmovil2.ui.dice.DiceFace
+import com.danidev.appmovil2.ui.dice.DicePalette
 import com.danidev.appmovil2.ui.dice.RollRecord
 import com.danidev.appmovil2.ui.style.LocalAppTokens
 import com.danidev.appmovil2.ui.style.StyledCard
 
+/** Tamaño de cada dado en la tira de últimos tiros. */
+private val DIE_SIZE = 62.dp
+
 /**
- * Tira corta con los últimos tiros (HU-011). El más reciente va primero y resaltado.
+ * Tira corta con los últimos tiros (HU-011): el dado tal como quedó en cada uno. El más reciente va
+ * primero y resaltado.
  * El enlace "Estadísticas" abre la pantalla de estadísticas (HU-13).
  */
 @Composable
 fun RecentRolls(
     history: List<RollRecord>,
     onOpenStats: () -> Unit,
+    palette: DicePalette,
     modifier: Modifier = Modifier,
     onCard: Boolean = false
 ) {
@@ -86,20 +93,28 @@ fun RecentRolls(
                 color = labelColor
             )
         } else {
+            // Cada tiro se muestra con el dado tal como quedó, con su resultado; si fueron dos dados,
+            // aparecen los dos. El más reciente va resaltado con el color de acento.
             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 items(history, key = { it.id }) { record ->
                     val latest = record.id == history.first().id
                     StyledCard(
                         color = if (latest) tokens.accent else tokens.surface,
-                        radius = if (tokens.isPlayful) 22.dp else 14.dp
+                        radius = if (tokens.isPlayful) 20.dp else 16.dp
                     ) {
-                        Box(contentAlignment = Alignment.Center, modifier = Modifier.size(44.dp)) {
-                            Text(
-                                text = record.value.toString(),
-                                fontSize = if (record.value > 99) 14.sp else 18.sp,
-                                fontWeight = FontWeight.ExtraBold,
-                                color = if (latest) tokens.onAccent else tokens.ink
-                            )
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(2.dp),
+                            modifier = Modifier.padding(5.dp)
+                        ) {
+                            record.values.forEach { value ->
+                                DiceFace(
+                                    value = value,
+                                    sides = record.sides,
+                                    palette = palette,
+                                    contentDescription = value.toString(),
+                                    modifier = Modifier.size(DIE_SIZE)
+                                )
+                            }
                         }
                     }
                 }

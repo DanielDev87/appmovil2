@@ -88,4 +88,18 @@
     <string name="settings_sound">Sonido</string>
     <string name="settings_vibration">Vibración</string>
     <string name="settings_shake">Agitar para tirar</string>
+    <!-- Rediseño: pantalla de juego -->
+    <string name="game_title">Partida</string>
+    <string name="stat_points">Puntos</string>
+    <string name="stat_launches">Lanzamientos</string>
+    <string name="stat_of">/ %1$d</string>
+    <string name="game_hint">Pulsa Tirar o agita el teléfono</string>
+    <string name="game_hint_no_shake">Pulsa Tirar</string>
+    <string name="roll_playful">¡TIRAR!</string>
+    <string name="recent_rolls">Últimos tiros</string>
+    <string name="stats_link">Estadísticas</string>
+    <string name="roll_critical">¡Crítico!</string>
+    <string name="roll_fumble">¡Pifia!</string>
+    <string name="sum_pill">Suma %1$d</string>
+    <string name="roll_count_reset">Reiniciar contador</string>
 </resources>

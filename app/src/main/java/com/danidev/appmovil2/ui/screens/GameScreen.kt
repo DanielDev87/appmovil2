@@ -3,22 +3,17 @@ package com.danidev.appmovil2.ui.screens
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -32,9 +27,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -46,8 +38,6 @@ import com.danidev.appmovil2.RollIndicator
 import com.danidev.appmovil2.audio.rememberDiceSoundManager
 import com.danidev.appmovil2.haptics.rememberDiceHaptics
 import com.danidev.appmovil2.sensor.rememberShakeDetector
-import com.danidev.appmovil2.ui.dice.DicePalettePicker
-import com.danidev.appmovil2.ui.dice.DiceSizeSlider
 import com.danidev.appmovil2.ui.dice.DiceTypeSelector
 import com.danidev.appmovil2.ui.dice.DiceViewModel
 import com.danidev.appmovil2.ui.dice.LocalDicePalette
@@ -60,14 +50,17 @@ import com.danidev.appmovil2.ui.game.DiceBoard
 import com.danidev.appmovil2.ui.game.DiceCountSelector
 import com.danidev.appmovil2.ui.game.GameStatus
 import com.danidev.appmovil2.ui.game.GameTopBar
+import com.danidev.appmovil2.ui.game.DiceStage
+import com.danidev.appmovil2.ui.game.RecentRolls
 import com.danidev.appmovil2.ui.game.RollButton
-import com.danidev.appmovil2.ui.game.RollSum
+import com.danidev.appmovil2.ui.game.ScoreCards
 import com.danidev.appmovil2.ui.game.ShareResultButton
-import com.danidev.appmovil2.ui.player.LocalPlayerName
 import com.danidev.appmovil2.ui.settings.SettingsSheet
 import com.danidev.appmovil2.ui.settings.rememberGameSettingsViewModel
+import com.danidev.appmovil2.ui.style.AppBackground
+import com.danidev.appmovil2.ui.style.LocalAppTokens
+import com.danidev.appmovil2.ui.style.StyledButton
 import com.danidev.appmovil2.ui.theme.Appmovil2Theme
-import com.danidev.appmovil2.ui.theme.LocalThemeController
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -142,17 +135,7 @@ fun GameScreen(diceViewModel: DiceViewModel = viewModel(), onNavigateToMenu: () 
         label = "diceScale"
     )
 
-    val isDark = LocalThemeController.current.isDark
-    val backgroundBrush = if (isDark) {
-        Brush.verticalGradient(colors = listOf(Color(0xFF381B46), Color(0xFF13091B)))
-    } else {
-        Brush.verticalGradient(
-            colors = listOf(
-                MaterialTheme.colorScheme.primary,
-                MaterialTheme.colorScheme.background
-            )
-        )
-    }
+    val tokens = LocalAppTokens.current
 
     val hasUnlockedDice = uiState.lockedIndices.size < uiState.diceCount
     val canRoll = !isRolling && outcome == GameOutcome.IN_PROGRESS && hasUnlockedDice
@@ -209,140 +192,112 @@ fun GameScreen(diceViewModel: DiceViewModel = viewModel(), onNavigateToMenu: () 
     // HU-19: detección de sacudida por acelerómetro para lanzar los dados.
     rememberShakeDetector(enabled = canRoll && settings.shakeEnabled, onShake = triggerRoll)
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(brush = backgroundBrush)
-            .statusBarsPadding()
-            .navigationBarsPadding()
-    ) {
-        GameTopBar(
-            haptics = haptics,
-            isSoundMuted = settings.soundMuted,
-            onToggleSound = { settingsViewModel.setSoundMuted(!settings.soundMuted) },
-            onNavigateToMenu = onNavigateToMenu,
-            onOpenSettings = { showSettings = true }
-        )
+    val scrollState = rememberScrollState()
 
+    AppBackground {
         Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f)
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp, vertical = 8.dp)
+                .fillMaxSize()
+                .statusBarsPadding()
+                .navigationBarsPadding()
+                .padding(horizontal = 20.dp)
         ) {
-            // HU-12: saludo personalizado con el nombre del jugador.
-            val playerName = LocalPlayerName.current.displayName
-            if (playerName.isNotEmpty()) {
-                Text(
-                    text = stringResource(R.string.player_turn, playerName),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onBackground,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-            }
-
-            DiceCountSelector(
-                diceCount = uiState.diceCount,
-                enabled = !isRolling,
-                onSelect = diceViewModel::setDiceCount
+            GameTopBar(
+                isSoundMuted = settings.soundMuted,
+                onToggleSound = { settingsViewModel.setSoundMuted(!settings.soundMuted) },
+                onNavigateToMenu = onNavigateToMenu,
+                onOpenSettings = { showSettings = true }
             )
 
-            // HU-07: selector del número de caras. Al cambiarlo empieza una partida nueva.
-            DiceTypeSelector(
-                selected = diceType,
-                enabled = !isRolling,
-                onSelect = { type ->
-                    if (type != diceType) {
-                        typeViewModel.select(type)
-                        resetGame()
-                    }
-                },
-                modifier = Modifier.padding(bottom = 4.dp)
-            )
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(14.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .verticalScroll(scrollState)
+                    .padding(vertical = 8.dp)
+            ) {
+                ScoreCards(uiState = uiState)
 
-            DiceBoard(
-                values = currentDiceValues,
-                lockedIndices = uiState.lockedIndices,
-                diceType = diceType,
-                palette = palette,
-                sizeFactor = sizeFactor,
-                rotation = rotation,
-                scale = scale,
-                isDark = isDark,
-                canToggleLock = !isRolling && outcome == GameOutcome.IN_PROGRESS,
-                onToggleLock = diceViewModel::toggleLock
-            )
-
-            RollSum(
-                unlockedValues = currentDiceValues.filterIndexed { index, _ ->
-                    index !in uiState.lockedIndices
-                },
-                isDark = isDark
-            )
-
-            // HU-04: selector de paleta de color del dado.
-            DicePalettePicker(
-                selected = palette,
-                onSelect = paletteViewModel::selectPalette
-            )
-
-            // HU-05: slider para cambiar el tamaño del dado.
-            DiceSizeSlider(
-                factor = sizeFactor,
-                diceCount = uiState.diceCount,
-                onFactorChange = sizeViewModel::setFactor,
-                modifier = Modifier.padding(top = 8.dp)
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            GameStatus(uiState = uiState)
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            RollButton(enabled = canRoll, onClick = triggerRoll)
-
-            if (outcome != GameOutcome.IN_PROGRESS) {
-                OutlinedButton(
-                    onClick = resetGame,
-                    modifier = Modifier.padding(top = 8.dp)
+                // HU-06 y HU-07: modo de 1 o 2 dados y número de caras. Cambiar las caras
+                // empieza una partida nueva.
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(stringResource(R.string.play_again))
+                    DiceCountSelector(
+                        diceCount = uiState.diceCount,
+                        enabled = !isRolling,
+                        onSelect = diceViewModel::setDiceCount,
+                        modifier = Modifier.width(200.dp)
+                    )
+                    DiceTypeSelector(
+                        selected = diceType,
+                        enabled = !isRolling,
+                        onSelect = { type ->
+                            if (type != diceType) {
+                                typeViewModel.select(type)
+                                resetGame()
+                            }
+                        }
+                    )
                 }
-            }
 
-            if (uiState.launches > 0) {
-                Spacer(modifier = Modifier.height(14.dp))
-                ShareResultButton(uiState = uiState)
-            }
+                DiceStage(
+                    indicator = uiState.rollIndicator,
+                    sum = currentDiceValues
+                        .filterIndexed { index, _ -> index !in uiState.lockedIndices }
+                        .sum()
+                ) {
+                    DiceBoard(
+                        values = currentDiceValues,
+                        lockedIndices = uiState.lockedIndices,
+                        diceType = diceType,
+                        palette = palette,
+                        sizeFactor = sizeFactor,
+                        rotation = rotation,
+                        scale = scale,
+                        canToggleLock = !isRolling && outcome == GameOutcome.IN_PROGRESS,
+                        onToggleLock = diceViewModel::toggleLock
+                    )
+                }
 
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // HU-08: reinicia el contador de tiros consecutivos.
-            IconButton(onClick = diceViewModel::resetRollCount) {
-                Image(
-                    painter = painterResource(R.drawable.reiniciar),
-                    contentDescription = "Reiniciar contador",
-                    modifier = Modifier.size(40.dp)
+                GameStatus(
+                    uiState = uiState,
+                    shakeEnabled = settings.shakeEnabled,
+                    onResetRollCount = diceViewModel::resetRollCount
                 )
+
+                RollButton(enabled = canRoll, onClick = triggerRoll)
+
+                if (outcome != GameOutcome.IN_PROGRESS) {
+                    StyledButton(onClick = resetGame, height = 52.dp) {
+                        Text(
+                            text = stringResource(R.string.play_again),
+                            fontWeight = FontWeight.ExtraBold,
+                            color = tokens.onAccent
+                        )
+                    }
+                }
+
+                if (uiState.launches > 0) {
+                    ShareResultButton(uiState = uiState)
+                }
+
+                RecentRolls(
+                    history = uiState.history,
+                    onOpenStats = {
+                        coroutineScope.launch { scrollState.animateScrollTo(scrollState.maxValue) }
+                    }
+                )
+
+                // HU-011 y HU-13: historial completo y estadísticas de la partida.
+                CompositionLocalProvider(LocalDicePalette provides palette) {
+                    RollHistory(history = uiState.history)
+                }
+                RollStatistics(counts = uiState.faceCounts, faces = diceType.sides)
             }
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            // HU-011: lista desplazable con los últimos 10 lanzamientos.
-            CompositionLocalProvider(LocalDicePalette provides palette) {
-                RollHistory(history = uiState.history)
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // HU-13: cuántas veces ha salido cada cara en la partida.
-            RollStatistics(counts = uiState.faceCounts, faces = diceType.sides)
-
-            Spacer(modifier = Modifier.height(48.dp))
         }
     }
 

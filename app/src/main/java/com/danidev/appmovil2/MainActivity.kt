@@ -24,6 +24,8 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.VolumeOff
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Vibration
+import com.danidev.appmovil2.haptics.rememberDiceHaptics
 import com.danidev.appmovil2.audio.rememberDiceSoundManager
 import com.danidev.appmovil2.sensor.rememberShakeDetector
 import androidx.compose.material3.*
@@ -216,6 +218,9 @@ fun MoverDados(diceViewModel: DiceViewModel = viewModel(), onNavigateToMenu: () 
         soundManager.setMuted(isSoundMuted)
     }
 
+    // HU-16: vibración al detenerse el dado; el usuario puede desactivarla.
+    val haptics = rememberDiceHaptics()
+
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
 
@@ -297,19 +302,33 @@ fun MoverDados(diceViewModel: DiceViewModel = viewModel(), onNavigateToMenu: () 
                 ThemeSwitch()
             }
 
-            // HU-15: Botón para alternar sonido (silenciar / activar)
-            IconButton(
-                onClick = {
-                    isSoundMuted = !isSoundMuted
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                // HU-16: Botón para activar o desactivar la vibración.
+                IconButton(onClick = { haptics.setVibrationEnabled(!haptics.isEnabled) }) {
+                    Icon(
+                        imageVector = Icons.Filled.Vibration,
+                        contentDescription = stringResource(
+                            if (haptics.isEnabled) R.string.haptics_enabled else R.string.haptics_disabled
+                        ),
+                        tint = MaterialTheme.colorScheme.onBackground
+                            .copy(alpha = if (haptics.isEnabled) 1f else 0.4f)
+                    )
                 }
-            ) {
-                Icon(
-                    imageVector = if (isSoundMuted) Icons.AutoMirrored.Filled.VolumeOff else Icons.AutoMirrored.Filled.VolumeUp,
-                    contentDescription = stringResource(
-                        if (isSoundMuted) R.string.sound_disabled else R.string.sound_enabled
-                    ),
-                    tint = MaterialTheme.colorScheme.onBackground
-                )
+
+                // HU-15: Botón para alternar sonido (silenciar / activar)
+                IconButton(
+                    onClick = {
+                        isSoundMuted = !isSoundMuted
+                    }
+                ) {
+                    Icon(
+                        imageVector = if (isSoundMuted) Icons.AutoMirrored.Filled.VolumeOff else Icons.AutoMirrored.Filled.VolumeUp,
+                        contentDescription = stringResource(
+                            if (isSoundMuted) R.string.sound_disabled else R.string.sound_enabled
+                        ),
+                        tint = MaterialTheme.colorScheme.onBackground
+                    )
+                }
             }
         }
 
@@ -602,6 +621,9 @@ fun MoverDados(diceViewModel: DiceViewModel = viewModel(), onNavigateToMenu: () 
                         if (finalValues.size == 1) {
                             rollIndicator = determineRollIndicator(finalValues[0], diceType.sides)
                         }
+
+                        // HU-16: vibración al detenerse el dado; más larga en crítico o pifia.
+                        haptics.vibrateOnLand(strong = rollIndicator != RollIndicator.NONE)
 
                         isRolling = false
                     }

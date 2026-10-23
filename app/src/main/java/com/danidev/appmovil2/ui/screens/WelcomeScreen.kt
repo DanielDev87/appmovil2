@@ -22,7 +22,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
 import com.danidev.appmovil2.R
+import com.danidev.appmovil2.ui.player.LocalPlayerName
+import com.danidev.appmovil2.ui.player.PlayerNameField
 import com.danidev.appmovil2.ui.theme.ThemeSwitch
 
 @Composable
@@ -106,32 +109,59 @@ fun WelcomeScreen(onStartClicked: () -> Unit, onNavigateToAbout: () -> Unit = {}
                         textAlign = TextAlign.Center,
                         modifier = Modifier.padding(horizontal = 8.dp)
                     )
+
+                    // HU-12: saludo con el nombre del jugador. Se reserva el espacio aunque
+                    // no haya nombre para que la pantalla no se mueva al empezar a escribir.
+                    val playerName = LocalPlayerName.current.displayName
+                    Box(
+                        modifier = Modifier
+                            .padding(top = 16.dp)
+                            .height(32.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (playerName.isNotEmpty()) {
+                            Text(
+                                text = stringResource(R.string.player_greeting, playerName),
+                                fontSize = 22.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onBackground,
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
                 }
             }
-            
-            Spacer(modifier = Modifier.height(64.dp))
-            
+
+            Spacer(modifier = Modifier.height(32.dp))
+
             AnimatedVisibility(
                 visible = visible,
                 enter = fadeIn(animationSpec = tween(1000, delayMillis = 500)) + slideInVertically(initialOffsetY = { 50 })
             ) {
-                Button(
-                    onClick = onStartClicked,
-                    modifier = Modifier
-                        .fillMaxWidth(0.8f)
-                        .height(56.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 8.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.onBackground
-                    )
-                ) {
-                    Text(
-                        text = "Jugar ahora",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold
-                    )
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    // HU-12: campo para escribir el nombre del jugador.
+                    PlayerNameField(modifier = Modifier.fillMaxWidth(0.8f))
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    Button(
+                        onClick = onStartClicked,
+                        modifier = Modifier
+                            .fillMaxWidth(0.8f)
+                            .height(56.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 8.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onBackground
+                        )
+                    ) {
+                        Text(
+                            text = "Jugar ahora",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
             }
         }

@@ -53,6 +53,10 @@ import com.danidev.appmovil2.ui.dice.RollHistory
 import com.danidev.appmovil2.ui.dice.diceImageRes
 import com.danidev.appmovil2.ui.dice.rememberDicePaletteViewModel
 import com.danidev.appmovil2.ui.navigation.AppNavGraph
+import com.danidev.appmovil2.ui.player.LocalPlayerName
+import com.danidev.appmovil2.ui.player.PlayerNameController
+import com.danidev.appmovil2.ui.player.PlayerNameViewModel
+import com.danidev.appmovil2.ui.player.SharedPreferencesPlayerNameStore
 import com.danidev.appmovil2.ui.theme.Appmovil2Theme
 import com.danidev.appmovil2.ui.theme.LocalThemeController
 import com.danidev.appmovil2.ui.theme.SharedPreferencesThemeStore
@@ -75,6 +79,13 @@ class MainActivity : ComponentActivity() {
     private val themeViewModel: ThemeViewModel by viewModels {
         viewModelFactory {
             initializer { ThemeViewModel(SharedPreferencesThemeStore(applicationContext)) }
+        }
+    }
+
+    // HU-12: nombre del jugador, guardado entre sesiones.
+    private val playerNameViewModel: PlayerNameViewModel by viewModels {
+        viewModelFactory {
+            initializer { PlayerNameViewModel(SharedPreferencesPlayerNameStore(applicationContext)) }
         }
     }
 
@@ -107,10 +118,16 @@ class MainActivity : ComponentActivity() {
                 onDispose {}
             }
 
+            val playerName by playerNameViewModel.name.collectAsState()
+
             CompositionLocalProvider(
                 LocalThemeController provides ThemeController(
                     isDark = darkTheme,
                     onDarkChange = themeViewModel::setDarkTheme
+                ),
+                LocalPlayerName provides PlayerNameController(
+                    name = playerName,
+                    onNameChange = playerNameViewModel::setName
                 )
             ) {
                 Appmovil2Theme(darkTheme = darkTheme) {
@@ -278,6 +295,18 @@ fun MoverDados(diceViewModel: DiceViewModel = viewModel(), onNavigateToMenu: () 
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp, vertical = 8.dp)
         ) {
+            // HU-12: saludo personalizado con el nombre del jugador.
+            val playerName = LocalPlayerName.current.displayName
+            if (playerName.isNotEmpty()) {
+                Text(
+                    text = stringResource(R.string.player_turn, playerName),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+            }
+
             // HU-06: Selección de modo de dados (1 Dado / 2 Dados)
             Row(
                 verticalAlignment = Alignment.CenterVertically,

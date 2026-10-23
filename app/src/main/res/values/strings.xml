@@ -36,5 +36,10 @@
     <string name="share_no_app">No hay aplicaciones para compartir</string>
     <string name="share_message">🎲 En Mover Dados llevo %1$d de %2$d puntos en %3$d lanzamientos. ¿Puedes superarme?</string>
     <string name="share_message_won">🎲 ¡Gané en Mover Dados! Llegué a %1$d puntos en %2$d lanzamientos. ¿Puedes superarme?</string>
+    <!-- HU-12: Nombre del jugador -->
+    <string name="player_name_label">Tu nombre</string>
+    <string name="player_name_hint">Se guarda en tu teléfono</string>
+    <string name="player_greeting">Hola, %1$s</string>
+    <string name="player_turn">Turno de: %1$s</string>
     <string name="back_to_menu">Volver al menú principal</string>
 </resources>

@@ -9,6 +9,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.VolumeOff
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -16,6 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.danidev.appmovil2.R
@@ -34,6 +36,7 @@ fun GameTopBar(
     onToggleSound: () -> Unit,
     onNavigateToMenu: () -> Unit,
     onOpenSettings: () -> Unit,
+    onReset: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val tokens = LocalAppTokens.current
@@ -77,12 +80,19 @@ fun GameTopBar(
                     text = stringResource(R.string.player_turn, playerName),
                     fontSize = 13.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = tokens.bgMuted
+                    color = tokens.bgMuted,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
         }
 
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            StyledIconButton(
+                icon = Icons.Filled.Refresh,
+                contentDescription = stringResource(R.string.reset_game_description),
+                onClick = onReset
+            )
             StyledIconButton(
                 icon = if (isSoundMuted) {
                     Icons.AutoMirrored.Filled.VolumeOff

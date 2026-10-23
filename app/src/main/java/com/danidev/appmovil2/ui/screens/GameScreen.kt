@@ -55,6 +55,7 @@ import com.danidev.appmovil2.ui.game.GameTopBar
 import com.danidev.appmovil2.ui.game.DiceStage
 import com.danidev.appmovil2.ui.game.RecentRolls
 import com.danidev.appmovil2.ui.game.PlayAgainButton
+import com.danidev.appmovil2.ui.game.ResetGameDialog
 import com.danidev.appmovil2.ui.game.RollButton
 import com.danidev.appmovil2.ui.game.ScoreCards
 import com.danidev.appmovil2.ui.game.ShareResultButton
@@ -119,6 +120,7 @@ fun GameScreen(
     val settingsViewModel = rememberGameSettingsViewModel()
     val settings by settingsViewModel.settings.collectAsState()
     var showSettings by remember { mutableStateOf(false) }
+    var showResetConfirm by remember { mutableStateOf(false) }
 
     // Pantalla de fin de partida: se puede cerrar para ver cómo quedó y vuelve a mostrarse
     // en la partida siguiente.
@@ -230,7 +232,8 @@ fun GameScreen(
                 isSoundMuted = settings.soundMuted,
                 onToggleSound = { settingsViewModel.setSoundMuted(!settings.soundMuted) },
                 onNavigateToMenu = onNavigateToMenu,
-                onOpenSettings = { showSettings = true }
+                onOpenSettings = { showSettings = true },
+                onReset = { if (!isRolling) showResetConfirm = true }
             )
 
             // Piezas de la partida; se acomodan distinto en vertical y en una tablet horizontal.
@@ -371,6 +374,16 @@ fun GameScreen(
             onPlayAgain = resetGame,
             onNavigateToMenu = onNavigateToMenu,
             onDismiss = { gameOverDismissed = true }
+        )
+    }
+
+    if (showResetConfirm) {
+        ResetGameDialog(
+            onConfirm = {
+                resetGame()
+                showResetConfirm = false
+            },
+            onDismiss = { showResetConfirm = false }
         )
     }
 

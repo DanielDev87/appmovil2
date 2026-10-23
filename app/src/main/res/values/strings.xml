@@ -102,4 +102,9 @@
     <string name="roll_fumble">¡Pifia!</string>
     <string name="sum_pill">Suma %1$d</string>
     <string name="roll_count_reset">Reiniciar contador</string>
+    <string name="stats_top">¡TOP!</string>
+    <string name="stats_back">Volver a la partida</string>
+    <string name="stats_rolls_label">Lanzamientos · %1$s</string>
+    <string name="stats_streak_label">Racha</string>
+    <string name="stats_keep_playing">¡A seguir jugando!</string>
 </resources>

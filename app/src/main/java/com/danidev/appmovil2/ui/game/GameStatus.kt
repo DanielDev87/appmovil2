@@ -49,7 +49,7 @@ fun GameStatus(
             color = tokens.muted
         )
     }
-    if (uiState.rollCount > 0) {
+    run {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),

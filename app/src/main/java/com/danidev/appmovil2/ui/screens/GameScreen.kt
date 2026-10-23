@@ -16,7 +16,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -40,9 +39,6 @@ import com.danidev.appmovil2.haptics.rememberDiceHaptics
 import com.danidev.appmovil2.sensor.rememberShakeDetector
 import com.danidev.appmovil2.ui.dice.DiceTypeSelector
 import com.danidev.appmovil2.ui.dice.DiceViewModel
-import com.danidev.appmovil2.ui.dice.LocalDicePalette
-import com.danidev.appmovil2.ui.dice.RollHistory
-import com.danidev.appmovil2.ui.dice.RollStatistics
 import com.danidev.appmovil2.ui.dice.rememberDicePaletteViewModel
 import com.danidev.appmovil2.ui.dice.rememberDiceSizeViewModel
 import com.danidev.appmovil2.ui.dice.rememberDiceTypeViewModel
@@ -75,7 +71,11 @@ import kotlinx.coroutines.launch
  * @param diceViewModel ViewModel con el historial y el estado de la partida.
  */
 @Composable
-fun GameScreen(diceViewModel: DiceViewModel = viewModel(), onNavigateToMenu: () -> Unit = {}) {
+fun GameScreen(
+    diceViewModel: DiceViewModel = viewModel(),
+    onNavigateToMenu: () -> Unit = {},
+    onNavigateToStats: () -> Unit = {}
+) {
     val uiState by diceViewModel.uiState.collectAsState()
 
     // Paleta de color del dado (HU-04), guardada entre sesiones.
@@ -192,8 +192,6 @@ fun GameScreen(diceViewModel: DiceViewModel = viewModel(), onNavigateToMenu: () 
     // HU-19: detección de sacudida por acelerómetro para lanzar los dados.
     rememberShakeDetector(enabled = canRoll && settings.shakeEnabled, onShake = triggerRoll)
 
-    val scrollState = rememberScrollState()
-
     AppBackground {
         Column(
             modifier = Modifier
@@ -215,7 +213,7 @@ fun GameScreen(diceViewModel: DiceViewModel = viewModel(), onNavigateToMenu: () 
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
-                    .verticalScroll(scrollState)
+                    .verticalScroll(rememberScrollState())
                     .padding(vertical = 8.dp)
             ) {
                 ScoreCards(uiState = uiState)
@@ -287,16 +285,8 @@ fun GameScreen(diceViewModel: DiceViewModel = viewModel(), onNavigateToMenu: () 
 
                 RecentRolls(
                     history = uiState.history,
-                    onOpenStats = {
-                        coroutineScope.launch { scrollState.animateScrollTo(scrollState.maxValue) }
-                    }
+                    onOpenStats = onNavigateToStats
                 )
-
-                // HU-011 y HU-13: historial completo y estadísticas de la partida.
-                CompositionLocalProvider(LocalDicePalette provides palette) {
-                    RollHistory(history = uiState.history)
-                }
-                RollStatistics(counts = uiState.faceCounts, faces = diceType.sides)
             }
         }
     }

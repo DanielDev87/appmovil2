@@ -49,7 +49,9 @@ import com.danidev.appmovil2.RollIndicator
 import com.danidev.appmovil2.audio.rememberDiceSoundManager
 import com.danidev.appmovil2.haptics.rememberDiceHaptics
 import com.danidev.appmovil2.sensor.rememberShakeDetector
+import com.danidev.appmovil2.ui.dice.DiceType
 import com.danidev.appmovil2.ui.dice.DiceViewModel
+import com.danidev.appmovil2.ui.dice.effectiveDiceSides
 import com.danidev.appmovil2.ui.dice.rememberDicePaletteViewModel
 import com.danidev.appmovil2.ui.dice.rememberDiceSizeViewModel
 import com.danidev.appmovil2.ui.dice.rememberDiceTypeViewModel
@@ -134,6 +136,8 @@ fun GameScreen(
     val soundManager = rememberDiceSoundManager()
     val settingsViewModel = rememberGameSettingsViewModel()
     val settings by settingsViewModel.settings.collectAsState()
+    // Caras de cada dado en juego: el primero usa el tipo elegido y los demás pueden ser distintos.
+    val diceSides = effectiveDiceSides(settings.diceCount, diceType.sides, settings.extraDiceSides)
     var showSettings by remember { mutableStateOf(false) }
     var showResetConfirm by remember { mutableStateOf(false) }
 
@@ -158,7 +162,7 @@ fun GameScreen(
                         score = uiState.score,
                         launches = uiState.launches,
                         criticals = uiState.criticalCount,
-                        sides = diceType.sides
+                        sides = diceSides.first()
                     )
                 )
             }
@@ -245,7 +249,7 @@ fun GameScreen(
                     if (index in lockedIndices) {
                         currentDiceValues.getOrElse(index) { 1 }
                     } else {
-                        diceType.roll()
+                        DiceType.fromSides(diceSides.getOrElse(index) { diceType.sides }).roll()
                     }
                 }
                 currentDiceValues = finalValues
@@ -258,7 +262,13 @@ fun GameScreen(
                 throwAnimation.animateTo(1f, tween(durationMillis = 350, easing = LinearEasing))
 
                 val unlockedValues = finalValues.filterIndexed { index, _ -> index !in lockedIndices }
-                diceViewModel.registerResult(finalValues, unlockedValues, diceType.sides)
+                val unlockedSides = diceSides.filterIndexed { index, _ -> index !in lockedIndices }
+                diceViewModel.registerResult(
+                    values = finalValues,
+                    activeValues = unlockedValues,
+                    diceSides = unlockedSides,
+                    modifier = settings.rollModifier
+                )
 
                 // HU-16: vibración al detenerse el dado; más larga en crítico o pifia.
                 haptics.vibrateOnLand(
@@ -315,13 +325,14 @@ fun GameScreen(
                     sum = currentDiceValues
                         .filterIndexed { index, _ -> index !in uiState.lockedIndices }
                         .sum(),
+                    rollModifier = settings.rollModifier,
                     modifier = stageModifier,
                     minHeight = stageMinHeight
                 ) {
                     DiceBoard(
                         values = currentDiceValues,
                         lockedIndices = uiState.lockedIndices,
-                        diceType = diceType,
+                        diceSides = diceSides,
                         palette = palette,
                         sizeFactor = sizeFactor,
                         throwProgress = throwAnimation.value,
@@ -373,7 +384,7 @@ fun GameScreen(
                         ) {
                             GameInfoPanel(
                                 diceCount = uiState.diceCount,
-                                diceType = diceType,
+                                diceSides = diceSides,
                                 rollCount = uiState.rollCount,
                                 onClick = { showSettings = true }
                             )
@@ -405,7 +416,7 @@ fun GameScreen(
                     ScoreCards(uiState = uiState)
                     GameInfoPanel(
                         diceCount = uiState.diceCount,
-                        diceType = diceType,
+                        diceSides = diceSides,
                         rollCount = uiState.rollCount,
                         onClick = { showSettings = true }
                     )

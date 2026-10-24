@@ -34,7 +34,11 @@ import com.danidev.appmovil2.ui.dice.LocalDicePalette
 import com.danidev.appmovil2.ui.dice.RollHistoryGrid
 import com.danidev.appmovil2.ui.dice.RollStatistics
 import com.danidev.appmovil2.ui.dice.rememberDicePaletteViewModel
+import com.danidev.appmovil2.ui.dice.diceLabel
+import com.danidev.appmovil2.ui.dice.effectiveDiceSides
+import com.danidev.appmovil2.ui.dice.highestFace
 import com.danidev.appmovil2.ui.dice.rememberDiceTypeViewModel
+import com.danidev.appmovil2.ui.settings.rememberGameSettingsViewModel
 import com.danidev.appmovil2.ui.style.AppBackground
 import com.danidev.appmovil2.ui.style.LocalAppTokens
 import com.danidev.appmovil2.ui.style.gameContentMaxWidth
@@ -53,6 +57,8 @@ fun StatsScreen(diceViewModel: DiceViewModel = viewModel(), onNavigateBack: () -
     val tokens = LocalAppTokens.current
     val uiState by diceViewModel.uiState.collectAsState()
     val diceType by rememberDiceTypeViewModel().type.collectAsState()
+    val settings by rememberGameSettingsViewModel().settings.collectAsState()
+    val diceSides = effectiveDiceSides(settings.diceCount, diceType.sides, settings.extraDiceSides)
     val palette by rememberDicePaletteViewModel().palette.collectAsState()
 
     AppBackground {
@@ -124,7 +130,7 @@ fun StatsScreen(diceViewModel: DiceViewModel = viewModel(), onNavigateBack: () -
                     )
                 }
 
-                RollStatistics(counts = uiState.faceCounts, faces = diceType.sides)
+                RollStatistics(counts = uiState.faceCounts, faces = highestFace(diceSides))
 
                 CompositionLocalProvider(LocalDicePalette provides palette) {
                     RollHistoryGrid(history = uiState.history)

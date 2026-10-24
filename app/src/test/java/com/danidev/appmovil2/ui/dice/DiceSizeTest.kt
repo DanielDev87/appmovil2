@@ -91,4 +91,17 @@ class DiceSizeTest {
 
         assertEquals(0.8f, nuevaSesion.factor.value, 0.001f)
     }
+
+    @Test
+    fun `con tres dados cada uno es mas chico y el maximo tambien`() {
+        assertEquals(92f, DiceSize.sizeDp(diceCount = 3, factor = 1f), 0.001f)
+        assertEquals(DiceSize.MAX_FACTOR_TRIPLE, DiceSize.maxFactor(3), 0.001f)
+        assertEquals(DiceSize.MAX_FACTOR_TRIPLE, DiceSize.effectiveFactor(1.4f, diceCount = 3), 0.001f)
+    }
+
+    @Test
+    fun `tres dados juntos caben en el ancho de un telefono`() {
+        val total = 3 * DiceSize.sizeDp(diceCount = 3, factor = DiceSize.MAX_FACTOR_TRIPLE) + 2 * 12f + 32f
+        assert(total <= 411f) { "ancho total $total" }
+    }
 }

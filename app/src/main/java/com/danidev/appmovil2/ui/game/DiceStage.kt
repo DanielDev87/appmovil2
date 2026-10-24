@@ -49,12 +49,14 @@ private val BADGE_SLOT_HEIGHT = 52.dp
  *
  * @param indicator Resultado del último tiro.
  * @param sum Suma de los dados que no están bloqueados.
+ * @param rollModifier Número que se suma al tiro; si no es 0, la suma lo muestra y da el total.
  * @param content Los dados.
  */
 @Composable
 fun DiceStage(
     indicator: RollIndicator,
     sum: Int,
+    rollModifier: Int = 0,
     modifier: Modifier = Modifier,
     minHeight: Dp = if (isTablet()) 300.dp else 230.dp,
     content: @Composable () -> Unit
@@ -126,7 +128,11 @@ fun DiceStage(
                 tilt = if (tokens.isPlayful) -2f else 0f
             ) {
                 Text(
-                    text = stringResource(R.string.sum_pill, sum),
+                    text = if (rollModifier == 0) {
+                        stringResource(R.string.sum_pill, sum)
+                    } else {
+                        stringResource(R.string.sum_pill_modifier, sum, rollModifier, (sum + rollModifier).coerceAtLeast(0))
+                    },
                     fontSize = 16.sp,
                     fontWeight = FontWeight.ExtraBold,
                     color = if (tokens.isPlayful) tokens.onAccent else tokens.ink,

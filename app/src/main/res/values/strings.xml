@@ -272,4 +272,11 @@
     <string name="tour_progress_body">Mira cuántas veces sale cada cara en Estadísticas y desbloquea logros y récords desde el trofeo de la bienvenida.</string>
     <string name="settings_tour">Ver el tour</string>
     <string name="settings_tour_hint">Repasa cómo se juega, paso a paso</string>
+    <string name="sum_pill_modifier">Suma %1$d %2$+d = %3$d</string>
+    <string name="settings_dice_n">Dado %1$d</string>
+    <string name="settings_dice_same">Igual</string>
+    <string name="settings_modifier">Modificador del tiro</string>
+    <string name="settings_modifier_hint">Se suma a cada tiro</string>
+    <string name="three_dice">3 Dados</string>
+    <string name="settings_faces_n">Caras del dado %1$d</string>
 </resources>

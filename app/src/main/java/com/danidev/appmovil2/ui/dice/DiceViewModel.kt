@@ -2,6 +2,7 @@ package com.danidev.appmovil2.ui.dice
 
 import androidx.lifecycle.ViewModel
 import com.danidev.appmovil2.GameOutcome
+import com.danidev.appmovil2.MAX_DICE
 import com.danidev.appmovil2.MAX_PLAYERS
 import com.danidev.appmovil2.MIN_PLAYERS
 import com.danidev.appmovil2.RollIndicator
@@ -94,10 +95,10 @@ class DiceViewModel : ViewModel() {
     /**
      * Cambia la cantidad de dados en juego (HU-06).
      *
-     * @param count Número de dados a usar (mínimo 1).
+     * @param count Número de dados a usar, de 1 a [MAX_DICE].
      */
     fun setDiceCount(count: Int) {
-        val validCount = count.coerceAtLeast(1)
+        val validCount = count.coerceIn(1, MAX_DICE)
         _uiState.update { currentState ->
             val newValues = List(validCount) { index ->
                 currentState.currentDiceValues.getOrElse(index) { 1 }
@@ -150,18 +151,46 @@ class DiceViewModel : ViewModel() {
      * @param sides Número de caras de los dados del lanzamiento (HU-07); por defecto, 6.
      */
     fun registerResult(values: List<Int>, activeValues: List<Int> = values, sides: Int = 6) {
+        registerResult(
+            values = values,
+            activeValues = activeValues,
+            diceSides = List(activeValues.ifEmpty { values }.size) { sides }
+        )
+    }
+
+    /**
+     * Registra un lanzamiento con dados que pueden tener distinto número de caras, y un modificador.
+     *
+     * @param diceSides Caras de cada dado de [activeValues] (o de [values] si no hay activos), en el
+     * mismo orden; el crítico y la pifia se evalúan dado por dado con sus propias caras.
+     * @param modifier Número que se suma al tiro; los puntos del tiro no bajan de cero.
+     */
+    fun registerResult(
+        values: List<Int>,
+        activeValues: List<Int> = values,
+        diceSides: List<Int>,
+        modifier: Int = 0
+    ) {
         val recordValues = activeValues.ifEmpty { values }
-        val newRecord = RollRecord(id = nextRollId++, values = recordValues, sides = sides)
+        val sides = diceSides.firstOrNull() ?: 6
+        val newRecord = RollRecord(
+            id = nextRollId++,
+            values = recordValues,
+            sides = sides,
+            diceSides = diceSides,
+            modifier = modifier
+        )
         _uiState.update { currentState ->
-            // HU-09: crítico si algún dado que cuenta sale en la cara más alta; pifia si todos en 1.
-            val indicator = determineRollIndicator(recordValues, sides)
+            // HU-09: crítico si algún dado que cuenta sale en su cara más alta; pifia si todos en 1.
+            val indicator = determineRollIndicator(recordValues, diceSides)
             val index = currentState.currentPlayer.coerceIn(currentState.players.indices)
+            val rollPoints = (activeValues.sum() + modifier).coerceAtLeast(0)
             val updatedPlayers = currentState.players.mapIndexed { i, player ->
                 if (i != index) {
                     player
                 } else {
                     PlayerStats(
-                        score = player.score + activeValues.sum(),
+                        score = player.score + rollPoints,
                         launches = player.launches + 1,
                         criticals = player.criticals + if (indicator == RollIndicator.CRITICAL) 1 else 0
                     )

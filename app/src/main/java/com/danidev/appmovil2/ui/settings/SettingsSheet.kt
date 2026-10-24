@@ -48,6 +48,8 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.danidev.appmovil2.Difficulty
 import com.danidev.appmovil2.MAX_MAX_LAUNCHES
+import com.danidev.appmovil2.MAX_ROLL_MODIFIER
+import com.danidev.appmovil2.MIN_ROLL_MODIFIER
 import com.danidev.appmovil2.MAX_TARGET_SCORE
 import com.danidev.appmovil2.MIN_MAX_LAUNCHES
 import com.danidev.appmovil2.MIN_TARGET_SCORE
@@ -57,6 +59,7 @@ import com.danidev.appmovil2.ui.dice.DiceFace
 import com.danidev.appmovil2.ui.dice.DicePalette
 import com.danidev.appmovil2.ui.dice.DiceSize
 import com.danidev.appmovil2.ui.dice.DiceType
+import com.danidev.appmovil2.ui.dice.effectiveDiceSides
 import com.danidev.appmovil2.ui.player.FriendsSection
 import com.danidev.appmovil2.ui.style.LocalAppTokens
 import com.danidev.appmovil2.ui.style.LocalStyleController
@@ -81,6 +84,8 @@ class GameOptions(
     val onDiceCountChange: (Int) -> Unit,
     val diceType: DiceType,
     val onDiceTypeChange: (DiceType) -> Unit,
+    val onExtraDiceSidesChange: (Int, Int) -> Unit,
+    val onRollModifierChange: (Int) -> Unit,
     val haptics: DiceHaptics,
     val settings: GameSettings,
     val onSoundMutedChange: (Boolean) -> Unit,
@@ -169,41 +174,35 @@ private fun GameTab(options: GameOptions, onShowTour: () -> Unit) {
 
     Label(stringResource(R.string.settings_dice))
     StyledSegmented(
-        options = listOf(stringResource(R.string.one_die), stringResource(R.string.two_dice)),
-        selectedIndex = if (options.diceCount == 2) 1 else 0,
+        options = listOf(
+            stringResource(R.string.one_die),
+            stringResource(R.string.two_dice),
+            stringResource(R.string.three_dice)
+        ),
+        selectedIndex = options.diceCount.coerceIn(1, 3) - 1,
         onSelect = { options.onDiceCountChange(it + 1) },
         enabled = !options.isRolling,
         modifier = Modifier.fillMaxWidth()
     )
 
-    Label(stringResource(R.string.settings_faces))
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-        DiceType.entries.forEach { type ->
-            val selected = type == options.diceType
-            StyledCard(
-                color = if (selected) tokens.accent else tokens.surface,
-                radius = 14.dp,
-                modifier = Modifier
-                    .weight(1f)
-                    .clickable(enabled = !options.isRolling, role = Role.RadioButton) {
-                        options.onDiceTypeChange(type)
-                    }
-            ) {
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 12.dp)
-                ) {
-                    Text(
-                        text = type.label,
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = if (selected) tokens.onAccent else tokens.ink
-                    )
-                }
-            }
-        }
+    // Caras del primer dado y, si hay más dados, las de cada uno (pueden ser distintas).
+    Label(
+        if (options.diceCount > 1) stringResource(R.string.settings_faces_n, 1)
+        else stringResource(R.string.settings_faces)
+    )
+    FacesChips(
+        selectedSides = options.diceType.sides,
+        onSelect = { sides -> options.onDiceTypeChange(DiceType.fromSides(sides)) },
+        enabled = !options.isRolling
+    )
+    for (index in 1 until options.diceCount) {
+        Label(stringResource(R.string.settings_faces_n, index + 1))
+        FacesChips(
+            selectedSides = options.settings.extraDiceSides.getOrElse(index - 1) { 0 },
+            onSelect = { sides -> options.onExtraDiceSidesChange(index, sides) },
+            enabled = !options.isRolling,
+            includeSame = true
+        )
     }
 
     Label(stringResource(R.string.settings_dice_color))
@@ -225,6 +224,17 @@ private fun GameTab(options: GameOptions, onShowTour: () -> Unit) {
         palette = options.palette,
         diceType = options.diceType,
         onFactorChange = options.onSizeChange
+    )
+
+    Label(stringResource(R.string.settings_modifier))
+    StyledStepper(
+        label = stringResource(R.string.settings_modifier_hint),
+        value = options.settings.rollModifier,
+        onValueChange = options.onRollModifierChange,
+        min = MIN_ROLL_MODIFIER,
+        max = MAX_ROLL_MODIFIER,
+        step = 1,
+        format = { String.format(java.util.Locale.getDefault(), "%+d", it).let { text -> if (it == 0) "0" else text } }
     )
 
     Label(stringResource(R.string.settings_goals))
@@ -307,6 +317,53 @@ private fun TourButton(onClick: () -> Unit) {
                     fontSize = 13.sp,
                     color = tokens.muted
                 )
+            }
+        }
+    }
+}
+
+/**
+ * Fila de fichas con las caras que se pueden elegir (D4 a D20).
+ *
+ * @param selectedSides Caras elegidas; 0 es "igual que el primer dado".
+ * @param includeSame `true` para ofrecer también la ficha "Igual", usada por los dados 2 y 3.
+ */
+@Composable
+private fun FacesChips(
+    selectedSides: Int,
+    onSelect: (Int) -> Unit,
+    enabled: Boolean,
+    includeSame: Boolean = false
+) {
+    val tokens = LocalAppTokens.current
+    val choices = buildList {
+        if (includeSame) add(0 to stringResource(R.string.settings_dice_same))
+        DiceType.entries.forEach { add(it.sides to it.label) }
+    }
+    Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
+        choices.forEach { (sides, label) ->
+            val selected = sides == selectedSides
+            StyledCard(
+                color = if (selected) tokens.accent else tokens.surface,
+                radius = 14.dp,
+                modifier = Modifier
+                    .weight(1f)
+                    .clickable(enabled = enabled, role = Role.RadioButton) { onSelect(sides) }
+            ) {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 12.dp)
+                ) {
+                    Text(
+                        text = label,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = if (selected) tokens.onAccent else tokens.ink,
+                        maxLines = 1
+                    )
+                }
             }
         }
     }
@@ -514,13 +571,17 @@ fun rememberGameOptions(
         diceCount = settings.diceCount,
         onDiceCountChange = { count ->
             settingsViewModel.setDiceCount(count)
-            settingsViewModel.refreshDifficulty(diceType.sides, count)
+            settingsViewModel.refreshDifficulty(
+                effectiveDiceSides(count, diceType.sides, settings.extraDiceSides)
+            )
         },
         diceType = diceType,
         onDiceTypeChange = { type ->
             if (type != diceType) {
                 typeViewModel.select(type)
-                settingsViewModel.refreshDifficulty(type.sides, settings.diceCount)
+                settingsViewModel.refreshDifficulty(
+                    effectiveDiceSides(settings.diceCount, type.sides, settings.extraDiceSides)
+                )
                 onDiceTypeChanged()
             }
         },
@@ -528,9 +589,24 @@ fun rememberGameOptions(
         settings = settings,
         onSoundMutedChange = settingsViewModel::setSoundMuted,
         onShakeChange = settingsViewModel::setShakeEnabled,
+        onExtraDiceSidesChange = { index, sides ->
+            settingsViewModel.setExtraDiceSides(index, sides)
+            val extras = settings.extraDiceSides.mapIndexed { i, old -> if (i == index - 1) sides else old }
+            settingsViewModel.refreshDifficulty(effectiveDiceSides(settings.diceCount, diceType.sides, extras))
+            onDiceTypeChanged()
+        },
+        onRollModifierChange = { value ->
+            settingsViewModel.setRollModifier(value)
+            settingsViewModel.refreshDifficulty(
+                effectiveDiceSides(settings.diceCount, diceType.sides, settings.extraDiceSides)
+            )
+        },
         onTargetScoreChange = settingsViewModel::setTargetScore,
         onDifficultyChange = { difficulty ->
-            settingsViewModel.setDifficulty(difficulty, diceType.sides, settings.diceCount)
+            settingsViewModel.setDifficulty(
+                difficulty,
+                effectiveDiceSides(settings.diceCount, diceType.sides, settings.extraDiceSides)
+            )
         },
         onMaxLaunchesChange = settingsViewModel::setMaxLaunches,
         onPlayerCountChange = settingsViewModel::setPlayerCount,

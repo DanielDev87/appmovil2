@@ -106,10 +106,10 @@ fun RecentRolls(
                             horizontalArrangement = Arrangement.spacedBy(2.dp),
                             modifier = Modifier.padding(5.dp)
                         ) {
-                            record.values.forEach { value ->
+                            record.values.forEachIndexed { index, value ->
                                 DiceFace(
                                     value = value,
-                                    sides = record.sides,
+                                    sides = record.sidesAt(index),
                                     palette = palette,
                                     contentDescription = value.toString(),
                                     modifier = Modifier.size(DIE_SIZE)

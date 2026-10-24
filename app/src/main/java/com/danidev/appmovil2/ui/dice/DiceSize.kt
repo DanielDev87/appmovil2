@@ -56,12 +56,21 @@ object DiceSize {
     /** Tamaño original (factor 1.0) de cada dado cuando hay dos, en dp. */
     private const val BASE_DOUBLE_DP = 130f
 
+    /** Tamaño original (factor 1.0) de cada dado cuando hay tres, en dp. */
+    private const val BASE_TRIPLE_DP = 92f
+
+    /** Factor máximo con tres dados: más allá no caben juntos en el ancho de un teléfono. */
+    const val MAX_FACTOR_TRIPLE = 1.0f
+
     /** Proporción del dado que se deja como margen interior. */
     private const val PADDING_RATIO = 0.15f
 
     /** Factor máximo permitido para la cantidad de dados indicada. */
-    fun maxFactor(diceCount: Int): Float =
-        if (diceCount > 1) MAX_FACTOR_DOUBLE else MAX_FACTOR_SINGLE
+    fun maxFactor(diceCount: Int): Float = when {
+        diceCount >= 3 -> MAX_FACTOR_TRIPLE
+        diceCount == 2 -> MAX_FACTOR_DOUBLE
+        else -> MAX_FACTOR_SINGLE
+    }
 
     /**
      * Factor realmente aplicado: el elegido por el usuario, limitado a lo que cabe
@@ -73,7 +82,11 @@ object DiceSize {
 
     /** Tamaño del dado (alto y ancho) en dp para el factor y la cantidad de dados dados. */
     fun sizeDp(diceCount: Int, factor: Float): Float {
-        val base = if (diceCount > 1) BASE_DOUBLE_DP else BASE_SINGLE_DP
+        val base = when {
+            diceCount >= 3 -> BASE_TRIPLE_DP
+            diceCount == 2 -> BASE_DOUBLE_DP
+            else -> BASE_SINGLE_DP
+        }
         return base * effectiveFactor(factor, diceCount)
     }
 

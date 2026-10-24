@@ -53,9 +53,18 @@ fun determineRollIndicator(result: Int, sides: Int = 6): RollIndicator = when (r
  * Indicador de un tiro con uno o varios dados: es crítico si algún dado sale en la cara más
  * alta y pifia si todos salen en 1; en cualquier otro caso no hay indicador.
  */
-fun determineRollIndicator(results: List<Int>, sides: Int = 6): RollIndicator = when {
+fun determineRollIndicator(results: List<Int>, sides: Int = 6): RollIndicator =
+    determineRollIndicator(results, List(results.size) { sides })
+
+/**
+ * Igual que la anterior, pero cada dado puede tener un número de caras distinto: es crítico si algún
+ * dado sale en su cara más alta y pifia si todos salen en 1.
+ *
+ * @param sides Caras de cada dado, en el mismo orden que [results].
+ */
+fun determineRollIndicator(results: List<Int>, sides: List<Int>): RollIndicator = when {
     results.isEmpty() -> RollIndicator.NONE
-    results.any { it == sides } -> RollIndicator.CRITICAL
+    results.indices.any { results[it] == sides.getOrElse(it) { 6 } } -> RollIndicator.CRITICAL
     results.all { it == 1 } -> RollIndicator.FUMBLE
     else -> RollIndicator.NONE
 }
@@ -83,12 +92,27 @@ enum class Difficulty(val maxLaunches: Int, val goalFactor: Double) {
      * Puntos para ganar con un dado de [sides] caras y [diceCount] dados: el promedio por tiro por los
      * lanzamientos, por [goalFactor], dentro de los límites permitidos.
      */
-    fun targetScore(sides: Int, diceCount: Int): Int {
-        val averagePerRoll = (sides + 1) / 2.0 * diceCount
+    fun targetScore(sides: Int, diceCount: Int): Int =
+        targetScore(List(diceCount) { sides }, modifier = 0)
+
+    /**
+     * Igual que la anterior para dados de caras distintas ([sides], una por dado) y un [modifier] que
+     * se suma a cada tiro: el promedio por tiro es la suma de los promedios de cada dado más el
+     * modificador.
+     */
+    fun targetScore(sides: List<Int>, modifier: Int): Int {
+        val averagePerRoll = (sides.sumOf { (it + 1) / 2.0 } + modifier).coerceAtLeast(1.0)
         return Math.round(averagePerRoll * maxLaunches * goalFactor).toInt()
             .coerceIn(MIN_TARGET_SCORE, MAX_TARGET_SCORE)
     }
 }
+
+/** Cantidad máxima de dados que se pueden lanzar a la vez. */
+const val MAX_DICE = 3
+
+/** Menor y mayor modificador que se puede sumar a cada tiro. */
+const val MIN_ROLL_MODIFIER = -5
+const val MAX_ROLL_MODIFIER = 5
 
 /** Cantidad mínima y máxima de jugadores en una partida. */
 const val MIN_PLAYERS = 1

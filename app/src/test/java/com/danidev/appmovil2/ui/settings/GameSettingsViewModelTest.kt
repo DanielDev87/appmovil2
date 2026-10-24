@@ -142,7 +142,7 @@ class GameSettingsViewModelTest {
     }
 
     @Test
-    fun `por defecto se juega con un dado y la cantidad de dados se guarda entre uno y dos`() {
+    fun `por defecto se juega con un dado y la cantidad de dados se guarda y se limita`() {
         val store = FakeGameSettingsStore()
         val viewModel = GameSettingsViewModel(store)
         assertEquals(1, viewModel.settings.value.diceCount)
@@ -151,7 +151,7 @@ class GameSettingsViewModelTest {
         assertEquals(2, store.saved.diceCount)
 
         viewModel.setDiceCount(7)
-        assertEquals(2, viewModel.settings.value.diceCount)
+        assertEquals(3, viewModel.settings.value.diceCount)
         viewModel.setDiceCount(0)
         assertEquals(1, viewModel.settings.value.diceCount)
     }
@@ -198,5 +198,57 @@ class GameSettingsViewModelTest {
         viewModel.refreshDifficulty(sides = 20, diceCount = 2)
 
         assertEquals(50, viewModel.settings.value.targetScore)
+    }
+
+    @Test
+    fun `la cantidad de dados llega a tres y el modificador se limita entre menos cinco y cinco`() {
+        val store = FakeGameSettingsStore()
+        val viewModel = GameSettingsViewModel(store)
+
+        viewModel.setDiceCount(3)
+        assertEquals(3, store.saved.diceCount)
+        viewModel.setDiceCount(9)
+        assertEquals(3, viewModel.settings.value.diceCount)
+
+        viewModel.setRollModifier(2)
+        assertEquals(2, store.saved.rollModifier)
+        viewModel.setRollModifier(40)
+        assertEquals(5, viewModel.settings.value.rollModifier)
+        viewModel.setRollModifier(-40)
+        assertEquals(-5, viewModel.settings.value.rollModifier)
+    }
+
+    @Test
+    fun `se pueden elegir caras distintas para el segundo y el tercer dado`() {
+        val store = FakeGameSettingsStore()
+        val viewModel = GameSettingsViewModel(store)
+
+        viewModel.setExtraDiceSides(1, 20)
+        viewModel.setExtraDiceSides(2, 8)
+        assertEquals(listOf(20, 8), store.saved.extraDiceSides)
+
+        viewModel.setExtraDiceSides(1, 0)
+        assertEquals(listOf(0, 8), viewModel.settings.value.extraDiceSides)
+    }
+
+    @Test
+    fun `no se aceptan caras que no existen ni posiciones fuera de rango`() {
+        val viewModel = GameSettingsViewModel(FakeGameSettingsStore())
+
+        viewModel.setExtraDiceSides(1, 7)
+        viewModel.setExtraDiceSides(0, 20)
+        viewModel.setExtraDiceSides(3, 20)
+
+        assertEquals(listOf(0, 0), viewModel.settings.value.extraDiceSides)
+    }
+
+    @Test
+    fun `cambiar de nivel usa los dados distintos y el modificador de tiro`() {
+        val viewModel = GameSettingsViewModel(FakeGameSettingsStore())
+        viewModel.setRollModifier(2)
+
+        viewModel.setDifficulty(Difficulty.NORMAL, listOf(20, 6))
+
+        assertEquals(Difficulty.NORMAL.targetScore(listOf(20, 6), modifier = 2), viewModel.settings.value.targetScore)
     }
 }

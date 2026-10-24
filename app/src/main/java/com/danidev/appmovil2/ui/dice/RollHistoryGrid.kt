@@ -80,10 +80,10 @@ fun RollHistoryGrid(history: List<RollRecord>, modifier: Modifier = Modifier) {
                             modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp)
                         ) {
                             Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                record.values.forEach { value ->
+                                record.values.forEachIndexed { valueIndex, value ->
                                     DiceFace(
                                         value = value,
-                                        sides = record.sides,
+                                        sides = record.sidesAt(valueIndex),
                                         palette = palette,
                                         contentDescription = value.toString(),
                                         modifier = Modifier.size(if (record.values.size > 1) 44.dp else 60.dp)

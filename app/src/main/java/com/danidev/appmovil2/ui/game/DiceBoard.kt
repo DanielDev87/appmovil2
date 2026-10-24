@@ -29,7 +29,6 @@ import com.danidev.appmovil2.R
 import com.danidev.appmovil2.ui.dice.DiceFace
 import com.danidev.appmovil2.ui.dice.DicePalette
 import com.danidev.appmovil2.ui.dice.DiceSize
-import com.danidev.appmovil2.ui.dice.DiceType
 import com.danidev.appmovil2.ui.dice.DieTumble
 import com.danidev.appmovil2.ui.style.LocalAppTokens
 import kotlin.math.PI
@@ -70,7 +69,7 @@ internal fun spinLeft(progress: Float): Float {
 fun DiceBoard(
     values: List<Int>,
     lockedIndices: Set<Int>,
-    diceType: DiceType,
+    diceSides: List<Int>,
     palette: DicePalette,
     sizeFactor: Float,
     throwProgress: Float,
@@ -131,7 +130,7 @@ fun DiceBoard(
                 // HU-07: con D6 se dibuja con puntos; con otros dados, en número estilizado.
                 DiceFace(
                     value = dieVal,
-                    sides = diceType.sides,
+                    sides = diceSides.getOrElse(index) { 6 },
                     palette = palette,
                     contentDescription = if (isLocked) {
                         stringResource(R.string.dice_locked_description, dieVal)

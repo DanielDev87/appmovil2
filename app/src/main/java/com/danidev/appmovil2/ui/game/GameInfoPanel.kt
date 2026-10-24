@@ -18,7 +18,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.danidev.appmovil2.R
-import com.danidev.appmovil2.ui.dice.DiceType
+import com.danidev.appmovil2.ui.dice.diceLabel
 import com.danidev.appmovil2.ui.style.LocalAppTokens
 import com.danidev.appmovil2.ui.style.StyledCard
 
@@ -29,7 +29,7 @@ import com.danidev.appmovil2.ui.style.StyledCard
 @Composable
 fun GameInfoPanel(
     diceCount: Int,
-    diceType: DiceType,
+    diceSides: List<Int>,
     rollCount: Int,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
@@ -49,7 +49,7 @@ fun GameInfoPanel(
                 .padding(vertical = 14.dp)
         ) {
             InfoCell(label = stringResource(R.string.info_dice), value = diceCount.toString())
-            InfoCell(label = stringResource(R.string.info_faces), value = diceType.label)
+            InfoCell(label = stringResource(R.string.info_faces), value = diceLabel(diceSides))
             InfoCell(label = stringResource(R.string.info_streak), value = rollCount.toString())
         }
     }

@@ -12,12 +12,24 @@ package com.danidev.appmovil2.ui.dice
  * @property value Suma total de los valores obtenidos en el lanzamiento.
  * @property sides Número de caras de los dados con los que se hizo el lanzamiento (HU-07);
  * el historial lo necesita para dibujar cada resultado según el tipo de dado.
+ * @property diceSides Caras de cada dado de [values], en el mismo orden; permite dados distintos en un
+ * mismo tiro. Si está vacía, todos tienen [sides].
+ * @property modifier Número que se sumó al tiro (puede ser negativo).
  */
 data class RollRecord(
     val id: Long,
     val values: List<Int>,
     val value: Int = values.sum(),
-    val sides: Int = 6
+    val sides: Int = 6,
+    val diceSides: List<Int> = emptyList(),
+    val modifier: Int = 0
 ) {
+    /** Caras del dado en la posición [index] de [values]. */
+    fun sidesAt(index: Int): Int = diceSides.getOrElse(index) { sides }
+
+    /** Puntos que sumó el tiro: los dados más el modificador, sin bajar de cero. */
+    val points: Int get() = (values.sum() + modifier).coerceAtLeast(0)
+
+
     constructor(id: Long, value: Int) : this(id = id, values = listOf(value), value = value)
 }

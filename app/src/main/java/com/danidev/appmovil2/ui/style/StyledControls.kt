@@ -111,6 +111,7 @@ fun StyledSwitchRow(
  * Fila con una etiqueta y, a la derecha, un valor que se cambia con los botones − y +.
  *
  * @param step Cuánto cambia el valor con cada toque.
+ * @param format Cómo se escribe el valor (por ejemplo, con signo).
  */
 @Composable
 fun StyledStepper(
@@ -120,7 +121,8 @@ fun StyledStepper(
     min: Int,
     max: Int,
     step: Int,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    format: (Int) -> String = { it.toString() }
 ) {
     val tokens = LocalAppTokens.current
     Row(
@@ -134,7 +136,7 @@ fun StyledStepper(
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             StepperButton("−", enabled = value > min) { onValueChange((value - step).coerceAtLeast(min)) }
             Text(
-                text = value.toString(),
+                text = format(value),
                 fontSize = 20.sp,
                 fontWeight = FontWeight.ExtraBold,
                 color = tokens.ink,

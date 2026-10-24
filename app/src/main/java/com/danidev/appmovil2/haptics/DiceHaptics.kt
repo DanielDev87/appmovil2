@@ -1,5 +1,6 @@
 package com.danidev.appmovil2.haptics
 
+import com.danidev.appmovil2.RollIndicator
 import android.content.Context
 import android.os.Build
 import android.os.VibrationEffect
@@ -26,6 +27,15 @@ import androidx.compose.ui.platform.LocalContext
 interface HapticOutput {
     /** Hace vibrar el dispositivo durante [durationMs] milisegundos. */
     fun pulse(durationMs: Long)
+
+    /**
+     * Hace vibrar siguiendo un patrón: [timingsMs] alterna esperas y vibraciones, empezando por una
+     * espera (por ejemplo, `[0, 60, 70, 60]` son dos vibraciones cortas). Si la salida no sabe hacer
+     * patrones, vibra una sola vez durante el total de las vibraciones.
+     */
+    fun pattern(timingsMs: LongArray) {
+        pulse(timingsMs.filterIndexed { index, _ -> index % 2 == 1 }.sum())
+    }
 }
 
 /**
@@ -47,6 +57,21 @@ class VibratorOutput(private val vibrator: Vibrator?) : HapticOutput {
             } else {
                 @Suppress("DEPRECATION")
                 motor.vibrate(durationMs)
+            }
+        } catch (_: Throwable) {
+            // Sin permiso o sin servicio de vibración: se ignora.
+        }
+    }
+
+    override fun pattern(timingsMs: LongArray) {
+        val motor = vibrator ?: return
+        try {
+            if (!motor.hasVibrator()) return
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                motor.vibrate(VibrationEffect.createWaveform(timingsMs, -1))
+            } else {
+                @Suppress("DEPRECATION")
+                motor.vibrate(timingsMs, -1)
             }
         } catch (_: Throwable) {
             // Sin permiso o sin servicio de vibración: se ignora.
@@ -118,7 +143,41 @@ class DiceHaptics(
         output.pulse(if (strong) STRONG_MS else LAND_MS)
     }
 
+    /**
+     * Vibra al terminar un tiro según su resultado: una vibración corta si fue normal, dos rápidas
+     * si fue un crítico y una larga y grave si fue una pifia.
+     */
+    fun vibrateOnResult(indicator: RollIndicator) {
+        if (!isEnabled) return
+        when (indicator) {
+            RollIndicator.CRITICAL -> output.pattern(CRITICAL_PATTERN)
+            RollIndicator.FUMBLE -> output.pulse(FUMBLE_MS)
+            RollIndicator.NONE -> output.pulse(LAND_MS)
+        }
+    }
+
+    /**
+     * Vibra al terminar la partida: un redoble de tres vibraciones si se ganó y una sola larga si se
+     * perdió.
+     */
+    fun vibrateOnGameOver(won: Boolean) {
+        if (!isEnabled) return
+        if (won) output.pattern(WIN_PATTERN) else output.pulse(LOSE_MS)
+    }
+
     companion object {
+        /** Dos vibraciones rápidas para un tiro crítico. */
+        val CRITICAL_PATTERN = longArrayOf(0, 60, 70, 60)
+
+        /** Duración de la vibración larga de una pifia. */
+        const val FUMBLE_MS = 180L
+
+        /** Tres vibraciones que van creciendo, para una victoria. */
+        val WIN_PATTERN = longArrayOf(0, 60, 60, 90, 60, 150)
+
+        /** Duración de la vibración larga de una derrota. */
+        const val LOSE_MS = 320L
+
         /** Duración de la vibración de un lanzamiento normal. */
         const val LAND_MS = 40L
 

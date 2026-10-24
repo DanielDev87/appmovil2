@@ -279,4 +279,9 @@
     <string name="settings_modifier_hint">Se suma a cada tiro</string>
     <string name="three_dice">3 Dados</string>
     <string name="settings_faces_n">Caras del dado %1$d</string>
+    <string name="settings_text_size">Tamaño del texto</string>
+    <string name="text_size_normal">Normal</string>
+    <string name="text_size_large">Grande</string>
+    <string name="text_size_extra_large">Muy grande</string>
+    <string name="size_fine_tune">Ajuste fino</string>
 </resources>

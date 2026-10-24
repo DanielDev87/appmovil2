@@ -50,3 +50,16 @@ fun gameContentMaxWidth(): Dp {
     val wideLandscape = isTablet() && configuration.screenWidthDp > configuration.screenHeightDp
     return if (wideLandscape) WIDE_CONTENT_WIDTH else MAX_CONTENT_WIDTH
 }
+
+/**
+ * Agranda (o no) el texto de todo el contenido según [factor], conservando el tamaño de las medidas.
+ * Se suma a la escala de letra que el usuario tenga en el sistema.
+ */
+@Composable
+fun TextScaling(factor: Float, content: @Composable () -> Unit) {
+    val base = LocalDensity.current
+    CompositionLocalProvider(
+        LocalDensity provides Density(base.density, base.fontScale * factor),
+        content = content
+    )
+}

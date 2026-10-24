@@ -1,26 +1,5 @@
 package com.danidev.appmovil2.ui.dice
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Slider
-import androidx.compose.material3.SliderDefaults
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
-import com.danidev.appmovil2.R
-import com.danidev.appmovil2.ui.theme.Appmovil2Theme
-import kotlin.math.roundToInt
 
 /*
  * HU-05: Modificador de tamaño del dado.
@@ -95,69 +74,4 @@ object DiceSize {
 
     /** Limita un factor al rango válido del slider. */
     fun coerce(factor: Float): Float = factor.coerceIn(MIN_FACTOR, MAX_FACTOR_SINGLE)
-}
-
-/**
- * Slider para cambiar el tamaño del dado (HU-05).
- *
- * Al moverlo cambia el `Modifier.size()` del dado al instante, porque la pantalla
- * recompone con el nuevo factor.
- *
- * @param factor Factor elegido por el usuario.
- * @param diceCount Cantidad de dados en juego; limita el máximo del slider.
- * @param onFactorChange Se invoca con el factor nuevo mientras el usuario desliza.
- * @param modifier Modificador opcional para el contenedor.
- */
-@Composable
-fun DiceSizeSlider(
-    factor: Float,
-    diceCount: Int,
-    onFactorChange: (Float) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val onBackground = MaterialTheme.colorScheme.onBackground
-    val shown = DiceSize.effectiveFactor(factor, diceCount)
-    val description = stringResource(R.string.dice_size_description)
-
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        Text(
-            text = stringResource(R.string.dice_size_label),
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.Bold,
-            color = onBackground
-        )
-        Slider(
-            value = shown,
-            onValueChange = onFactorChange,
-            valueRange = DiceSize.MIN_FACTOR..DiceSize.maxFactor(diceCount),
-            colors = SliderDefaults.colors(
-                thumbColor = onBackground,
-                activeTrackColor = onBackground,
-                inactiveTrackColor = onBackground.copy(alpha = 0.25f)
-            ),
-            modifier = Modifier
-                .weight(1f)
-                .semantics { contentDescription = description }
-        )
-        Text(
-            text = stringResource(R.string.dice_size_percent, (shown * 100).roundToInt()),
-            style = MaterialTheme.typography.bodyMedium,
-            color = onBackground,
-            modifier = Modifier.width(48.dp)
-        )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun DiceSizeSliderPreview() {
-    Appmovil2Theme {
-        DiceSizeSlider(factor = 1f, diceCount = 1, onFactorChange = {})
-    }
 }

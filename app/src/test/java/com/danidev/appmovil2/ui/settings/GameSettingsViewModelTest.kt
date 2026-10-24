@@ -251,4 +251,22 @@ class GameSettingsViewModelTest {
 
         assertEquals(Difficulty.NORMAL.targetScore(listOf(20, 6), modifier = 2), viewModel.settings.value.targetScore)
     }
+
+    @Test
+    fun `por defecto el texto es normal y el tamano se guarda`() {
+        val store = FakeGameSettingsStore()
+        val viewModel = GameSettingsViewModel(store)
+        assertEquals(TextSize.NORMAL, viewModel.settings.value.textSize)
+
+        viewModel.setTextSize(TextSize.EXTRA_LARGE)
+
+        assertEquals(TextSize.EXTRA_LARGE, store.saved.textSize)
+    }
+
+    @Test
+    fun `cada tamano de texto es mayor que el anterior y el normal no cambia nada`() {
+        assertEquals(1.0f, TextSize.NORMAL.factor, 0.0001f)
+        assertTrue(TextSize.LARGE.factor > TextSize.NORMAL.factor)
+        assertTrue(TextSize.EXTRA_LARGE.factor > TextSize.LARGE.factor)
+    }
 }

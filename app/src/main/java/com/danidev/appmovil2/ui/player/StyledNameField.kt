@@ -26,7 +26,7 @@ import com.danidev.appmovil2.ui.style.StyledCard
 /**
  * Campo para escribir el nombre del jugador (HU-12) con el aspecto del estilo vigente.
  *
- * Igual que [PlayerNameField], cada letra se guarda al instante y "Listo" cierra el teclado.
+ * Cada letra se guarda al instante y "Listo" cierra el teclado.
  */
 @Composable
 fun StyledNameField(modifier: Modifier = Modifier) {

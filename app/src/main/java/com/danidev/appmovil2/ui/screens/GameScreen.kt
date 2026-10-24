@@ -146,6 +146,9 @@ fun GameScreen(
     var gameOverDismissed by rememberSaveable { mutableStateOf(false) }
     // Se espera un momento tras el último tiro para que se vea el dado antes de la pantalla final.
     var showGameOver by remember { mutableStateOf(false) }
+    // HU-16: vibración al detenerse el dado; el usuario puede desactivarla.
+    val haptics = rememberDiceHaptics()
+
     // Récords, racha y logros: se guarda cada partida terminada una sola vez.
     val progressViewModel = rememberProgressViewModel()
     val lastRecord by progressViewModel.lastRecord.collectAsState()
@@ -168,6 +171,8 @@ fun GameScreen(
             }
             delay(GAME_OVER_DELAY_MS)
             showGameOver = true
+            // Con varios jugadores siempre hay quien gane, así que se celebra siempre.
+            haptics.vibrateOnGameOver(uiState.isMultiplayer || uiState.outcome == GameOutcome.WON)
         } else {
             showGameOver = false
         }
@@ -203,8 +208,6 @@ fun GameScreen(
         soundManager.setMuted(settings.soundMuted)
     }
 
-    // HU-16: vibración al detenerse el dado; el usuario puede desactivarla.
-    val haptics = rememberDiceHaptics()
 
     val coroutineScope = rememberCoroutineScope()
 
@@ -270,10 +273,8 @@ fun GameScreen(
                     modifier = settings.rollModifier
                 )
 
-                // HU-16: vibración al detenerse el dado; más larga en crítico o pifia.
-                haptics.vibrateOnLand(
-                    strong = diceViewModel.uiState.value.rollIndicator != RollIndicator.NONE
-                )
+                // HU-16: vibración al detenerse el dado; distinta en crítico, pifia o un tiro normal.
+                haptics.vibrateOnResult(diceViewModel.uiState.value.rollIndicator)
 
                 isRolling = false
             }

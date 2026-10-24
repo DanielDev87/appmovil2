@@ -40,7 +40,9 @@ import com.danidev.appmovil2.ui.style.SharedPreferencesStyleStore
 import com.danidev.appmovil2.ui.style.StyleController
 import com.danidev.appmovil2.ui.style.PressIndication
 import com.danidev.appmovil2.ui.style.StyleViewModel
+import com.danidev.appmovil2.ui.settings.rememberGameSettingsViewModel
 import com.danidev.appmovil2.ui.style.TabletScaling
+import com.danidev.appmovil2.ui.style.TextScaling
 import com.danidev.appmovil2.ui.style.appTokens
 import com.danidev.appmovil2.ui.theme.Appmovil2Theme
 import com.danidev.appmovil2.ui.theme.LocalThemeController
@@ -124,6 +126,9 @@ class MainActivity : ComponentActivity() {
             val playerName by playerNameViewModel.name.collectAsState()
             val appStyle by styleViewModel.style.collectAsState()
             val background by backgroundViewModel.choice.collectAsState()
+            // Tamaño del texto de toda la app (accesibilidad), elegido en Ajustes.
+            val gameSettings by rememberGameSettingsViewModel().settings.collectAsState()
+            val textSize = gameSettings.textSize
             val tourVisible by tourViewModel.visible.collectAsState()
             val tourStep by tourViewModel.stepIndex.collectAsState()
             LaunchedEffect(Unit) { tourViewModel.showIfFirstTime() }
@@ -154,27 +159,29 @@ class MainActivity : ComponentActivity() {
             ) {
                 Appmovil2Theme(darkTheme = darkTheme) {
                     TabletScaling {
-                        // Sin ondulado de Material: se usa el efecto de presionar propio de la app.
-                        CompositionLocalProvider(
-                            LocalIndication provides PressIndication,
-                            LocalRippleConfiguration provides null
-                        ) {
-                            Surface(
-                                modifier = Modifier.fillMaxSize(),
-                                color = MaterialTheme.colorScheme.background
+                        TextScaling(factor = textSize.factor) {
+                            // Sin ondulado de Material: se usa el efecto de presionar propio de la app.
+                            CompositionLocalProvider(
+                                LocalIndication provides PressIndication,
+                                LocalRippleConfiguration provides null
                             ) {
-                                val navController = rememberNavController()
-                                AppNavGraph(navController = navController)
-                            }
+                                Surface(
+                                    modifier = Modifier.fillMaxSize(),
+                                    color = MaterialTheme.colorScheme.background
+                                ) {
+                                    val navController = rememberNavController()
+                                    AppNavGraph(navController = navController)
+                                }
 
-                            if (tourVisible) {
-                                TourDialog(
-                                    steps = tourViewModel.steps,
-                                    stepIndex = tourStep,
-                                    onNext = tourViewModel::next,
-                                    onBack = tourViewModel::back,
-                                    onSkip = tourViewModel::finish
-                                )
+                                if (tourVisible) {
+                                    TourDialog(
+                                        steps = tourViewModel.steps,
+                                        stepIndex = tourStep,
+                                        onNext = tourViewModel::next,
+                                        onBack = tourViewModel::back,
+                                        onSkip = tourViewModel::finish
+                                    )
+                                }
                             }
                         }
                     }

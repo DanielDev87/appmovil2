@@ -53,7 +53,7 @@ enum class DicePalette(
  * Paleta que usan los dados del árbol de Composables actual.
  *
  * Se entrega mediante un `CompositionLocal` para que el dado de la pantalla
- * principal y el historial (`RollHistory`) usen la misma paleta sin cambiar la
+ * principal y el historial (`RecentRolls`) usen la misma paleta sin cambiar la
  * firma de ninguno de los dos.
  */
 val LocalDicePalette = compositionLocalOf { DicePalette.LILA }

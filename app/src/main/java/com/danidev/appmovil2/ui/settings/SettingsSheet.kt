@@ -400,6 +400,21 @@ private fun PersonalizeTab() {
     )
 
     PersonalizeContent(style = styleController.style, onStyleChange = styleController.onStyleChange)
+
+    // Accesibilidad: tamaño del texto de toda la app.
+    val settingsViewModel = rememberGameSettingsViewModel()
+    val settings by settingsViewModel.settings.collectAsState()
+    Label(stringResource(R.string.settings_text_size))
+    StyledSegmented(
+        options = listOf(
+            stringResource(R.string.text_size_normal),
+            stringResource(R.string.text_size_large),
+            stringResource(R.string.text_size_extra_large)
+        ),
+        selectedIndex = settings.textSize.ordinal,
+        onSelect = { settingsViewModel.setTextSize(TextSize.entries[it]) },
+        modifier = Modifier.fillMaxWidth()
+    )
 }
 
 /** Panel pegado al borde derecho, con el resto de la pantalla atenuado; tocarlo fuera lo cierra. */
@@ -522,6 +537,37 @@ private fun DiceSizePicker(
             selectedIndex = selected.ordinal,
             onSelect = { onFactorChange(SizeChoice.entries[it].factor) },
             modifier = Modifier.fillMaxWidth()
+        )
+        // Ajuste fino: entre las tres opciones hay tamaños intermedios.
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(
+                text = stringResource(R.string.size_fine_tune),
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Bold,
+                color = LocalAppTokens.current.muted
+            )
+            Text(
+                text = stringResource(R.string.dice_size_percent, (shown * 100).roundToInt()),
+                fontWeight = FontWeight.Bold,
+                color = LocalAppTokens.current.ink
+            )
+        }
+        val sliderTokens = LocalAppTokens.current
+        val sizeDescription = stringResource(R.string.dice_size_description)
+        Slider(
+            value = shown,
+            onValueChange = onFactorChange,
+            valueRange = DiceSize.MIN_FACTOR..DiceSize.maxFactor(diceCount),
+            colors = SliderDefaults.colors(
+                thumbColor = sliderTokens.accent,
+                activeTrackColor = sliderTokens.accent,
+                inactiveTrackColor = sliderTokens.soft
+            ),
+            modifier = Modifier.semantics { contentDescription = sizeDescription }
         )
         // Muestra: el dado con su tamaño elegido, a escala, para ver el resultado sin salir.
         Box(contentAlignment = Alignment.Center, modifier = Modifier.size(104.dp)) {

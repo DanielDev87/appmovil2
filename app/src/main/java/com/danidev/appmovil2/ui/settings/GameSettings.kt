@@ -26,6 +26,18 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
 /**
+ * Tamaño del texto de la app: ayuda a quien necesita leer más grande. Multiplica el tamaño de todos los
+ * textos, además de lo que ya haya elegido en el sistema.
+ *
+ * @property factor Cuánto se agranda el texto.
+ */
+enum class TextSize(val factor: Float) {
+    NORMAL(1.0f),
+    LARGE(1.15f),
+    EXTRA_LARGE(1.3f)
+}
+
+/**
  * Ajustes de la partida que se guardan entre sesiones.
  *
  * @property soundMuted `true` si el sonido de los dados está silenciado (HU-15).
@@ -37,6 +49,7 @@ import kotlinx.coroutines.flow.update
  * @property playerCount Personas que juegan, turnándose en el mismo teléfono.
  * @property diceCount Dados en juego, de 1 a [MAX_DICE] (HU-06); se guarda aquí para poder elegirlo
  * también desde la bienvenida.
+ * @property textSize Tamaño del texto de toda la app (accesibilidad).
  * @property rollModifier Número que se suma a cada tiro, de [MIN_ROLL_MODIFIER] a [MAX_ROLL_MODIFIER].
  * @property extraDiceSides Caras del dado 2 y del dado 3 cuando son distintos del primero; 0 significa
  * "igual que el primero".
@@ -52,6 +65,7 @@ data class GameSettings(
     val playerCount: Int = MIN_PLAYERS,
     val diceCount: Int = 1,
     val rollModifier: Int = 0,
+    val textSize: TextSize = TextSize.NORMAL,
     val extraDiceSides: List<Int> = List(MAX_DICE - 1) { 0 },
     val playerNames: List<String> = List(MAX_PLAYERS - 1) { "" }
 )
@@ -82,6 +96,8 @@ class SharedPreferencesGameSettingsStore(context: Context) : GameSettingsStore {
             .coerceIn(MIN_MAX_LAUNCHES, MAX_MAX_LAUNCHES),
         playerCount = preferences.getInt(KEY_PLAYER_COUNT, MIN_PLAYERS).coerceIn(MIN_PLAYERS, MAX_PLAYERS),
         diceCount = preferences.getInt(KEY_DICE_COUNT, 1).coerceIn(1, MAX_DICE),
+        textSize = TextSize.entries.firstOrNull { it.name == preferences.getString(KEY_TEXT_SIZE, null) }
+            ?: TextSize.NORMAL,
         rollModifier = preferences.getInt(KEY_ROLL_MODIFIER, 0).coerceIn(MIN_ROLL_MODIFIER, MAX_ROLL_MODIFIER),
         extraDiceSides = List(MAX_DICE - 1) { preferences.getInt(KEY_EXTRA_SIDES + (it + 2), 0) },
         difficulty = loadDifficulty(),
@@ -108,6 +124,7 @@ class SharedPreferencesGameSettingsStore(context: Context) : GameSettingsStore {
             .putInt(KEY_PLAYER_COUNT, settings.playerCount)
             .putInt(KEY_DICE_COUNT, settings.diceCount)
             .putInt(KEY_ROLL_MODIFIER, settings.rollModifier)
+            .putString(KEY_TEXT_SIZE, settings.textSize.name)
             .putString(KEY_DIFFICULTY, settings.difficulty?.name ?: DIFFICULTY_CUSTOM)
             .apply {
                 settings.extraDiceSides.forEachIndexed { i, sides -> putInt(KEY_EXTRA_SIDES + (i + 2), sides) }
@@ -125,6 +142,7 @@ class SharedPreferencesGameSettingsStore(context: Context) : GameSettingsStore {
         const val KEY_PLAYER_COUNT = "player_count"
         const val KEY_DICE_COUNT = "dice_count"
         const val KEY_ROLL_MODIFIER = "roll_modifier"
+        const val KEY_TEXT_SIZE = "text_size"
         const val KEY_EXTRA_SIDES = "extra_sides_"
         const val KEY_DIFFICULTY = "difficulty"
         const val DIFFICULTY_CUSTOM = "custom"
@@ -188,6 +206,9 @@ class GameSettingsViewModel(private val store: GameSettingsStore) : ViewModel() 
 
     /** Fija cuántos dados se usan: 1 o 2. */
     fun setDiceCount(value: Int) = change { it.copy(diceCount = value.coerceIn(1, MAX_DICE)) }
+
+    /** Fija el tamaño del texto de toda la app. */
+    fun setTextSize(size: TextSize) = change { it.copy(textSize = size) }
 
     /** Fija el número que se suma a cada tiro, entre [MIN_ROLL_MODIFIER] y [MAX_ROLL_MODIFIER]. */
     fun setRollModifier(value: Int) =

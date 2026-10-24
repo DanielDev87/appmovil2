@@ -3,6 +3,7 @@ package com.danidev.appmovil2.ui.settings
 import android.content.Context
 import androidx.compose.runtime.Composable
 import com.danidev.appmovil2.MAX_LAUNCHES
+import com.danidev.appmovil2.Difficulty
 import com.danidev.appmovil2.MAX_MAX_LAUNCHES
 import com.danidev.appmovil2.MAX_PLAYERS
 import com.danidev.appmovil2.MIN_PLAYERS
@@ -27,6 +28,8 @@ import kotlinx.coroutines.flow.update
  * @property shakeEnabled `true` si sacudir el teléfono lanza los dados (HU-19).
  * @property targetScore Puntos que hay que alcanzar para ganar.
  * @property maxLaunches Lanzamientos disponibles en cada partida.
+ * @property difficulty Nivel elegido, que reajusta la meta si cambia el dado; `null` cuando la meta se
+ * puso a mano.
  * @property playerCount Personas que juegan, turnándose en el mismo teléfono.
  * @property diceCount Dados en juego: 1 o 2 (HU-06); se guarda aquí para poder elegirlo también desde la
  * bienvenida.
@@ -38,6 +41,7 @@ data class GameSettings(
     val shakeEnabled: Boolean = true,
     val targetScore: Int = TARGET_SCORE,
     val maxLaunches: Int = MAX_LAUNCHES,
+    val difficulty: Difficulty? = Difficulty.NORMAL,
     val playerCount: Int = MIN_PLAYERS,
     val diceCount: Int = 1,
     val playerNames: List<String> = List(MAX_PLAYERS - 1) { "" }
@@ -69,8 +73,20 @@ class SharedPreferencesGameSettingsStore(context: Context) : GameSettingsStore {
             .coerceIn(MIN_MAX_LAUNCHES, MAX_MAX_LAUNCHES),
         playerCount = preferences.getInt(KEY_PLAYER_COUNT, MIN_PLAYERS).coerceIn(MIN_PLAYERS, MAX_PLAYERS),
         diceCount = preferences.getInt(KEY_DICE_COUNT, 1).coerceIn(1, 2),
+        difficulty = loadDifficulty(),
         playerNames = List(MAX_PLAYERS - 1) { preferences.getString(KEY_PLAYER_NAME + (it + 2), "").orEmpty() }
     )
+
+    /** El nivel guardado; sin dato, es Normal si la meta guardada es la de siempre y personalizada si no. */
+    private fun loadDifficulty(): Difficulty? {
+        if (!preferences.contains(KEY_DIFFICULTY)) {
+            val target = preferences.getInt(KEY_TARGET_SCORE, TARGET_SCORE)
+            val launches = preferences.getInt(KEY_MAX_LAUNCHES, MAX_LAUNCHES)
+            return if (target == TARGET_SCORE && launches == MAX_LAUNCHES) Difficulty.NORMAL else null
+        }
+        val saved = preferences.getString(KEY_DIFFICULTY, null)
+        return Difficulty.entries.firstOrNull { it.name == saved }
+    }
 
     override fun save(settings: GameSettings) {
         preferences.edit()
@@ -80,6 +96,7 @@ class SharedPreferencesGameSettingsStore(context: Context) : GameSettingsStore {
             .putInt(KEY_MAX_LAUNCHES, settings.maxLaunches)
             .putInt(KEY_PLAYER_COUNT, settings.playerCount)
             .putInt(KEY_DICE_COUNT, settings.diceCount)
+            .putString(KEY_DIFFICULTY, settings.difficulty?.name ?: DIFFICULTY_CUSTOM)
             .apply {
                 settings.playerNames.forEachIndexed { i, name -> putString(KEY_PLAYER_NAME + (i + 2), name) }
             }
@@ -94,6 +111,8 @@ class SharedPreferencesGameSettingsStore(context: Context) : GameSettingsStore {
         const val KEY_MAX_LAUNCHES = "max_launches"
         const val KEY_PLAYER_COUNT = "player_count"
         const val KEY_DICE_COUNT = "dice_count"
+        const val KEY_DIFFICULTY = "difficulty"
+        const val DIFFICULTY_CUSTOM = "custom"
         const val KEY_PLAYER_NAME = "player_name_"
     }
 }
@@ -114,12 +133,35 @@ class GameSettingsViewModel(private val store: GameSettingsStore) : ViewModel() 
     fun setShakeEnabled(enabled: Boolean) = change { it.copy(shakeEnabled = enabled) }
 
     /** Fija los puntos para ganar, dentro de los límites permitidos. */
-    fun setTargetScore(value: Int) =
-        change { it.copy(targetScore = value.coerceIn(MIN_TARGET_SCORE, MAX_TARGET_SCORE)) }
+    fun setTargetScore(value: Int) = change {
+        it.copy(targetScore = value.coerceIn(MIN_TARGET_SCORE, MAX_TARGET_SCORE), difficulty = null)
+    }
 
     /** Fija los lanzamientos disponibles, dentro de los límites permitidos. */
-    fun setMaxLaunches(value: Int) =
-        change { it.copy(maxLaunches = value.coerceIn(MIN_MAX_LAUNCHES, MAX_MAX_LAUNCHES)) }
+    fun setMaxLaunches(value: Int) = change {
+        it.copy(maxLaunches = value.coerceIn(MIN_MAX_LAUNCHES, MAX_MAX_LAUNCHES), difficulty = null)
+    }
+
+    /**
+     * Elige un nivel de dificultad: fija los lanzamientos y la meta que le tocan al dado de [sides] caras
+     * con [diceCount] dados.
+     */
+    fun setDifficulty(difficulty: Difficulty, sides: Int, diceCount: Int) = change {
+        it.copy(
+            difficulty = difficulty,
+            targetScore = difficulty.targetScore(sides, diceCount),
+            maxLaunches = difficulty.maxLaunches
+        )
+    }
+
+    /**
+     * Si hay un nivel elegido, reajusta la meta al nuevo dado o cantidad de dados; con meta personalizada
+     * no toca nada.
+     */
+    fun refreshDifficulty(sides: Int, diceCount: Int) {
+        val chosen = _settings.value.difficulty ?: return
+        setDifficulty(chosen, sides, diceCount)
+    }
 
     /** Fija cuántos dados se usan: 1 o 2. */
     fun setDiceCount(value: Int) = change { it.copy(diceCount = value.coerceIn(1, 2)) }

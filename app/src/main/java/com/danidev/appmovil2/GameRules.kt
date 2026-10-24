@@ -62,18 +62,31 @@ fun determineRollIndicator(results: List<Int>, sides: Int = 6): RollIndicator = 
 
 
 /**
- * Niveles de dificultad listos para elegir: cada uno fija los puntos para ganar y los
- * lanzamientos disponibles. Más puntos y menos lanzamientos es más difícil.
+ * Niveles de dificultad listos para elegir. Cada uno fija los lanzamientos disponibles y cuánto de lo
+ * que se espera sacar en promedio hay que conseguir para ganar ([goalFactor]). Como la meta sale del
+ * promedio del dado y de cuántos dados se usan, el nivel es igual de duro con un D4 que con un D20.
+ *
+ * Con un D6 y un solo dado, la probabilidad de ganar es aproximadamente: Fácil 96 %, Normal 84 %,
+ * Difícil 10 % y Experto 3 %.
+ *
+ * @property maxLaunches Lanzamientos disponibles.
+ * @property goalFactor Fracción del total esperado que hay que sumar: menos de 1 es más fácil que el
+ * azar medio y más de 1, más difícil.
  */
-enum class Difficulty(val targetScore: Int, val maxLaunches: Int) {
-    EASY(targetScore = 20, maxLaunches = 12),
-    NORMAL(targetScore = TARGET_SCORE, maxLaunches = MAX_LAUNCHES),
-    HARD(targetScore = 40, maxLaunches = 8);
+enum class Difficulty(val maxLaunches: Int, val goalFactor: Double) {
+    EASY(maxLaunches = 12, goalFactor = 0.75),
+    NORMAL(maxLaunches = MAX_LAUNCHES, goalFactor = TARGET_SCORE / 35.0),
+    HARD(maxLaunches = 7, goalFactor = 1.25),
+    EXPERT(maxLaunches = 6, goalFactor = 1.4);
 
-    companion object {
-        /** La dificultad que coincide con esta meta, o `null` si la meta es personalizada. */
-        fun matching(targetScore: Int, maxLaunches: Int): Difficulty? =
-            entries.firstOrNull { it.targetScore == targetScore && it.maxLaunches == maxLaunches }
+    /**
+     * Puntos para ganar con un dado de [sides] caras y [diceCount] dados: el promedio por tiro por los
+     * lanzamientos, por [goalFactor], dentro de los límites permitidos.
+     */
+    fun targetScore(sides: Int, diceCount: Int): Int {
+        val averagePerRoll = (sides + 1) / 2.0 * diceCount
+        return Math.round(averagePerRoll * maxLaunches * goalFactor).toInt()
+            .coerceIn(MIN_TARGET_SCORE, MAX_TARGET_SCORE)
     }
 }
 

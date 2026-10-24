@@ -1,5 +1,6 @@
 package com.danidev.appmovil2.ui.settings
 
+import com.danidev.appmovil2.Difficulty
 import com.danidev.appmovil2.MAX_LAUNCHES
 import com.danidev.appmovil2.MAX_TARGET_SCORE
 import com.danidev.appmovil2.MIN_MAX_LAUNCHES
@@ -153,5 +154,49 @@ class GameSettingsViewModelTest {
         assertEquals(2, viewModel.settings.value.diceCount)
         viewModel.setDiceCount(0)
         assertEquals(1, viewModel.settings.value.diceCount)
+    }
+
+    @Test
+    fun `por defecto el nivel es Normal y cambiar la meta a mano lo quita`() {
+        val viewModel = GameSettingsViewModel(FakeGameSettingsStore())
+        assertEquals(Difficulty.NORMAL, viewModel.settings.value.difficulty)
+
+        viewModel.setTargetScore(40)
+
+        assertEquals(null, viewModel.settings.value.difficulty)
+    }
+
+    @Test
+    fun `elegir un nivel fija la meta y los lanzamientos segun el dado y lo guarda`() {
+        val store = FakeGameSettingsStore()
+        val viewModel = GameSettingsViewModel(store)
+
+        viewModel.setDifficulty(Difficulty.HARD, sides = 6, diceCount = 1)
+
+        assertEquals(Difficulty.HARD, store.saved.difficulty)
+        assertEquals(31, store.saved.targetScore)
+        assertEquals(7, store.saved.maxLaunches)
+    }
+
+    @Test
+    fun `al cambiar de dado el nivel elegido reajusta la meta`() {
+        val viewModel = GameSettingsViewModel(FakeGameSettingsStore())
+        viewModel.setDifficulty(Difficulty.HARD, sides = 6, diceCount = 1)
+        val withD6 = viewModel.settings.value.targetScore
+
+        viewModel.refreshDifficulty(sides = 20, diceCount = 1)
+
+        assert(viewModel.settings.value.targetScore > withD6)
+        assertEquals(Difficulty.HARD, viewModel.settings.value.difficulty)
+    }
+
+    @Test
+    fun `con meta personalizada cambiar de dado no la toca`() {
+        val viewModel = GameSettingsViewModel(FakeGameSettingsStore())
+        viewModel.setTargetScore(50)
+
+        viewModel.refreshDifficulty(sides = 20, diceCount = 2)
+
+        assertEquals(50, viewModel.settings.value.targetScore)
     }
 }

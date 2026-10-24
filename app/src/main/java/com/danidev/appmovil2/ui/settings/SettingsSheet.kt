@@ -85,6 +85,7 @@ class GameOptions(
     val onSoundMutedChange: (Boolean) -> Unit,
     val onShakeChange: (Boolean) -> Unit,
     val onTargetScoreChange: (Int) -> Unit,
+    val onDifficultyChange: (Difficulty) -> Unit,
     val onMaxLaunchesChange: (Int) -> Unit,
     val onPlayerCountChange: (Int) -> Unit,
     val onPlayerNameChange: (Int, String) -> Unit,
@@ -228,15 +229,11 @@ private fun GameTab(options: GameOptions) {
         options = listOf(
             stringResource(R.string.difficulty_easy),
             stringResource(R.string.difficulty_normal),
-            stringResource(R.string.difficulty_hard)
+            stringResource(R.string.difficulty_hard),
+            stringResource(R.string.difficulty_expert)
         ),
-        selectedIndex = Difficulty.matching(options.settings.targetScore, options.settings.maxLaunches)
-            ?.ordinal ?: -1,
-        onSelect = { index ->
-            val difficulty = Difficulty.entries[index]
-            options.onTargetScoreChange(difficulty.targetScore)
-            options.onMaxLaunchesChange(difficulty.maxLaunches)
-        },
+        selectedIndex = options.settings.difficulty?.ordinal ?: -1,
+        onSelect = { index -> options.onDifficultyChange(Difficulty.entries[index]) },
         modifier = Modifier.fillMaxWidth()
     )
     StyledStepper(
@@ -474,11 +471,15 @@ fun rememberGameOptions(
         sizeFactor = sizeFactor,
         onSizeChange = sizeViewModel::setFactor,
         diceCount = settings.diceCount,
-        onDiceCountChange = settingsViewModel::setDiceCount,
+        onDiceCountChange = { count ->
+            settingsViewModel.setDiceCount(count)
+            settingsViewModel.refreshDifficulty(diceType.sides, count)
+        },
         diceType = diceType,
         onDiceTypeChange = { type ->
             if (type != diceType) {
                 typeViewModel.select(type)
+                settingsViewModel.refreshDifficulty(type.sides, settings.diceCount)
                 onDiceTypeChanged()
             }
         },
@@ -487,6 +488,9 @@ fun rememberGameOptions(
         onSoundMutedChange = settingsViewModel::setSoundMuted,
         onShakeChange = settingsViewModel::setShakeEnabled,
         onTargetScoreChange = settingsViewModel::setTargetScore,
+        onDifficultyChange = { difficulty ->
+            settingsViewModel.setDifficulty(difficulty, diceType.sides, settings.diceCount)
+        },
         onMaxLaunchesChange = settingsViewModel::setMaxLaunches,
         onPlayerCountChange = settingsViewModel::setPlayerCount,
         onPlayerNameChange = settingsViewModel::setPlayerName,

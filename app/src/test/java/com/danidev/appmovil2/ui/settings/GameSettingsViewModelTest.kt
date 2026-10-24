@@ -201,7 +201,7 @@ class GameSettingsViewModelTest {
     }
 
     @Test
-    fun `la cantidad de dados llega a tres y el modificador se limita entre menos cinco y cinco`() {
+    fun `la cantidad de dados llega a tres`() {
         val store = FakeGameSettingsStore()
         val viewModel = GameSettingsViewModel(store)
 
@@ -209,13 +209,6 @@ class GameSettingsViewModelTest {
         assertEquals(3, store.saved.diceCount)
         viewModel.setDiceCount(9)
         assertEquals(3, viewModel.settings.value.diceCount)
-
-        viewModel.setRollModifier(2)
-        assertEquals(2, store.saved.rollModifier)
-        viewModel.setRollModifier(40)
-        assertEquals(5, viewModel.settings.value.rollModifier)
-        viewModel.setRollModifier(-40)
-        assertEquals(-5, viewModel.settings.value.rollModifier)
     }
 
     @Test
@@ -243,13 +236,11 @@ class GameSettingsViewModelTest {
     }
 
     @Test
-    fun `cambiar de nivel usa los dados distintos y el modificador de tiro`() {
+    fun `cambiar de nivel usa los dados distintos`() {
         val viewModel = GameSettingsViewModel(FakeGameSettingsStore())
-        viewModel.setRollModifier(2)
-
         viewModel.setDifficulty(Difficulty.NORMAL, listOf(20, 6))
 
-        assertEquals(Difficulty.NORMAL.targetScore(listOf(20, 6), modifier = 2), viewModel.settings.value.targetScore)
+        assertEquals(Difficulty.NORMAL.targetScore(listOf(20, 6)), viewModel.settings.value.targetScore)
     }
 
     @Test

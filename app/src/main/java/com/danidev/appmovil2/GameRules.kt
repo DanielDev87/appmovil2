@@ -93,15 +93,14 @@ enum class Difficulty(val maxLaunches: Int, val goalFactor: Double) {
      * lanzamientos, por [goalFactor], dentro de los límites permitidos.
      */
     fun targetScore(sides: Int, diceCount: Int): Int =
-        targetScore(List(diceCount) { sides }, modifier = 0)
+        targetScore(List(diceCount) { sides })
 
     /**
-     * Igual que la anterior para dados de caras distintas ([sides], una por dado) y un [modifier] que
-     * se suma a cada tiro: el promedio por tiro es la suma de los promedios de cada dado más el
-     * modificador.
+     * Igual que la anterior para dados de caras distintas ([sides], una por dado): el promedio por
+     * tiro es la suma de los promedios de cada dado.
      */
-    fun targetScore(sides: List<Int>, modifier: Int): Int {
-        val averagePerRoll = (sides.sumOf { (it + 1) / 2.0 } + modifier).coerceAtLeast(1.0)
+    fun targetScore(sides: List<Int>): Int {
+        val averagePerRoll = sides.sumOf { (it + 1) / 2.0 }.coerceAtLeast(1.0)
         return Math.round(averagePerRoll * maxLaunches * goalFactor).toInt()
             .coerceIn(MIN_TARGET_SCORE, MAX_TARGET_SCORE)
     }
@@ -109,10 +108,6 @@ enum class Difficulty(val maxLaunches: Int, val goalFactor: Double) {
 
 /** Cantidad máxima de dados que se pueden lanzar a la vez. */
 const val MAX_DICE = 3
-
-/** Menor y mayor modificador que se puede sumar a cada tiro. */
-const val MIN_ROLL_MODIFIER = -5
-const val MAX_ROLL_MODIFIER = 5
 
 /** Cantidad mínima y máxima de jugadores en una partida. */
 const val MIN_PLAYERS = 1

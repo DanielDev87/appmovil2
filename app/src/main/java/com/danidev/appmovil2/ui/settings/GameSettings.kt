@@ -6,8 +6,6 @@ import com.danidev.appmovil2.MAX_LAUNCHES
 import com.danidev.appmovil2.Difficulty
 import com.danidev.appmovil2.MAX_DICE
 import com.danidev.appmovil2.MAX_MAX_LAUNCHES
-import com.danidev.appmovil2.MAX_ROLL_MODIFIER
-import com.danidev.appmovil2.MIN_ROLL_MODIFIER
 import com.danidev.appmovil2.MAX_PLAYERS
 import com.danidev.appmovil2.MIN_PLAYERS
 import com.danidev.appmovil2.MAX_TARGET_SCORE
@@ -50,7 +48,6 @@ enum class TextSize(val factor: Float) {
  * @property diceCount Dados en juego, de 1 a [MAX_DICE] (HU-06); se guarda aquí para poder elegirlo
  * también desde la bienvenida.
  * @property textSize Tamaño del texto de toda la app (accesibilidad).
- * @property rollModifier Número que se suma a cada tiro, de [MIN_ROLL_MODIFIER] a [MAX_ROLL_MODIFIER].
  * @property extraDiceSides Caras del dado 2 y del dado 3 cuando son distintos del primero; 0 significa
  * "igual que el primero".
  * @property playerNames Nombres de los jugadores 2 a 4; vacío usa "Jugador N". El del jugador 1 es
@@ -64,7 +61,6 @@ data class GameSettings(
     val difficulty: Difficulty? = Difficulty.NORMAL,
     val playerCount: Int = MIN_PLAYERS,
     val diceCount: Int = 1,
-    val rollModifier: Int = 0,
     val textSize: TextSize = TextSize.NORMAL,
     val extraDiceSides: List<Int> = List(MAX_DICE - 1) { 0 },
     val playerNames: List<String> = List(MAX_PLAYERS - 1) { "" }
@@ -98,7 +94,6 @@ class SharedPreferencesGameSettingsStore(context: Context) : GameSettingsStore {
         diceCount = preferences.getInt(KEY_DICE_COUNT, 1).coerceIn(1, MAX_DICE),
         textSize = TextSize.entries.firstOrNull { it.name == preferences.getString(KEY_TEXT_SIZE, null) }
             ?: TextSize.NORMAL,
-        rollModifier = preferences.getInt(KEY_ROLL_MODIFIER, 0).coerceIn(MIN_ROLL_MODIFIER, MAX_ROLL_MODIFIER),
         extraDiceSides = List(MAX_DICE - 1) { preferences.getInt(KEY_EXTRA_SIDES + (it + 2), 0) },
         difficulty = loadDifficulty(),
         playerNames = List(MAX_PLAYERS - 1) { preferences.getString(KEY_PLAYER_NAME + (it + 2), "").orEmpty() }
@@ -123,7 +118,6 @@ class SharedPreferencesGameSettingsStore(context: Context) : GameSettingsStore {
             .putInt(KEY_MAX_LAUNCHES, settings.maxLaunches)
             .putInt(KEY_PLAYER_COUNT, settings.playerCount)
             .putInt(KEY_DICE_COUNT, settings.diceCount)
-            .putInt(KEY_ROLL_MODIFIER, settings.rollModifier)
             .putString(KEY_TEXT_SIZE, settings.textSize.name)
             .putString(KEY_DIFFICULTY, settings.difficulty?.name ?: DIFFICULTY_CUSTOM)
             .apply {
@@ -141,7 +135,6 @@ class SharedPreferencesGameSettingsStore(context: Context) : GameSettingsStore {
         const val KEY_MAX_LAUNCHES = "max_launches"
         const val KEY_PLAYER_COUNT = "player_count"
         const val KEY_DICE_COUNT = "dice_count"
-        const val KEY_ROLL_MODIFIER = "roll_modifier"
         const val KEY_TEXT_SIZE = "text_size"
         const val KEY_EXTRA_SIDES = "extra_sides_"
         const val KEY_DIFFICULTY = "difficulty"
@@ -182,11 +175,11 @@ class GameSettingsViewModel(private val store: GameSettingsStore) : ViewModel() 
     fun setDifficulty(difficulty: Difficulty, sides: Int, diceCount: Int) =
         setDifficulty(difficulty, List(diceCount) { sides })
 
-    /** Igual que la anterior, con las caras de cada dado y el modificador de tiro actual. */
+    /** Igual que la anterior, con las caras de cada dado. */
     fun setDifficulty(difficulty: Difficulty, diceSides: List<Int>) = change {
         it.copy(
             difficulty = difficulty,
-            targetScore = difficulty.targetScore(diceSides, it.rollModifier),
+            targetScore = difficulty.targetScore(diceSides),
             maxLaunches = difficulty.maxLaunches
         )
     }
@@ -209,10 +202,6 @@ class GameSettingsViewModel(private val store: GameSettingsStore) : ViewModel() 
 
     /** Fija el tamaño del texto de toda la app. */
     fun setTextSize(size: TextSize) = change { it.copy(textSize = size) }
-
-    /** Fija el número que se suma a cada tiro, entre [MIN_ROLL_MODIFIER] y [MAX_ROLL_MODIFIER]. */
-    fun setRollModifier(value: Int) =
-        change { it.copy(rollModifier = value.coerceIn(MIN_ROLL_MODIFIER, MAX_ROLL_MODIFIER)) }
 
     /**
      * Fija las caras del dado en la posición [index] (de 1 a [MAX_DICE] - 1, es decir, el dado 2 o el 3);

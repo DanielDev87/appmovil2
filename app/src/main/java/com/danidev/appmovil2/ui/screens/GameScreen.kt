@@ -271,8 +271,7 @@ fun GameScreen(
                 diceViewModel.registerResult(
                     values = finalValues,
                     activeValues = unlockedValues,
-                    diceSides = unlockedSides,
-                    modifier = settings.rollModifier
+                    diceSides = unlockedSides
                 )
 
                 // HU-16: vibración al detenerse el dado; distinta en crítico, pifia o un tiro normal.
@@ -328,7 +327,6 @@ fun GameScreen(
                     sum = currentDiceValues
                         .filterIndexed { index, _ -> index !in uiState.lockedIndices }
                         .sum(),
-                    rollModifier = settings.rollModifier,
                     modifier = stageModifier.tourTarget(TourTargetId.DICE_STAGE),
                     minHeight = stageMinHeight
                 ) {

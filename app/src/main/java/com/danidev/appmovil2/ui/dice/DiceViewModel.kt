@@ -159,17 +159,15 @@ class DiceViewModel : ViewModel() {
     }
 
     /**
-     * Registra un lanzamiento con dados que pueden tener distinto número de caras, y un modificador.
+     * Registra un lanzamiento con dados que pueden tener distinto número de caras.
      *
      * @param diceSides Caras de cada dado de [activeValues] (o de [values] si no hay activos), en el
      * mismo orden; el crítico y la pifia se evalúan dado por dado con sus propias caras.
-     * @param modifier Número que se suma al tiro; los puntos del tiro no bajan de cero.
      */
     fun registerResult(
         values: List<Int>,
         activeValues: List<Int> = values,
-        diceSides: List<Int>,
-        modifier: Int = 0
+        diceSides: List<Int>
     ) {
         val recordValues = activeValues.ifEmpty { values }
         val sides = diceSides.firstOrNull() ?: 6
@@ -177,14 +175,13 @@ class DiceViewModel : ViewModel() {
             id = nextRollId++,
             values = recordValues,
             sides = sides,
-            diceSides = diceSides,
-            modifier = modifier
+            diceSides = diceSides
         )
         _uiState.update { currentState ->
             // HU-09: crítico si algún dado que cuenta sale en su cara más alta; pifia si todos en 1.
             val indicator = determineRollIndicator(recordValues, diceSides)
             val index = currentState.currentPlayer.coerceIn(currentState.players.indices)
-            val rollPoints = (activeValues.sum() + modifier).coerceAtLeast(0)
+            val rollPoints = activeValues.sum()
             val updatedPlayers = currentState.players.mapIndexed { i, player ->
                 if (i != index) {
                     player

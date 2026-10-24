@@ -9,7 +9,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
-/** Pruebas del control sobre los dados: hasta tres, con modificador y con caras distintas. */
+/** Pruebas del control sobre los dados: hasta tres y con caras distintas. */
 class DiceControlTest {
 
     private lateinit var viewModel: DiceViewModel
@@ -36,31 +36,6 @@ class DiceControlTest {
 
         viewModel.setDiceCount(0)
         assertEquals(1, state.diceCount)
-    }
-
-    @Test
-    fun `un modificador positivo suma puntos al tiro`() {
-        viewModel.registerResult(values = listOf(4), activeValues = listOf(4), diceSides = listOf(6), modifier = 2)
-
-        assertEquals(6, state.score)
-        assertEquals(2, state.history.first().modifier)
-    }
-
-    @Test
-    fun `un modificador negativo resta pero el tiro no baja de cero puntos`() {
-        viewModel.registerResult(listOf(5), listOf(5), diceSides = listOf(6), modifier = -2)
-        assertEquals(3, state.score)
-
-        viewModel.registerResult(listOf(1), listOf(1), diceSides = listOf(6), modifier = -5)
-        assertEquals(3, state.score)
-    }
-
-    @Test
-    fun `los puntos de un tiro en el historial incluyen el modificador`() {
-        viewModel.registerResult(listOf(3, 4), listOf(3, 4), diceSides = listOf(6, 6), modifier = 1)
-
-        assertEquals(8, state.history.first().points)
-        assertEquals(7, state.history.first().value)
     }
 
     @Test
@@ -95,16 +70,10 @@ class DiceControlTest {
     }
 
     @Test
-    fun `la meta de la dificultad cuenta cada dado con sus caras y el modificador`() {
+    fun `la meta de la dificultad cuenta cada dado con sus caras`() {
         // D20 + D6: promedios 10.5 + 3.5 = 14 por tiro; 10 lanzamientos y factor de Normal.
-        val mixed = Difficulty.NORMAL.targetScore(listOf(20, 6), modifier = 0)
+        val mixed = Difficulty.NORMAL.targetScore(listOf(20, 6))
         assertEquals(Math.round(14.0 * 10 * Difficulty.NORMAL.goalFactor).toInt(), mixed)
-
-        val withBonus = Difficulty.NORMAL.targetScore(listOf(20, 6), modifier = 3)
-        assertTrue(withBonus > mixed)
-
-        val withPenalty = Difficulty.NORMAL.targetScore(listOf(20, 6), modifier = -3)
-        assertTrue(withPenalty < mixed)
     }
 
     @Test
@@ -112,7 +81,7 @@ class DiceControlTest {
         for (difficulty in Difficulty.entries) {
             assertEquals(
                 difficulty.targetScore(sides = 6, diceCount = 2),
-                difficulty.targetScore(listOf(6, 6), modifier = 0)
+                difficulty.targetScore(listOf(6, 6))
             )
         }
     }

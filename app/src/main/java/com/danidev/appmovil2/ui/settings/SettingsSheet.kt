@@ -48,8 +48,6 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.danidev.appmovil2.Difficulty
 import com.danidev.appmovil2.MAX_MAX_LAUNCHES
-import com.danidev.appmovil2.MAX_ROLL_MODIFIER
-import com.danidev.appmovil2.MIN_ROLL_MODIFIER
 import com.danidev.appmovil2.MAX_TARGET_SCORE
 import com.danidev.appmovil2.MIN_MAX_LAUNCHES
 import com.danidev.appmovil2.MIN_TARGET_SCORE
@@ -85,7 +83,6 @@ class GameOptions(
     val diceType: DiceType,
     val onDiceTypeChange: (DiceType) -> Unit,
     val onExtraDiceSidesChange: (Int, Int) -> Unit,
-    val onRollModifierChange: (Int) -> Unit,
     val haptics: DiceHaptics,
     val settings: GameSettings,
     val onSoundMutedChange: (Boolean) -> Unit,
@@ -224,17 +221,6 @@ private fun GameTab(options: GameOptions, onShowTour: () -> Unit) {
         palette = options.palette,
         diceType = options.diceType,
         onFactorChange = options.onSizeChange
-    )
-
-    Label(stringResource(R.string.settings_modifier))
-    StyledStepper(
-        label = stringResource(R.string.settings_modifier_hint),
-        value = options.settings.rollModifier,
-        onValueChange = options.onRollModifierChange,
-        min = MIN_ROLL_MODIFIER,
-        max = MAX_ROLL_MODIFIER,
-        step = 1,
-        format = { String.format(java.util.Locale.getDefault(), "%+d", it).let { text -> if (it == 0) "0" else text } }
     )
 
     Label(stringResource(R.string.settings_goals))
@@ -640,12 +626,6 @@ fun rememberGameOptions(
             val extras = settings.extraDiceSides.mapIndexed { i, old -> if (i == index - 1) sides else old }
             settingsViewModel.refreshDifficulty(effectiveDiceSides(settings.diceCount, diceType.sides, extras))
             onDiceTypeChanged()
-        },
-        onRollModifierChange = { value ->
-            settingsViewModel.setRollModifier(value)
-            settingsViewModel.refreshDifficulty(
-                effectiveDiceSides(settings.diceCount, diceType.sides, settings.extraDiceSides)
-            )
         },
         onTargetScoreChange = settingsViewModel::setTargetScore,
         onDifficultyChange = { difficulty ->

@@ -31,7 +31,11 @@ class ThemeViewModel(private val store: ThemeStore) : ViewModel() {
      * @param dark `true` para el tema oscuro, `false` para el claro.
      */
     fun setDarkTheme(dark: Boolean) {
-        val mode = if (dark) ThemeMode.DARK else ThemeMode.LIGHT
+        setThemeMode(if (dark) ThemeMode.DARK else ThemeMode.LIGHT)
+    }
+
+    /** Fija el modo de tema (claro, oscuro o seguir al sistema) y lo guarda. */
+    fun setThemeMode(mode: ThemeMode) {
         _themeMode.value = mode
         store.save(mode)
     }

@@ -1,5 +1,7 @@
 package com.danidev.appmovil2.audio
 
+import com.danidev.appmovil2.RollIndicator
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -15,6 +17,8 @@ class DiceSoundManagerTest {
 
         var playRollCount = 0
         var playLandCount = 0
+        val resultSounds = mutableListOf<RollIndicator>()
+        val gameOverSounds = mutableListOf<Boolean>()
         var stopRollCount = 0
         var pauseCount = 0
         var resumeCount = 0
@@ -33,6 +37,16 @@ class DiceSoundManagerTest {
 
         override fun playLandSound() {
             if (!isMuted) playLandCount++
+        }
+
+        override fun playResultSound(indicator: RollIndicator) {
+            if (!isMuted && (indicator == RollIndicator.CRITICAL || indicator == RollIndicator.FUMBLE)) {
+                resultSounds += indicator
+            }
+        }
+
+        override fun playGameOverSound(won: Boolean) {
+            if (!isMuted) gameOverSounds += won
         }
 
         override fun stopRollSound() {
@@ -89,6 +103,39 @@ class DiceSoundManagerTest {
 
         assertTrue(player.playRollCount == 0)
         assertTrue(player.playLandCount == 0)
+    }
+
+    @Test
+    fun `el critico y la pifia tienen su propio sonido y un tiro normal no`() {
+        val player = FakeAudioPlayer()
+
+        player.playResultSound(RollIndicator.CRITICAL)
+        player.playResultSound(RollIndicator.FUMBLE)
+        player.playResultSound(RollIndicator.NONE)
+
+        assertEquals(listOf(RollIndicator.CRITICAL, RollIndicator.FUMBLE), player.resultSounds)
+    }
+
+    @Test
+    fun `al terminar la partida suena la victoria o la derrota`() {
+        val player = FakeAudioPlayer()
+
+        player.playGameOverSound(won = true)
+        player.playGameOverSound(won = false)
+
+        assertEquals(listOf(true, false), player.gameOverSounds)
+    }
+
+    @Test
+    fun `en silencio no suenan ni el resultado ni el final`() {
+        val player = FakeAudioPlayer()
+        player.setMuted(true)
+
+        player.playResultSound(RollIndicator.CRITICAL)
+        player.playGameOverSound(won = true)
+
+        assertTrue(player.resultSounds.isEmpty())
+        assertTrue(player.gameOverSounds.isEmpty())
     }
 
     @Test

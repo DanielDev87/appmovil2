@@ -11,6 +11,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.danidev.appmovil2.R
+import com.danidev.appmovil2.RollIndicator
 
 /**
  * Interfaz para el reproductor de efectos de sonido del dado (HU-15).
@@ -20,6 +21,13 @@ interface DiceAudioPlayer {
     fun setMuted(muted: Boolean)
     fun playRollSound()
     fun playLandSound()
+
+    /** Suena un efecto propio para un crítico o una pifia; un tiro normal no añade nada. */
+    fun playResultSound(indicator: RollIndicator)
+
+    /** Suena la melodía de victoria o de derrota al terminar la partida. */
+    fun playGameOverSound(won: Boolean)
+
     fun stopRollSound()
     fun pauseAll()
     fun resumeAll()
@@ -55,6 +63,11 @@ class DiceSoundManager(
     private var soundPool: SoundPool? = null
     private var rollSoundId: Int = 0
     private var landSoundId: Int = 0
+    private var criticalSoundId: Int = 0
+    private var fumbleSoundId: Int = 0
+    private var winSoundId: Int = 0
+    private var loseSoundId: Int = 0
+    private val loadedSounds = mutableSetOf<Int>()
 
     var isRollLoaded: Boolean = false
         private set
@@ -79,6 +92,7 @@ class DiceSoundManager(
             val pool = soundPoolFactory()
             pool.setOnLoadCompleteListener { _, sampleId, status ->
                 if (status == 0) {
+                    loadedSounds += sampleId
                     if (sampleId == rollSoundId) isRollLoaded = true
                     if (sampleId == landSoundId) isLandLoaded = true
                 }
@@ -95,6 +109,10 @@ class DiceSoundManager(
             try {
                 rollSoundId = pool.load(context, R.raw.dice_roll, 1)
                 landSoundId = pool.load(context, R.raw.dice_land, 1)
+                criticalSoundId = pool.load(context, R.raw.dice_critical, 1)
+                fumbleSoundId = pool.load(context, R.raw.dice_fumble, 1)
+                winSoundId = pool.load(context, R.raw.game_win, 1)
+                loseSoundId = pool.load(context, R.raw.game_lose, 1)
             } catch (_: Throwable) {
                 // Previene caídas si los recursos no pueden cargarse
             }
@@ -137,6 +155,23 @@ class DiceSoundManager(
         }
     }
 
+    override fun playResultSound(indicator: RollIndicator) {
+        when (indicator) {
+            RollIndicator.CRITICAL -> playLoaded(criticalSoundId)
+            RollIndicator.FUMBLE -> playLoaded(fumbleSoundId)
+            else -> Unit
+        }
+    }
+
+    override fun playGameOverSound(won: Boolean) {
+        playLoaded(if (won) winSoundId else loseSoundId)
+    }
+
+    private fun playLoaded(soundId: Int) {
+        if (isMuted || soundId == 0 || soundId !in loadedSounds) return
+        soundPool?.play(soundId, 1f, 1f, 1, 0, 1f)
+    }
+
     /**
      * Pausa todas las reproducciones de audio de SoundPool (e.g. al pasar a ON_PAUSE).
      */
@@ -162,6 +197,7 @@ class DiceSoundManager(
         soundPool = null
         isRollLoaded = false
         isLandLoaded = false
+        loadedSounds.clear()
     }
 }
 

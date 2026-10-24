@@ -174,7 +174,9 @@ fun GameScreen(
             delay(GAME_OVER_DELAY_MS)
             showGameOver = true
             // Con varios jugadores siempre hay quien gane, así que se celebra siempre.
-            haptics.vibrateOnGameOver(uiState.isMultiplayer || uiState.outcome == GameOutcome.WON)
+            val celebrate = uiState.isMultiplayer || uiState.outcome == GameOutcome.WON
+            haptics.vibrateOnGameOver(celebrate)
+            soundManager.playGameOverSound(celebrate)
         } else {
             showGameOver = false
         }
@@ -275,7 +277,10 @@ fun GameScreen(
                 )
 
                 // HU-16: vibración al detenerse el dado; distinta en crítico, pifia o un tiro normal.
-                haptics.vibrateOnResult(diceViewModel.uiState.value.rollIndicator)
+                val indicator = diceViewModel.uiState.value.rollIndicator
+                haptics.vibrateOnResult(indicator)
+                // Sonido propio para el crítico y la pifia, además del impacto de los dados.
+                soundManager.playResultSound(indicator)
 
                 isRolling = false
             }

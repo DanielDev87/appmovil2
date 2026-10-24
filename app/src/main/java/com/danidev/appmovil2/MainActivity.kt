@@ -16,6 +16,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -47,6 +48,11 @@ import com.danidev.appmovil2.ui.theme.SharedPreferencesThemeStore
 import com.danidev.appmovil2.ui.theme.ThemeController
 import com.danidev.appmovil2.ui.theme.ThemeMode
 import com.danidev.appmovil2.ui.theme.ThemeViewModel
+import com.danidev.appmovil2.ui.tour.LocalTourController
+import com.danidev.appmovil2.ui.tour.SharedPreferencesTourStore
+import com.danidev.appmovil2.ui.tour.TourController
+import com.danidev.appmovil2.ui.tour.TourDialog
+import com.danidev.appmovil2.ui.tour.TourViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 class MainActivity : ComponentActivity() {
@@ -76,6 +82,13 @@ class MainActivity : ComponentActivity() {
     private val backgroundViewModel: BackgroundViewModel by viewModels {
         viewModelFactory {
             initializer { BackgroundViewModel(SharedPreferencesBackgroundStore(applicationContext)) }
+        }
+    }
+
+    // Tour guiado: se muestra la primera vez y se puede repetir desde Ajustes.
+    private val tourViewModel: TourViewModel by viewModels {
+        viewModelFactory {
+            initializer { TourViewModel(SharedPreferencesTourStore(applicationContext)) }
         }
     }
 
@@ -111,6 +124,9 @@ class MainActivity : ComponentActivity() {
             val playerName by playerNameViewModel.name.collectAsState()
             val appStyle by styleViewModel.style.collectAsState()
             val background by backgroundViewModel.choice.collectAsState()
+            val tourVisible by tourViewModel.visible.collectAsState()
+            val tourStep by tourViewModel.stepIndex.collectAsState()
+            LaunchedEffect(Unit) { tourViewModel.showIfFirstTime() }
 
             CompositionLocalProvider(
                 LocalThemeController provides ThemeController(
@@ -133,6 +149,7 @@ class MainActivity : ComponentActivity() {
                     onUseStyleDefault = backgroundViewModel::useStyleDefault,
                     onGradientChange = backgroundViewModel::setGradient
                 ),
+                LocalTourController provides TourController(onShowTour = tourViewModel::start),
                 LocalAppTokens provides applyBackground(appTokens(appStyle, darkTheme), background)
             ) {
                 Appmovil2Theme(darkTheme = darkTheme) {
@@ -148,6 +165,16 @@ class MainActivity : ComponentActivity() {
                             ) {
                                 val navController = rememberNavController()
                                 AppNavGraph(navController = navController)
+                            }
+
+                            if (tourVisible) {
+                                TourDialog(
+                                    steps = tourViewModel.steps,
+                                    stepIndex = tourStep,
+                                    onNext = tourViewModel::next,
+                                    onBack = tourViewModel::back,
+                                    onSkip = tourViewModel::finish
+                                )
                             }
                         }
                     }

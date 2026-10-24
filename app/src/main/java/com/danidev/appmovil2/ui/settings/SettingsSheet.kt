@@ -67,6 +67,7 @@ import com.danidev.appmovil2.ui.style.StyledStepper
 import com.danidev.appmovil2.ui.style.StyledSwitchRow
 import com.danidev.appmovil2.ui.style.isTablet
 import com.danidev.appmovil2.ui.theme.LocalThemeController
+import com.danidev.appmovil2.ui.tour.LocalTourController
 import com.danidev.appmovil2.ui.theme.ThemeMode
 import kotlin.math.roundToInt
 
@@ -89,6 +90,7 @@ class GameOptions(
     val onMaxLaunchesChange: (Int) -> Unit,
     val onPlayerCountChange: (Int) -> Unit,
     val onPlayerNameChange: (Int, String) -> Unit,
+    val onShowTour: () -> Unit,
     /** `true` mientras los dados giran: no se pueden cambiar los dados en ese momento. */
     val isRolling: Boolean
 )
@@ -103,6 +105,8 @@ class GameOptions(
 @Composable
 fun SettingsSheet(options: GameOptions, onDismiss: () -> Unit) {
     val tokens = LocalAppTokens.current
+    // Al abrir el tour se cierran los ajustes, para que el tour quede solo en pantalla.
+    val showTourAndClose = { onDismiss(); options.onShowTour() }
 
     val body: @Composable () -> Unit = {
         var tab by rememberSaveable { mutableIntStateOf(0) }
@@ -130,7 +134,7 @@ fun SettingsSheet(options: GameOptions, onDismiss: () -> Unit) {
                 onSelect = { tab = it },
                 modifier = Modifier.fillMaxWidth()
             )
-            if (tab == 0) GameTab(options) else PersonalizeTab()
+            if (tab == 0) GameTab(options, showTourAndClose) else PersonalizeTab()
         }
     }
 
@@ -152,7 +156,7 @@ fun SettingsSheet(options: GameOptions, onDismiss: () -> Unit) {
 
 /** Primera pantalla: lo que cambia la partida. */
 @Composable
-private fun GameTab(options: GameOptions) {
+private fun GameTab(options: GameOptions, onShowTour: () -> Unit) {
     val tokens = LocalAppTokens.current
 
     // Jugar con amigos es opcional: apagado juega una persona; encendido, 2 o 3 con sus nombres.
@@ -269,6 +273,42 @@ private fun GameTab(options: GameOptions) {
             checked = options.settings.shakeEnabled,
             onCheckedChange = options.onShakeChange
         )
+    }
+
+    TourButton(onClick = onShowTour)
+}
+
+/** Botón que abre el tour guiado otra vez. */
+@Composable
+private fun TourButton(onClick: () -> Unit) {
+    val tokens = LocalAppTokens.current
+    StyledCard(
+        color = tokens.soft,
+        radius = 18.dp,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(role = Role.Button, onClick = onClick)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Text(text = "🧭", fontSize = 26.sp)
+            Column {
+                Text(
+                    text = stringResource(R.string.settings_tour),
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = tokens.ink
+                )
+                Text(
+                    text = stringResource(R.string.settings_tour_hint),
+                    fontSize = 13.sp,
+                    color = tokens.muted
+                )
+            }
+        }
     }
 }
 
@@ -464,6 +504,7 @@ fun rememberGameOptions(
     val sizeFactor by sizeViewModel.factor.collectAsState()
     val diceType by typeViewModel.type.collectAsState()
     val settings by settingsViewModel.settings.collectAsState()
+    val tour = LocalTourController.current
 
     return GameOptions(
         palette = palette,
@@ -494,6 +535,7 @@ fun rememberGameOptions(
         onMaxLaunchesChange = settingsViewModel::setMaxLaunches,
         onPlayerCountChange = settingsViewModel::setPlayerCount,
         onPlayerNameChange = settingsViewModel::setPlayerName,
+        onShowTour = tour.onShowTour,
         isRolling = isRolling
     )
 }

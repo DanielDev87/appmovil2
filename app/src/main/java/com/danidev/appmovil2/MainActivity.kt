@@ -9,6 +9,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.LocalRippleConfiguration
@@ -17,14 +18,19 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.danidev.appmovil2.ui.navigation.AppNavGraph
+import com.danidev.appmovil2.ui.navigation.Screen
 import com.danidev.appmovil2.ui.player.LocalPlayerName
 import com.danidev.appmovil2.ui.player.PlayerNameController
 import com.danidev.appmovil2.ui.player.PlayerNameViewModel
@@ -53,8 +59,16 @@ import com.danidev.appmovil2.ui.theme.ThemeViewModel
 import com.danidev.appmovil2.ui.tour.LocalTourController
 import com.danidev.appmovil2.ui.tour.SharedPreferencesTourStore
 import com.danidev.appmovil2.ui.tour.TourController
-import com.danidev.appmovil2.ui.tour.TourDialog
+import com.danidev.appmovil2.ui.tour.LocalTourTargets
+import com.danidev.appmovil2.ui.tour.TourOverlay
+import com.danidev.appmovil2.ui.tour.TourScreen
+import com.danidev.appmovil2.ui.tour.TourTargets
 import com.danidev.appmovil2.ui.tour.TourViewModel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+
+/** Pausa (ms) entre tocar lo resaltado y pasar al siguiente paso, para que se vea lo que hizo. */
+private const val TOUR_ADVANCE_DELAY_MS = 600L
 
 @OptIn(ExperimentalMaterial3Api::class)
 class MainActivity : ComponentActivity() {
@@ -133,6 +147,45 @@ class MainActivity : ComponentActivity() {
             val tourStep by tourViewModel.stepIndex.collectAsState()
             LaunchedEffect(Unit) { tourViewModel.showIfFirstTime() }
 
+            // La navegación vive aquí para que el tour pueda cambiar de pantalla por su cuenta.
+            val navController = rememberNavController()
+            val backStackEntry by navController.currentBackStackEntryAsState()
+            val currentScreen = if (backStackEntry?.destination?.route == Screen.Main.route) {
+                TourScreen.GAME
+            } else {
+                TourScreen.WELCOME
+            }
+
+            // Posiciones de lo que el tour señala; tocar algo resaltado lo hace funcionar normal y,
+            // tras un momento, el tour pasa al siguiente paso.
+            val tourTargets = remember { TourTargets() }
+            val scope = rememberCoroutineScope()
+            SideEffect {
+                tourTargets.onTouched = { target ->
+                    if (tourViewModel.shouldAdvanceOnTouch(target)) {
+                        val touchedStep = tourViewModel.stepIndex.value
+                        scope.launch {
+                            delay(TOUR_ADVANCE_DELAY_MS)
+                            tourViewModel.advanceFrom(touchedStep)
+                        }
+                    }
+                }
+            }
+
+            // Cada paso vive en una pantalla: si no es la actual, el tour lleva a ella.
+            LaunchedEffect(tourVisible, tourStep) {
+                if (!tourVisible) return@LaunchedEffect
+                val wanted = tourViewModel.steps[tourStep].screen
+                val route = navController.currentDestination?.route
+                if (wanted == TourScreen.GAME && route != Screen.Main.route) {
+                    navController.navigate(Screen.Main.route)
+                } else if (wanted == TourScreen.WELCOME && route != Screen.Welcome.route) {
+                    navController.navigate(Screen.Welcome.route) {
+                        popUpTo(Screen.Welcome.route) { inclusive = true }
+                    }
+                }
+            }
+
             CompositionLocalProvider(
                 LocalThemeController provides ThemeController(
                     isDark = darkTheme,
@@ -154,7 +207,10 @@ class MainActivity : ComponentActivity() {
                     onUseStyleDefault = backgroundViewModel::useStyleDefault,
                     onGradientChange = backgroundViewModel::setGradient
                 ),
-                LocalTourController provides TourController(onShowTour = tourViewModel::start),
+                LocalTourController provides TourController(
+                    onShowTour = { tourViewModel.start(currentScreen) }
+                ),
+                LocalTourTargets provides tourTargets,
                 LocalAppTokens provides applyBackground(appTokens(appStyle, darkTheme), background)
             ) {
                 Appmovil2Theme(darkTheme = darkTheme) {
@@ -165,22 +221,26 @@ class MainActivity : ComponentActivity() {
                                 LocalIndication provides PressIndication,
                                 LocalRippleConfiguration provides null
                             ) {
-                                Surface(
-                                    modifier = Modifier.fillMaxSize(),
-                                    color = MaterialTheme.colorScheme.background
-                                ) {
-                                    val navController = rememberNavController()
-                                    AppNavGraph(navController = navController)
-                                }
+                                Box(modifier = Modifier.fillMaxSize()) {
+                                    Surface(
+                                        modifier = Modifier.fillMaxSize(),
+                                        color = MaterialTheme.colorScheme.background
+                                    ) {
+                                        AppNavGraph(navController = navController)
+                                    }
 
-                                if (tourVisible) {
-                                    TourDialog(
-                                        steps = tourViewModel.steps,
-                                        stepIndex = tourStep,
-                                        onNext = tourViewModel::next,
-                                        onBack = tourViewModel::back,
-                                        onSkip = tourViewModel::finish
-                                    )
+                                    // Tour dinámico: señala los botones reales encima de la pantalla.
+                                    if (tourVisible) {
+                                        TourOverlay(
+                                            step = tourViewModel.steps[tourStep],
+                                            index = tourStep,
+                                            total = tourViewModel.steps.size,
+                                            isLast = tourStep == tourViewModel.steps.lastIndex,
+                                            onNext = tourViewModel::next,
+                                            onBack = tourViewModel::back,
+                                            onSkip = tourViewModel::finish
+                                        )
+                                    }
                                 }
                             }
                         }

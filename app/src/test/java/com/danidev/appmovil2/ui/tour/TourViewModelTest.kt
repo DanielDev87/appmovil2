@@ -17,7 +17,7 @@ class TourViewModelTest {
     }
 
     @Test
-    fun `la primera vez el tour se abre solo`() {
+    fun `la primera vez el tour se abre solo desde el principio`() {
         val viewModel = TourViewModel(FakeTourStore(seen = false))
 
         viewModel.showIfFirstTime()
@@ -36,17 +36,39 @@ class TourViewModelTest {
     }
 
     @Test
-    fun `se puede abrir otra vez a mano aunque ya se haya visto`() {
+    fun `se puede abrir a mano aunque ya se haya visto`() {
         val viewModel = TourViewModel(FakeTourStore(seen = true))
 
         viewModel.start()
 
         assertTrue(viewModel.visible.value)
-        assertEquals(0, viewModel.stepIndex.value)
+        assertEquals(TourStep.INTRO, viewModel.currentStep)
     }
 
     @Test
-    fun `siguiente y atras recorren los pasos sin salirse del rango`() {
+    fun `desde el juego empieza en el primer paso del juego`() {
+        val viewModel = TourViewModel(FakeTourStore())
+
+        viewModel.start(TourScreen.GAME)
+
+        assertEquals(TourStep.SCORES, viewModel.currentStep)
+    }
+
+    @Test
+    fun `los pasos de bienvenida van antes que los del juego`() {
+        val screens = TourStep.entries.map { it.screen }
+
+        assertEquals(screens.sortedBy { it.ordinal }, screens)
+        assertEquals(TourStep.PLAY, TourStep.entries.last { it.screen == TourScreen.WELCOME })
+    }
+
+    @Test
+    fun `solo los pasos con elemento pueden ser interactivos`() {
+        TourStep.entries.filter { it.interactive }.forEach { assertTrue(it.target != null) }
+    }
+
+    @Test
+    fun `siguiente y atras recorren los pasos sin salirse`() {
         val viewModel = TourViewModel(FakeTourStore())
         viewModel.start()
 
@@ -62,27 +84,22 @@ class TourViewModelTest {
     }
 
     @Test
-    fun `en el ultimo paso siguiente termina el tour y lo marca como visto`() {
+    fun `siguiente en el ultimo paso termina el tour y lo marca como visto`() {
         val store = FakeTourStore()
         val viewModel = TourViewModel(store)
-        viewModel.start()
+        viewModel.start(TourScreen.GAME)
 
-        repeat(viewModel.steps.size - 1) { viewModel.next() }
-        assertTrue(viewModel.isLastStep)
-        assertTrue(viewModel.visible.value)
-
-        viewModel.next()
+        repeat(viewModel.steps.size) { viewModel.next() }
 
         assertFalse(viewModel.visible.value)
         assertTrue(store.seen)
     }
 
     @Test
-    fun `omitir cierra el tour y tambien cuenta como visto`() {
+    fun `omitir cierra el tour y cuenta como visto`() {
         val store = FakeTourStore()
         val viewModel = TourViewModel(store)
         viewModel.start()
-        viewModel.next()
 
         viewModel.finish()
 
@@ -91,22 +108,50 @@ class TourViewModelTest {
     }
 
     @Test
-    fun `el tour no se reinicia si ya esta abierto al pedirlo la primera vez`() {
+    fun `tocar el elemento de un paso interactivo hace avanzar`() {
         val viewModel = TourViewModel(FakeTourStore())
         viewModel.start()
-        viewModel.next()
+        viewModel.next() // THEME, interactivo
 
-        viewModel.showIfFirstTime()
-
-        assertEquals(1, viewModel.stepIndex.value)
+        assertTrue(viewModel.shouldAdvanceOnTouch(TourTargetId.THEME_SWITCH))
+        assertFalse(viewModel.shouldAdvanceOnTouch(TourTargetId.PLAY_BUTTON))
     }
 
     @Test
-    fun `el tour tiene todos los pasos esperados en orden`() {
-        val steps = TourViewModel(FakeTourStore()).steps
+    fun `tocar un elemento de un paso que solo señala no avanza`() {
+        val viewModel = TourViewModel(FakeTourStore())
+        viewModel.start()
+        repeat(2) { viewModel.next() } // NAME, no interactivo
 
-        assertEquals(TourStep.WELCOME, steps.first())
-        assertEquals(TourStep.PROGRESS, steps.last())
-        assertEquals(6, steps.size)
+        assertFalse(viewModel.shouldAdvanceOnTouch(TourTargetId.NAME_FIELD))
+    }
+
+    @Test
+    fun `con el tour cerrado tocar nada avanza`() {
+        val viewModel = TourViewModel(FakeTourStore())
+
+        assertFalse(viewModel.shouldAdvanceOnTouch(TourTargetId.THEME_SWITCH))
+    }
+
+    @Test
+    fun `un toque tardio no se salta un paso que ya cambio`() {
+        val viewModel = TourViewModel(FakeTourStore())
+        viewModel.start()
+        viewModel.next() // paso 1
+        viewModel.next() // paso 2
+
+        viewModel.advanceFrom(1)
+
+        assertEquals(2, viewModel.stepIndex.value)
+    }
+
+    @Test
+    fun `advanceFrom avanza si sigue en ese paso`() {
+        val viewModel = TourViewModel(FakeTourStore())
+        viewModel.start()
+
+        viewModel.advanceFrom(0)
+
+        assertEquals(1, viewModel.stepIndex.value)
     }
 }

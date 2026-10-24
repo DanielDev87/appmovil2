@@ -65,6 +65,8 @@ import com.danidev.appmovil2.ui.style.StyledButton
 import com.danidev.appmovil2.ui.style.StyledIconButton
 import com.danidev.appmovil2.ui.style.isTablet
 import com.danidev.appmovil2.ui.theme.ThemeSwitch
+import com.danidev.appmovil2.ui.tour.TourTargetId
+import com.danidev.appmovil2.ui.tour.tourTarget
 
 /**
  * Pantalla de bienvenida: título, saludo con el nombre del jugador (HU-12) y el botón para empezar.
@@ -115,17 +117,19 @@ fun WelcomeScreen(onStartClicked: () -> Unit, onNavigateToAbout: () -> Unit = {}
                 modifier = Modifier.fillMaxWidth()
             ) {
                 // HU-03: selector de tema claro / oscuro.
-                ThemeSwitch()
+                ThemeSwitch(modifier = Modifier.tourTarget(TourTargetId.THEME_SWITCH))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     StyledIconButton(
                         icon = Icons.Filled.EmojiEvents,
                         contentDescription = stringResource(R.string.progress_open),
-                        onClick = { showProgress = true }
+                        onClick = { showProgress = true },
+                        modifier = Modifier.tourTarget(TourTargetId.WELCOME_PROGRESS)
                     )
                     StyledIconButton(
                         icon = Icons.Filled.Settings,
                         contentDescription = stringResource(R.string.welcome_settings),
-                        onClick = { showSettings = true }
+                        onClick = { showSettings = true },
+                        modifier = Modifier.tourTarget(TourTargetId.WELCOME_SETTINGS)
                     )
                     StyledIconButton(
                         icon = Icons.Filled.Info,
@@ -166,7 +170,7 @@ fun WelcomeScreen(onStartClicked: () -> Unit, onNavigateToAbout: () -> Unit = {}
                                 .padding(top = 12.dp, bottom = 8.dp)
                         ) {
                             // HU-12: nombre principal (jugador 1).
-                            StyledNameField()
+                            StyledNameField(modifier = Modifier.tourTarget(TourTargetId.NAME_FIELD))
                         }
                     }
                 }
@@ -179,6 +183,7 @@ fun WelcomeScreen(onStartClicked: () -> Unit, onNavigateToAbout: () -> Unit = {}
                     .widthIn(max = MAX_CONTENT_WIDTH)
                     .fillMaxWidth()
                     .padding(top = 8.dp)
+                    .tourTarget(TourTargetId.PLAY_BUTTON)
             ) {
                 Text(
                     text = stringResource(

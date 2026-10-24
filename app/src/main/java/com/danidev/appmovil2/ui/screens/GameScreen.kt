@@ -83,6 +83,8 @@ import com.danidev.appmovil2.ui.style.gameContentMaxWidth
 import com.danidev.appmovil2.ui.style.StyledButton
 import com.danidev.appmovil2.ui.style.StyledCard
 import com.danidev.appmovil2.ui.style.isTablet
+import com.danidev.appmovil2.ui.tour.TourTargetId
+import com.danidev.appmovil2.ui.tour.tourTarget
 import com.danidev.appmovil2.ui.theme.Appmovil2Theme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -327,7 +329,7 @@ fun GameScreen(
                         .filterIndexed { index, _ -> index !in uiState.lockedIndices }
                         .sum(),
                     rollModifier = settings.rollModifier,
-                    modifier = stageModifier,
+                    modifier = stageModifier.tourTarget(TourTargetId.DICE_STAGE),
                     minHeight = stageMinHeight
                 ) {
                     DiceBoard(
@@ -347,7 +349,7 @@ fun GameScreen(
                 if (showPlayAgain) {
                     PlayAgainButton(onClick = resetGame)
                 } else {
-                    RollButton(enabled = canRoll, onClick = triggerRoll)
+                    RollButton(enabled = canRoll, onClick = triggerRoll, modifier = Modifier.tourTarget(TourTargetId.ROLL_BUTTON))
                 }
             }
 
@@ -367,7 +369,7 @@ fun GameScreen(
                             .weight(1f)
                             .fillMaxHeight()
                     ) {
-                        ScoreCards(uiState = uiState)
+                        ScoreCards(uiState = uiState, modifier = Modifier.tourTarget(TourTargetId.SCORE_CARDS))
                         stage(swipeToThrow.weight(1f), 180.dp)
                     }
                     Column(
@@ -387,14 +389,15 @@ fun GameScreen(
                                 diceCount = uiState.diceCount,
                                 diceSides = diceSides,
                                 rollCount = uiState.rollCount,
-                                onClick = { showSettings = true }
+                                onClick = { showSettings = true },
+                                modifier = Modifier.tourTarget(TourTargetId.INFO_PANEL)
                             )
                             RecordsOrPlayers(uiState, progress, playerNames)
                             RecentRolls(
                                 history = uiState.history,
                                 onOpenStats = onNavigateToStats,
                                 palette = palette,
-                                modifier = Modifier.padding(horizontal = 4.dp)
+                                modifier = Modifier.padding(horizontal = 4.dp).tourTarget(TourTargetId.RECENT_ROLLS)
                             )
                         }
                         if (outcome != GameOutcome.IN_PROGRESS) {
@@ -414,12 +417,13 @@ fun GameScreen(
                         .fillMaxWidth()
                         .padding(top = 8.dp)
                 ) {
-                    ScoreCards(uiState = uiState)
+                    ScoreCards(uiState = uiState, modifier = Modifier.tourTarget(TourTargetId.SCORE_CARDS))
                     GameInfoPanel(
                         diceCount = uiState.diceCount,
                         diceSides = diceSides,
                         rollCount = uiState.rollCount,
-                        onClick = { showSettings = true }
+                        onClick = { showSettings = true },
+                        modifier = Modifier.tourTarget(TourTargetId.INFO_PANEL)
                     )
                     RecordsOrPlayers(uiState, progress, playerNames)
                 }
@@ -442,7 +446,7 @@ fun GameScreen(
                         history = uiState.history,
                         onOpenStats = onNavigateToStats,
                         palette = palette,
-                        modifier = Modifier.padding(horizontal = 4.dp)
+                        modifier = Modifier.padding(horizontal = 4.dp).tourTarget(TourTargetId.RECENT_ROLLS)
                     )
                     Spacer(modifier = Modifier.weight(1.7f))
                 }

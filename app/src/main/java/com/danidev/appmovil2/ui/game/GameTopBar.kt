@@ -24,6 +24,8 @@ import com.danidev.appmovil2.R
 import com.danidev.appmovil2.ui.style.LocalAppTokens
 import com.danidev.appmovil2.ui.style.StyledCard
 import com.danidev.appmovil2.ui.style.StyledIconButton
+import com.danidev.appmovil2.ui.tour.TourTargetId
+import com.danidev.appmovil2.ui.tour.tourTarget
 
 /**
  * Barra superior de la partida: volver al menú, título con el turno del jugador (HU-12),
@@ -91,7 +93,8 @@ fun GameTopBar(
             StyledIconButton(
                 icon = Icons.Filled.Refresh,
                 contentDescription = stringResource(R.string.reset_game_description),
-                onClick = onReset
+                onClick = onReset,
+                modifier = Modifier.tourTarget(TourTargetId.TOP_RESET)
             )
             StyledIconButton(
                 icon = if (isSoundMuted) {
@@ -102,12 +105,14 @@ fun GameTopBar(
                 contentDescription = stringResource(
                     if (isSoundMuted) R.string.sound_disabled else R.string.sound_enabled
                 ),
-                onClick = onToggleSound
+                onClick = onToggleSound,
+                modifier = Modifier.tourTarget(TourTargetId.TOP_SOUND)
             )
             StyledIconButton(
                 icon = Icons.Filled.Settings,
                 contentDescription = stringResource(R.string.settings_open),
-                onClick = onOpenSettings
+                onClick = onOpenSettings,
+                modifier = Modifier.tourTarget(TourTargetId.TOP_SETTINGS)
             )
         }
     }
